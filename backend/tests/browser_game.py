@@ -6,6 +6,9 @@ from tempfile import TemporaryDirectory
 from threading import Thread
 from time import monotonic, sleep
 from unittest import TestCase, main
+from uuid import uuid4
+
+import chess
 
 from playwright.sync_api import expect, sync_playwright
 from uvicorn import Config, Server
@@ -116,6 +119,39 @@ class BrowserGameTest(TestCase):
                     page.reload()
                     expect(page.get_by_text("Троекратное повторение", exact=True)).to_be_visible()
                     expect(page.get_by_text("Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1", exact=True)).to_be_visible()
+                    base = f"http://127.0.0.1:{port}"
+                    def prepare(line):
+                        game = page.request.post(base + "/api/games").json()
+                        board = chess.Board()
+                        for version, san in enumerate(line.split()):
+                            move = board.push_san(san)
+                            response = page.request.post(base + "/api/games/" + game["id"] + "/moves",
+                                data={"version": version, "uci": move.uci(), "command_id": str(uuid4())})
+                            self.assertTrue(response.ok)
+                        page.goto(base + "/?game=" + game["id"])
+                        expect(page.get_by_text("Ход белых", exact=True)).to_be_visible()
+
+                    def tap_move(start, end):
+                        page.locator(f'[data-square="{start}"]').tap()
+                        page.locator(f'[data-square="{end}"]').tap()
+
+                    prepare("e4 b6 Bc4 e6 Bb3 Ba6 Nf3 h6")
+                    tap_move("e1", "g1")
+                    expect(page.get_by_text("Ход белых", exact=True)).to_be_visible()
+                    expect(page.locator('[data-square="e1"] [role=img]')).to_have_attribute("aria-label", "white king e1")
+                    prepare("e4 a6 e5 d5")
+                    tap_move("e5", "d6")
+                    expect(page.get_by_text("Ход чёрных", exact=True)).to_be_visible()
+                    expect(page.locator('[data-square="d5"] [role=img]')).to_have_count(0)
+                    expect(page.locator('[data-square="d6"] [role=img]')).to_have_attribute("aria-label", "white pawn d6")
+                    prepare("a4 h5 a5 h4 a6 h3 axb7 hxg2")
+                    tap_move("b7", "a8")
+                    page.get_by_role("button", name="Конь", exact=True).tap()
+                    expect(page.locator('[data-square="a8"] [role=img]')).to_have_attribute("aria-label", "white knight a8")
+                    prepare("e3 a5 Qh5 Ra6 Qxa5 h5 Qxc7 Rah6 h4 f6 Qxd7+ Kf7 Qxb7 Qd3 Qxb8 Qh7 Qxc8 Kg6")
+                    tap_move("c8", "e6")
+                    expect(page.get_by_text("Пат", exact=True)).to_be_visible()
+                    expect(page.get_by_text("1/2-1/2", exact=True)).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True
