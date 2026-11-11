@@ -1,3 +1,4 @@
+import { useLanguage } from "../../shared/language";
 import React, { useEffect, useRef, useState } from "react";
 import { AttemptHistory } from "./AttemptHistory";
 import { commandId } from "../../shared/commandId";
@@ -15,6 +16,7 @@ interface Puzzle {
 interface Progress { id: string; puzzle: string; mistakes: number; solved: boolean }
 
 export function PuzzlesPage() {
+  const { language, t } = useLanguage();
   const attempt = useRef<Progress | null>(null);
   const [failed, setFailed] = useState<Progress[]>([]);
   const [pending, setPending] = useState(0);
@@ -42,12 +44,12 @@ export function PuzzlesPage() {
   const [theme, setTheme] = useState("");
   const [sequence, next] = useState(0);
   const [puzzle, setPuzzle] = useState<Puzzle>();
-  const [error, setError] = useState("");
+  const [error, setError] = useState<"empty" | "load" | null>(null);
   useEffect(() => {
     const abort = new AbortController();
     attempt.current = null;
     setPuzzle(undefined);
-    setError("");
+    setError(null);
     async function load() {
       const response = await fetch("/api/puzzles/random" + (theme ? "?theme=" + theme : ""), { signal: abort.signal, cache: "no-store" });
       if (response.status === 404) throw new Error("empty-theme");
@@ -62,27 +64,26 @@ export function PuzzlesPage() {
       if (!abort.signal.aborted) setPuzzle({ id: data.puzzle_id, rating: data.rating, fen, side, steps });
     }
     load().catch(reason => {
-      if (!abort.signal.aborted) setError(reason.message === "empty-theme" ?
-        "По этой теме нет задач. Выберите другую тему." : "Не удалось загрузить задачу из каталога.");
+      if (!abort.signal.aborted) setError(reason.message === "empty-theme" ? "empty" : "load");
     });
     return () => abort.abort();
   }, [sequence, theme]);
-  const title = <><h1>Шахматные задачи</h1>
-    <label>Тема задачи <select value={theme} onChange={e => setTheme(e.target.value)}>
-      <option value="">Все темы</option><option value="mateIn1">Мат в один ход</option>
-      <option value="mateIn2">Мат в два хода</option><option value="fork">Вилка</option>
-      <option value="pin">Связка</option><option value="endgame">Эндшпиль</option>
+  const title = <><h1>{t("Шахматные задачи", "Puzzles")}</h1>
+    <label>{t("Тема задачи", "Puzzle theme")} <select value={theme} onChange={e => setTheme(e.target.value)}>
+      <option value="">{t("Все темы", "All themes")}</option><option value="mateIn1">{t("Мат в один ход", "Mate in one")}</option>
+      <option value="mateIn2">{t("Мат в два хода", "Mate in two")}</option><option value="fork">{t("Вилка", "Fork")}</option>
+      <option value="pin">{t("Связка", "Pin")}</option><option value="endgame">{t("Эндшпиль", "Endgame")}</option>
     </select></label>
     <AttemptHistory revision={revision} />
-    {failed.length > 0 ? <p role="alert">История не сохранена. <button onClick={() => { setFailed([]); failed.forEach(entry => void save(entry)); }}>Повторить сохранение</button></p> :
-      pending > 0 && <p role="status">Сохраняем попытку…</p>}
+    {failed.length > 0 ? <p role="alert">{t("История не сохранена.", "History could not be saved.")} <button onClick={() => { setFailed([]); failed.forEach(entry => void save(entry)); }}>{t("Повторить сохранение", "Retry saving")}</button></p> :
+      pending > 0 && <p role="status">{t("Сохраняем попытку…", "Saving attempt…")}</p>}
   </>;
   const button = <button onClick={() => next(sequence + 1)} disabled={!error && !puzzle}>
-    {error ? "Повторить загрузку" : "Следующая задача"}
+    {error ? t("Повторить загрузку", "Retry loading") : t("Следующая задача", "Next puzzle")}
   </button>;
-  if (!puzzle) return <main className="study-page">{title}
-    <p role="status">{error || "Загружаем позицию…"}</p>{button}
+  if (!puzzle) return <main lang={language} className="study-page">{title}
+    <p role="status">{error === "empty" ? t("По этой теме нет задач. Выберите другую тему.", "No puzzles for this theme. Choose another theme.") : error === "load" ? t("Не удалось загрузить задачу из каталога.", "Could not load the puzzle.") : t("Загружаем позицию…", "Loading position…")}</p>{button}
   </main>;
   return <Trainer key={puzzle.id + sequence} fen={puzzle.fen} onAttempt={record} onRestart={() => { attempt.current = null; }} steps={puzzle.steps} side={puzzle.side} puzzle
-    context={<>{title}<p>Задача {puzzle.id} · Рейтинг {puzzle.rating}</p></>} next={button} />;
+    context={<>{title}<p>{t("Задача", "Puzzle")} {puzzle.id} · {t("Рейтинг", "Rating")} {puzzle.rating}</p></>} next={button} />;
 }

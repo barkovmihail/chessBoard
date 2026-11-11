@@ -1,3 +1,4 @@
+import { useLanguage } from "../../shared/language";
 import React, { useEffect, useMemo, useState } from "react";
 import { ArchiveMoves } from "./ArchiveMoves";
 import { BoardLayout } from "../../shared/board-layout";
@@ -16,10 +17,11 @@ interface Props {
 }
 
 export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, onRestart }: Props) {
+  const { language, t } = useLanguage();
   const [ply, advance] = useState(0);
   const [selected, select] = useState<Square>();
   const [hint, showHint] = useState(false);
-  const [feedback, say] = useState("");
+  const [feedback, say] = useState<{ kind: "correct"; ply: number; san: string } | { kind: "illegal" | "different"; ply: number }>();
   const [promotion, promote] = useState<Square>();
   const [otherMate, setOtherMate] = useState("");
   const state = useMemo(() => {
@@ -50,16 +52,15 @@ export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, on
     select(undefined);
     if (puzzle && move?.san.endsWith("#") && move.lan !== target?.lan) {
       onAttempt?.(false, true);
-      setOtherMate(move.san); say("Мат. Решение верно."); return;
+      setOtherMate(move.san); return;
     }
     if (!move || move.lan !== target?.lan) {
       onAttempt?.(true, false);
-      say((move ? "Допустимый ход, но в этой линии нужен другой." : "Так пойти нельзя.") +
-        (puzzle ? " Попробуйте ещё раз." : " " + expected[1]));
+      say({ kind: move ? "different" : "illegal", ply });
       return;
     }
     onAttempt?.(false, ply + 2 >= steps.length);
-    say("Верно, " + move.san + ". " + expected[1]);
+    say({ kind: "correct", ply, san: move.san });
     showHint(false);
     advance(ply + 1);
   }
@@ -68,23 +69,33 @@ export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, on
     if (state.get(square)?.color === side) { select(selected === square ? undefined : square); return; }
     if (selected) attempt(square);
   }
-  return <BoardLayout context={context} board={<Board position={boardPosition(state)} flipped={side === "b"} lastMove={lastMove} selected={selected}
+  function feedbackText() {
+    if (otherMate) return t("Мат. Решение верно.", "Checkmate. Correct solution.");
+    if (!feedback) return "";
+    const explanation = steps[feedback.ply][1];
+    if (feedback.kind === "correct") return t("Верно, ", "Correct, ") + feedback.san + ". " + explanation;
+    const message = feedback.kind === "different"
+      ? t("Допустимый ход, но в этой линии нужен другой.", "Legal move, but this line calls for another move.")
+      : t("Так пойти нельзя.", "That move is illegal.");
+    return message + " " + (puzzle ? t("Попробуйте ещё раз.", "Try again.") : explanation);
+  }
+  return <BoardLayout lang={language} context={context} board={<Board position={boardPosition(state)} flipped={side === "b"} lastMove={lastMove} selected={selected}
       targets={hint && target && !complete ? [target.from, target.to] : []}
       movableColor={side === "w" ? "white" : "black"}
       onMove={automatic || complete ? undefined : (from, to) => attempt(to, undefined, from)}
       onSquare={automatic || complete ? undefined : click} />}
     status={<>
-      <h2>{complete ? (puzzle ? "Задача решена" : "Линия пройдена") : automatic ? "Ответ соперника" : "Ваш ход"}</h2>
-      <p>{side === "w" ? "Вы играете белыми" : "Вы играете чёрными"}</p>
+      <h2>{complete ? (puzzle ? t("Задача решена", "Puzzle solved") : t("Линия пройдена", "Line completed")) : automatic ? t("Ответ соперника", "Opponent’s reply") : t("Ваш ход", "Your turn")}</h2>
+      <p>{side === "w" ? t("Вы играете белыми", "You play White") : t("Вы играете чёрными", "You play Black")}</p>
     </>} actions={<>
-      <p aria-live="polite">{feedback}</p>
-      {!puzzle && lastMove && lastMove.color !== side && <p>Ответ {lastMove.san}. {steps[ply - 1][1]}</p>}
-      {!complete && !automatic && <button onClick={() => showHint(true)}>Показать ход</button>}
+      <p aria-live="polite">{feedbackText()}</p>
+      {!puzzle && lastMove && lastMove.color !== side && <p>{t("Ответ", "Reply")} {lastMove.san}. {steps[ply - 1][1]}</p>}
+      {!complete && !automatic && <button onClick={() => showHint(true)}>{t("Показать ход", "Show move")}</button>}
       {hint && target && !complete && <p>{target.san} · {target.from} → {target.to}. {expected[1]}</p>}
       {promotion && <div>{(["q","r","b","n"] as const).map((p,i) =>
-        <button key={p} onClick={() => attempt(promotion, p)}>{["Ферзь","Ладья","Слон","Конь"][i]}</button>)}</div>}
-      {history.length > 0 && <p aria-label="Сыгранные ходы">{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
-      <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(""); promote(undefined); setOtherMate(""); }}>Начать заново</button>
+        <button key={p} onClick={() => attempt(promotion, p)}>{[t("Ферзь", "Queen"), t("Ладья", "Rook"), t("Слон", "Bishop"), t("Конь", "Knight")][i]}</button>)}</div>}
+      {history.length > 0 && <p aria-label={t("Сыгранные ходы", "Moves played")}>{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
+      <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(undefined); promote(undefined); setOtherMate(""); }}>{t("Начать заново", "Restart")}</button>
       {!puzzle && <ArchiveMoves prefix={history.map(move => move.lan).join(",")} />}
       {next}
     </>} />;

@@ -1,8 +1,10 @@
+import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
 
 interface Entry { id: string; puzzle: string; started: number; mistakes: number; solved: boolean }
 
 export function AttemptHistory({ revision }: { revision: number }) {
+  const { language, t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [offset, setOffset] = useState(0);
   const [page, setPage] = useState<{ items: Entry[]; more: boolean }>();
@@ -24,13 +26,13 @@ export function AttemptHistory({ revision }: { revision: number }) {
       }).catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [open, offset, revision, retry]);
-  return <details onToggle={event => setOpen(event.currentTarget.open)}><summary>История попыток</summary>
-    {open && (error ? <button onClick={() => setRetry(retry + 1)}>Повторить загрузку истории</button> : !page ?
-      <p>Загружаем историю…</p> : <>
-        {!page.items.length && <p>Пока нет попыток.</p>}
-        <ol>{page.items.map(row => <li key={row.id}>Задача {row.puzzle} · {row.solved ? "Решена" : "Не завершена"} · Ошибок {row.mistakes} · {new Date(row.started).toLocaleString("ru-RU")}</li>)}</ol>
-        {offset > 0 && <button onClick={() => setOffset(offset - 20)}>Предыдущие попытки</button>}
-        {page.more && <button onClick={() => setOffset(offset + 20)}>Следующие попытки</button>}
+  return <details onToggle={event => setOpen(event.currentTarget.open)}><summary>{t("История попыток", "Attempt history")}</summary>
+    {open && (error ? <button onClick={() => setRetry(retry + 1)}>{t("Повторить загрузку истории", "Retry loading history")}</button> : !page ?
+      <p>{t("Загружаем историю…", "Loading history…")}</p> : <>
+        {!page.items.length && <p>{t("Пока нет попыток.", "No attempts yet.")}</p>}
+        <ol>{page.items.map(row => <li key={row.id}>{t("Задача", "Puzzle")} {row.puzzle} · {row.solved ? t("Решена", "Solved") : t("Не завершена", "Unfinished")} · {t("Ошибок", "Mistakes")} {row.mistakes} · {new Date(row.started).toLocaleString(language)}</li>)}</ol>
+        {offset > 0 && <button onClick={() => setOffset(offset - 20)}>{t("Предыдущие попытки", "Previous attempts")}</button>}
+        {page.more && <button onClick={() => setOffset(offset + 20)}>{t("Следующие попытки", "Next attempts")}</button>}
       </>)}
   </details>;
 }
