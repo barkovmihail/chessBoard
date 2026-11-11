@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy import case, insert, select, update
 
 from .db import accounts, games, moves, receipts
+from .ratings import POOLS, rating, record_result
 from .domain import GameError, replay, snapshot
 
 
@@ -17,7 +18,7 @@ class Games:
             game_id = self.insert_game(db, owner, online, control)
         return self.get(game_id, owner)
 
-    def insert_game(self, db, owner, online, control, guest=None, previous_game=None):
+    def insert_game(self, db, owner, online, control, guest=None, previous_game=None, rated=False):
         game_id = uuid4().hex
         clock = {}
         if control:
@@ -26,8 +27,12 @@ class Games:
             clock = dict(base_minutes=minutes, increment_seconds=increment, white_ms=base_ms,
                          black_ms=base_ms, deadline_ms=None if online and not guest else self.now_ms() + base_ms)
         db.execute(insert(games).values(id=game_id, owner=owner, version=0, online=online, guest=guest,
-                                        previous_game=previous_game, **clock))
+                                        previous_game=previous_game, rated=rated, **clock))
         return game_id
+
+    def ratings(self, player):
+        with self.engine.connect() as db:
+            return {pool: rating(db, player, pool) for pool in POOLS}
 
     def archive(self, player, offset, limit):
         with self.engine.connect() as db:
@@ -69,7 +74,7 @@ class Games:
         view = snapshot(game["id"], history)
         view["side"] = ("white" if game["owner"] == player else "black") if game["online"] else "both"
         view["waiting"] = bool(game["online"] and not game["guest"])
-        view.update(version=game["version"], draw_offer=game["draw_offer"])
+        view.update(rated=game["rated"], version=game["version"], draw_offer=game["draw_offer"])
         for key in ("previous_game", "next_game", "rematch_offer"):
             view[key] = game[key]
         if game["result"]:
@@ -101,6 +106,7 @@ class Games:
         changes = {"result": result, "reason": "timeout", "finished_ms": self.now_ms(), "deadline_ms": None, "draw_offer": None,
                    "white_ms" if board.turn else "black_ms": 0, "version": game["version"] + 1}
         db.execute(update(games).where(games.c.id == game["id"]).values(**changes))
+        record_result(db, game, result)
         return dict(game, **changes)
 
     def expire_due(self):
@@ -160,7 +166,7 @@ class Games:
                     raise GameError("rematch_unavailable", 409)
                 if game["rematch_offer"]:
                     control = (game["base_minutes"], game["increment_seconds"]) if game["base_minutes"] else None
-                    changes["next_game"] = self.insert_game(db, game["guest"], True, control, game["owner"], game_id)
+                    changes["next_game"] = self.insert_game(db, game["guest"], True, control, game["owner"], game_id, rated=game["rated"])
                     changes["rematch_offer"] = None
                 else:
                     changes["rematch_offer"] = side
@@ -202,6 +208,7 @@ class Games:
                         changes[moving] = remaining
             if changes.get("result"):
                 changes["finished_ms"] = now
+                record_result(db, game, changes["result"])
             db.execute(update(games).where(games.c.id == game_id, games.c.version == version).values(**changes))
             result = self._view(dict(game, **changes), history, owner)
             db.execute(insert(receipts).values(game_id=game_id, command_id=command_id, player=owner,

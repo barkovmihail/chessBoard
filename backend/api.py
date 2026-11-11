@@ -32,6 +32,7 @@ class QueueVersion(BaseModel):
 
 
 class Search(QueueVersion):
+    rated: bool = False
     control: TimeControl
 
 
@@ -110,7 +111,8 @@ def create_app(path: Path):
 
     @app.get("/api/account")
     def account(request: Request):
-        return {"name": current(request)[1]}
+        player, name = current(request)
+        return {"name": name, "ratings": app.state.games.ratings(player) if name else None}
 
     @app.post("/api/account/register", status_code=201)
     def register(credentials: Credentials, request: Request, response: Response):
@@ -148,7 +150,7 @@ def create_app(path: Path):
         player = current(request)[0]
         if not player:
             raise GameError("session_required", 401)
-        return app.state.queue.change(player, command.version, "start", (command.control.minutes, command.control.increment))
+        return app.state.queue.change(player, command.version, "start", (command.control.minutes, command.control.increment), command.rated)
 
     @app.post("/api/queue/{action}")
     def update_search(action: Literal["cancel", "renew"], command: QueueVersion, request: Request):

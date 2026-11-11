@@ -2,7 +2,7 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import JSON, Boolean, Column, ForeignKey, Integer, LargeBinary, MetaData, String, Table, UniqueConstraint, create_engine, event
+from sqlalchemy import JSON, Boolean, Column, Index, ForeignKey, Integer, LargeBinary, MetaData, String, Table, UniqueConstraint, create_engine, event
 from sqlalchemy.engine import URL
 
 metadata = MetaData()
@@ -18,6 +18,7 @@ sessions = Table("account_sessions", metadata,
     Column("expires", Integer, nullable=False),
 )
 games = Table("games", metadata,
+    Column("rated", Boolean, nullable=False, server_default="0"),
     Column("id", String, primary_key=True),
     Column("owner", String, nullable=False),
     Column("online", Boolean, nullable=False, server_default="0"),
@@ -36,7 +37,14 @@ games = Table("games", metadata,
     Column("reason", String),
     Column("version", Integer, nullable=False),
 )
+rating_history = Table("rating_history", metadata,
+    Column("seq", Integer, primary_key=True), Column("game_id", ForeignKey("games.id"), nullable=False),
+    Column("player", ForeignKey("accounts.player"), nullable=False), Column("pool", String, nullable=False),
+    Column("value", Integer, nullable=False), UniqueConstraint("game_id", "player"),
+    Index("ix_rating_player_pool_seq", "player", "pool", "seq"),
+)
 queue = Table("match_queue", metadata,
+    Column("rated", Boolean, nullable=False, server_default="0"),
     Column("player", String, primary_key=True), Column("version", Integer, nullable=False),
     Column("minutes", Integer, nullable=False), Column("increment", Integer, nullable=False),
     Column("started", Integer, nullable=False), Column("expires", Integer, nullable=False),

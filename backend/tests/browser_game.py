@@ -206,6 +206,25 @@ class BrowserGameTest(TestCase):
                     white.locator('[data-square="e2"]').click()
                     white.locator('[data-square="e4"]').click()
                     expect(black.get_by_text("Ход чёрных")).to_be_visible()
+                    black.goto(base + "/?section=profile")
+                    black.get_by_role("button", name="Зарегистрироваться").click()
+                    black.get_by_label("Имя игрока").fill("BlackKnight")
+                    black.get_by_label("Пароль").fill("test-password-b")
+                    black.get_by_role("button", name="Создать аккаунт").click()
+                    expect(black.get_by_role("heading", name="BlackKnight")).to_be_visible()
+                    for player in (white, black):
+                        player.goto(base)
+                        player.get_by_label("Режим быстрого поиска").select_option("rated")
+                        player.get_by_role("button", name="Найти соперника").click()
+                        if player == white:
+                            expect(white.get_by_role("button", name="Отменить поиск")).to_be_visible()
+                    for player in (white, black):
+                        expect(player.get_by_text("Рейтинговая игра", exact=True)).to_be_visible()
+                    black.get_by_role("button", name="Сдаться").click()
+                    expect(white.get_by_text("Сдача", exact=True)).to_be_visible()
+                    for player, rating in [(white, 1516), (black, 1484)]:
+                        player.goto(base + "/?section=profile")
+                        expect(player.get_by_text(f"Блиц · {rating}", exact=True)).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True

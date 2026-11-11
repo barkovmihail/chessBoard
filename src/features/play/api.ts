@@ -13,6 +13,7 @@ export interface Game {
   previous_game?: string | null;
   next_game?: string | null;
   rematch_offer?: "white" | "black" | null;
+  rated?: boolean;
   draw_offer: "white" | "black" | null;
   side: "white" | "black" | "both";
   waiting: boolean;

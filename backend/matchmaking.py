@@ -1,7 +1,8 @@
 from sqlalchemy import select, update
 from sqlalchemy.dialects.sqlite import insert
 
-from .db import queue
+from .db import accounts, queue
+from .domain import GameError
 
 
 class Matchmaking:
@@ -13,14 +14,14 @@ class Matchmaking:
         if not row:
             return {"version": 0, "waiting": False, "game_id": None}
         return {"version": row["version"], "waiting": row["expires"] > now, "game_id": row["game_id"],
-                "minutes": row["minutes"], "increment": row["increment"]}
+                "rated": row["rated"], "minutes": row["minutes"], "increment": row["increment"]}
 
     def status(self, player):
         with self.games.engine.connect() as db:
             row = db.execute(select(queue).where(queue.c.player == player)).mappings().first()
             return self._view(row, self.games.now_ms())
 
-    def change(self, player, version, action, control=None):
+    def change(self, player, version, action, control=None, rated=False):
         with self.games.engine.begin() as db:
             db.exec_driver_sql("BEGIN IMMEDIATE")
             now = self.games.now_ms()
@@ -30,16 +31,18 @@ class Matchmaking:
             if current["version"] != version:
                 return current
             if action == "start" and not current["waiting"]:
+                if rated and not db.scalar(select(accounts.c.player).where(accounts.c.player == player)):
+                    raise GameError("account_required", 403)
                 minutes, increment = control
                 rival = db.execute(select(queue.c.player).where(queue.c.player != player, queue.c.expires > now,
-                    queue.c.minutes == minutes, queue.c.increment == increment)
+                    queue.c.rated == rated, queue.c.minutes == minutes, queue.c.increment == increment)
                     .order_by(queue.c.started, queue.c.player).limit(1)).scalar()
                 game_id = None
                 if rival:
-                    game_id = self.games.insert_game(db, rival, True, control, player)
+                    game_id = self.games.insert_game(db, rival, True, control, player, rated=rated)
                     db.execute(update(queue).where(queue.c.player == rival).values(
                         expires=0, game_id=game_id, version=queue.c.version + 1))
-                values = dict(version=version + 1, minutes=minutes, increment=increment, started=now,
+                values = dict(rated=rated, version=version + 1, minutes=minutes, increment=increment, started=now,
                               expires=0 if rival else now + 90000, game_id=game_id)
                 db.execute(insert(queue).values(player=player, **values).on_conflict_do_update(
                     index_elements=["player"], set_=values))

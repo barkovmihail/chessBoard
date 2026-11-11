@@ -111,6 +111,7 @@ export function GamePage() {
           <button disabled={busy || !!pending} onClick={() => act("rematch")}>
             {game.rematch_offer ? "Принять реванш" : "Предложить реванш"}
           </button>)}
+      <p>{game.rated ? "Рейтинговая игра" : "Нерейтинговая игра"}</p>
       {game.reason && <p>{reasons[game.reason] ?? game.reason}</p>}
       {!game.result && (game.side === "both" || game.side === game.turn) && Object.entries(game.claims ?? {}).map(([key, reason]) =>
         <button key={key} disabled={busy || !!pending} onClick={() => act(key === "claim" ? "claim" : `claim:${key.slice(6)}`)}>
