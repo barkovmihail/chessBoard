@@ -8,3 +8,9 @@ The classic version of the chessboard was chosen. If desired, you can add styles
 
 ### License
 [MIT licensed](./LICENSE).
+
+## Разработка
+
+Требуется Node.js 22.12 или новее. Установите зависимости командой `npm ci` и запустите доску через `npm start`. Команда `npm test` проверяет расстановку и архитектурные границы, `npm run build` проверяет типы и создаёт сборку в `build/`.
+
+[Архитектура приложения](ARCHITECTURE.md) · [План развития и приоритеты](ROADMAP.md)

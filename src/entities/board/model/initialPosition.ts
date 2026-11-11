@@ -1,165 +1,167 @@
-import { PieceColorType } from "../../enums/colorType";
-import { PieceType } from "../../enums/pieceType";
+import { PieceColorType } from "./colorType";
+import { PieceType } from "./pieceType";
 
-export const defaultBoardPosition = [
+import type { BoardPiece } from "./position";
+
+export const initialPosition: readonly BoardPiece[] = [
   {
     color: PieceColorType.White,
     type: PieceType.Pawn,
-    position: "2A",
+    square: "a2",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Pawn,
-    position: "2B",
+    square: "b2",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Pawn,
-    position: "2C",
+    square: "c2",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Pawn,
-    position: "2D",
+    square: "d2",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Pawn,
-    position: "2E",
+    square: "e2",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Pawn,
-    position: "2F",
+    square: "f2",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Pawn,
-    position: "2G",
+    square: "g2",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Pawn,
-    position: "2H",
+    square: "h2",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Rook,
-    position: "1A",
+    square: "a1",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Knight,
-    position: "1B",
+    square: "b1",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Bishop,
-    position: "1C",
+    square: "c1",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Queen,
-    position: "1D",
+    square: "d1",
   },
   {
     color: PieceColorType.White,
     type: PieceType.King,
-    position: "1E",
+    square: "e1",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Bishop,
-    position: "1F",
+    square: "f1",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Knight,
-    position: "1G",
+    square: "g1",
   },
   {
     color: PieceColorType.White,
     type: PieceType.Rook,
-    position: "1H",
+    square: "h1",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Pawn,
-    position: "7A",
+    square: "a7",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Pawn,
-    position: "7B",
+    square: "b7",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Pawn,
-    position: "7C",
+    square: "c7",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Pawn,
-    position: "7D",
+    square: "d7",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Pawn,
-    position: "7E",
+    square: "e7",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Pawn,
-    position: "7F",
+    square: "f7",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Pawn,
-    position: "7G",
+    square: "g7",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Pawn,
-    position: "7H",
+    square: "h7",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Rook,
-    position: "8A",
+    square: "a8",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Knight,
-    position: "8B",
+    square: "b8",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Bishop,
-    position: "8C",
+    square: "c8",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Queen,
-    position: "8D",
+    square: "d8",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.King,
-    position: "8E",
+    square: "e8",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Bishop,
-    position: "8F",
+    square: "f8",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Knight,
-    position: "8G",
+    square: "g8",
   },
   {
     color: PieceColorType.Black,
     type: PieceType.Rook,
-    position: "8H",
+    square: "h8",
   },
 ];

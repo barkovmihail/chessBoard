@@ -1,0 +1,33 @@
+.board {
+  position: relative;
+  width: min(500px, calc(100% - 80px));
+  margin: 40px;
+}
+
+.cells {
+  aspect-ratio: 1;
+  display: grid;
+  grid-template: repeat(8, 1fr) / repeat(8, 1fr);
+}
+
+.light { background: #f0d9b5; }
+.dark { background: #b58862; }
+
+.files, .ranks {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+
+.files {
+  width: 100%;
+  grid-template-columns: repeat(8, 1fr);
+  top: 100%;
+}
+
+.ranks {
+  top: 0;
+  left: calc(100% + 5px);
+  height: 100%;
+  grid-template-rows: repeat(8, 1fr);
+}
