@@ -14,10 +14,10 @@ class Games:
 
     def create(self, owner, online=False, control=None):
         with self.engine.begin() as db:
-            game_id = self._create(db, owner, online, control)
+            game_id = self.insert_game(db, owner, online, control)
         return self.get(game_id, owner)
 
-    def _create(self, db, owner, online, control, guest=None, previous_game=None):
+    def insert_game(self, db, owner, online, control, guest=None, previous_game=None):
         game_id = uuid4().hex
         clock = {}
         if control:
@@ -160,7 +160,7 @@ class Games:
                     raise GameError("rematch_unavailable", 409)
                 if game["rematch_offer"]:
                     control = (game["base_minutes"], game["increment_seconds"]) if game["base_minutes"] else None
-                    changes["next_game"] = self._create(db, game["guest"], True, control, game["owner"], game_id)
+                    changes["next_game"] = self.insert_game(db, game["guest"], True, control, game["owner"], game_id)
                     changes["rematch_offer"] = None
                 else:
                     changes["rematch_offer"] = side

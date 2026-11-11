@@ -189,6 +189,23 @@ class BrowserGameTest(TestCase):
                     tap_move("c8", "e6")
                     expect(page.get_by_text("Пат", exact=True)).to_be_visible()
                     expect(page.get_by_text("1/2-1/2", exact=True)).to_be_visible()
+                    for player in [white, black]:
+                        player.goto(base)
+                        player.get_by_role("button", name="5+0 Блиц").click()
+                    white.get_by_role("button", name="Найти соперника").click()
+                    white.get_by_role("button", name="Отменить поиск").click()
+                    expect(white.get_by_role("button", name="Найти соперника")).to_be_visible()
+                    white.get_by_role("button", name="Найти соперника").click()
+                    expect(white.get_by_text("Ищем соперника · 5+0")).to_be_visible()
+                    white.reload()
+                    expect(white.get_by_text("Ищем соперника · 5+0")).to_be_visible()
+                    black.get_by_role("button", name="Найти соперника").click()
+                    for player in [white, black]:
+                        expect(player.get_by_label("Шахматные часы")).to_contain_text("5+0")
+                    self.assertEqual(white.url, black.url)
+                    white.locator('[data-square="e2"]').click()
+                    white.locator('[data-square="e4"]').click()
+                    expect(black.get_by_text("Ход чёрных")).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True

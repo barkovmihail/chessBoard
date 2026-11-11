@@ -36,6 +36,12 @@ games = Table("games", metadata,
     Column("reason", String),
     Column("version", Integer, nullable=False),
 )
+queue = Table("match_queue", metadata,
+    Column("player", String, primary_key=True), Column("version", Integer, nullable=False),
+    Column("minutes", Integer, nullable=False), Column("increment", Integer, nullable=False),
+    Column("started", Integer, nullable=False), Column("expires", Integer, nullable=False),
+    Column("game_id", ForeignKey("games.id")),
+)
 moves = Table("moves", metadata,
     Column("game_id", ForeignKey("games.id"), primary_key=True),
     Column("ply", Integer, primary_key=True),

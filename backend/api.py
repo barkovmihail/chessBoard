@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import UUID
+from typing import Literal
 
 from anyio import from_thread
 from fastapi import FastAPI, Query, Request, Response, WebSocket
@@ -15,6 +16,7 @@ from pydantic import BaseModel, Field
 from .accounts import Accounts, SESSION_SECONDS, digest
 from .db import open_database
 from .domain import GameError
+from .matchmaking import Matchmaking
 from .puzzles import random_puzzle
 from .service import Games
 from .events import GameEvents
@@ -23,6 +25,14 @@ from .events import GameEvents
 class TimeControl(BaseModel):
     minutes: int = Field(ge=1, le=1440, strict=True)
     increment: int = Field(ge=0, le=3600, strict=True)
+
+
+class QueueVersion(BaseModel):
+    version: int = Field(ge=0)
+
+
+class Search(QueueVersion):
+    control: TimeControl
 
 
 class CreateGame(BaseModel):
@@ -53,6 +63,7 @@ def create_app(path: Path):
         engine = open_database(path)
         app.state.accounts = Accounts(engine)
         app.state.games = Games(engine)
+        app.state.queue = Matchmaking(app.state.games)
         app.state.events = GameEvents()
         async def monitor():
             while True:
@@ -123,6 +134,28 @@ def create_app(path: Path):
         app.state.accounts.logout(request.cookies.get("player"))
         response.delete_cookie("player")
         return {"ok": True}
+
+    @app.get("/api/queue")
+    def queue_status(request: Request):
+        return app.state.queue.status(current(request)[0])
+
+    @app.post("/api/queue/session")
+    def queue_session(request: Request, response: Response):
+        return app.state.queue.status(player_session(request, response))
+
+    @app.post("/api/queue/start")
+    def search(command: Search, request: Request):
+        player = current(request)[0]
+        if not player:
+            raise GameError("session_required", 401)
+        return app.state.queue.change(player, command.version, "start", (command.control.minutes, command.control.increment))
+
+    @app.post("/api/queue/{action}")
+    def update_search(action: Literal["cancel", "renew"], command: QueueVersion, request: Request):
+        player = current(request)[0]
+        if not player:
+            raise GameError("session_required", 401)
+        return app.state.queue.change(player, command.version, action)
 
     @app.get("/api/profile/games")
     def archive(request: Request, offset: int = Query(0, ge=0)):
