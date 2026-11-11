@@ -1,3 +1,4 @@
+import { useLanguage } from "../../shared/language";
 import React, { useState } from "react";
 import { Board, initialPosition } from "../../entities/board";
 import type { Square } from "../../entities/board";
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function PlayBoard({ game, enabled, onMove }: Props) {
+  const { t } = useLanguage();
   const [selected, select] = useState<Square>();
   const [promotions, setPromotions] = useState<string[]>([]);
   const choices = game?.legal.filter(move => move.startsWith(selected ?? "-")) ?? [];
@@ -27,7 +29,7 @@ export function PlayBoard({ game, enabled, onMove }: Props) {
     if (candidates.length === 1) onMove(candidates[0]);
     select(undefined);
   }
-  const names: Record<string, string> = { q: "Ферзь", r: "Ладья", b: "Слон", n: "Конь" };
+  const names: Record<string, string> = { q: t("Ферзь", "Queen"), r: t("Ладья", "Rook"), b: t("Слон", "Bishop"), n: t("Конь", "Knight") };
   return <>
     <Board flipped={game?.side === "black"} position={game?.position ?? initialPosition} selected={selected} highlight={game?.last_uci ?? undefined}
       movableColor={game?.turn} onMove={enabled ? drop : undefined}

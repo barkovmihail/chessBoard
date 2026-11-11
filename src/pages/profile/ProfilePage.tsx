@@ -1,14 +1,7 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
 import { Account } from "./Account";
-import { reasons } from "../../features/play";
-
-const englishReasons: Record<string, string> = {
-  threefold_repetition: "Threefold repetition", fifty_moves: "Fifty-move rule",
-  timeout: "Time expired", resignation: "Resignation", agreement: "Draw by agreement",
-  checkmate: "Checkmate", stalemate: "Stalemate", insufficient_material: "Insufficient material",
-  fivefold_repetition: "Fivefold repetition", seventyfive_moves: "Seventy-five-move rule",
-};
+import { resultReason } from "../../features/play";
 
 interface Entry {
   id: string;
@@ -54,7 +47,7 @@ export function ProfilePage({ onInbox }: { onInbox: () => void }) {
           {game.finished_ms === null ? t("Дата неизвестна", "Unknown date") : new Date(game.finished_ms).toLocaleString(language)} · {
           game.side === "both" ? t("На одном устройстве", "On one device") : (game.opponent ?? t("Гость", "Guest")) + " · " + (game.side === "white" ? t("Вы играли белыми", "You played White") : t("Вы играли чёрными", "You played Black"))} · {
           game.base_minutes === null ? t("Без часов", "Unlimited") : game.base_minutes + "+" + game.increment_seconds} · {
-          game.result} · {language === "ru" ? reasons[game.reason] ?? game.reason : englishReasons[game.reason] ?? game.reason}</a></li>)}</ul>
+          game.result} · {resultReason(game.reason, language)}</a></li>)}</ul>
         {offset > 0 && <button onClick={() => setOffset(Math.max(0, offset - 20))}>{t("Предыдущая страница", "Previous page")}</button>}
         {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Следующая страница", "Next page")}</button>}
       </>}
