@@ -1,6 +1,7 @@
 """Run after npm run build. Uses temporary SQLite and a local Chromium browser."""
 import os
 from pathlib import Path
+from random import Random
 from socket import socket
 from tempfile import TemporaryDirectory
 from threading import Thread
@@ -58,6 +59,17 @@ class BrowserGameTest(TestCase):
                     page.locator('[data-square="e4"]').tap()
                     expect(page.get_by_text("Ход чёрных")).to_be_visible()
                     page.wait_for_function("window.played.length === 3")
+                    for width in (360, 768, 1440):
+                        page.set_viewport_size({"width": width, "height": 900})
+                        cell = page.locator('[data-square="a8"]').bounding_box()
+                        self.assertAlmostEqual(cell["width"], cell["height"], delta=1)
+                        self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
+                        history = page.get_by_label("Запись ходов").bounding_box()
+                        if width > 680:
+                            self.assertGreater(history["x"], cell["x"] + 7 * cell["width"])
+                        else:
+                            self.assertGreater(history["y"], cell["y"] + 7 * cell["height"])
+                    page.set_viewport_size({"width": 390, "height": 844})
                     page.reload()
                     expect(page.locator('[data-square="e4"] [role=img]')).to_have_attribute("aria-label", "white pawn e4")
                     expect(page.locator('[data-square="e2"] [role=img]')).to_have_count(0)
@@ -101,7 +113,7 @@ class BrowserGameTest(TestCase):
                     expect(black.get_by_text("0-1", exact=True)).to_be_visible()
                     white.context.set_offline(False)
                     expect(white.get_by_text("0-1", exact=True)).to_be_visible()
-                    expect(white.get_by_text("f3 e5 g4 Qh4#", exact=True)).to_be_visible()
+                    expect(white.get_by_label("Запись ходов").get_by_role("listitem")).to_have_text(["f3 e5", "g4 Qh4#"])
                     review = black.get_by_role("navigation", name="Просмотр партии")
                     review.get_by_role("button", name="В начало").click()
                     expect(review.get_by_text("Начальная позиция")).to_be_visible()
@@ -138,7 +150,7 @@ class BrowserGameTest(TestCase):
                     black.get_by_role("button", name="Открыть FEN").click()
                     expect(black.get_by_role("alert")).to_contain_text("Не удалось прочитать FEN")
                     black.get_by_role("link", name="Вернуться к партии").click()
-                    expect(black.get_by_text("f3 e5 g4 Qh4#", exact=True)).to_be_visible()
+                    expect(black.get_by_label("Запись ходов").get_by_role("listitem")).to_have_text(["f3 e5", "g4 Qh4#"])
                     original_url = white.url
                     white.get_by_role("button", name="Предложить реванш").click()
                     black.get_by_role("button", name="Принять реванш").click()
@@ -152,7 +164,7 @@ class BrowserGameTest(TestCase):
                     expect(white.get_by_text("Ход чёрных")).to_be_visible()
                     white.get_by_role("link", name="Предыдущая партия").click()
                     expect(white).to_have_url(original_url)
-                    expect(white.get_by_text("f3 e5 g4 Qh4#", exact=True)).to_be_visible()
+                    expect(white.get_by_label("Запись ходов").get_by_role("listitem")).to_have_text(["f3 e5", "g4 Qh4#"])
                     expect(white.get_by_role("link", name="Открыть реванш")).to_be_visible()
                     white.get_by_role("link", name="Профиль").click()
                     record = white.get_by_role("link", name="Вы играли белыми", exact=False)
@@ -200,7 +212,7 @@ class BrowserGameTest(TestCase):
                     expect(page.get_by_text("1/2-1/2", exact=True)).to_be_visible()
                     page.reload()
                     expect(page.get_by_text("Троекратное повторение", exact=True)).to_be_visible()
-                    expect(page.get_by_text("Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1", exact=True)).to_be_visible()
+                    expect(page.get_by_label("Запись ходов").get_by_role("listitem")).to_have_text(["Nf3 Nf6", "Ng1 Ng8", "Nf3 Nf6", "Ng1"])
                     base = f"http://127.0.0.1:{port}"
                     def prepare(line):
                         game = page.request.post(base + "/api/games").json()
@@ -216,6 +228,20 @@ class BrowserGameTest(TestCase):
                     def tap_move(start, end):
                         page.locator(f'[data-square="{start}"]').tap()
                         page.locator(f'[data-square="{end}"]').tap()
+
+                    board = chess.Board()
+                    rng = Random(11)
+                    long_line = []
+                    for _ in range(80):
+                        move = rng.choice(list(board.legal_moves))
+                        long_line.append(board.san(move))
+                        board.push(move)
+                    page.set_viewport_size({"width": 1440, "height": 900})
+                    prepare(" ".join(long_line))
+                    history_panel = page.get_by_label("Запись ходов")
+                    expect(history_panel.get_by_role("listitem")).to_have_count(40)
+                    self.assertTrue(history_panel.evaluate("el => el.scrollHeight > el.clientHeight"))
+                    page.set_viewport_size({"width": 390, "height": 844})
 
                     prepare("e4 b6 Bc4 e6 Bb3 Ba6 Nf3 h6")
                     tap_move("e1", "g1")

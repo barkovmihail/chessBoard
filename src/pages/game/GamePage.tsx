@@ -3,6 +3,7 @@ import { Game, gameCue, PlayBoard, reasons, RequestError, requestGame, subscribe
 import { playSound } from "../../shared/sound";
 import { ClockPanel, TimeSetup } from "./TimeControl";
 import { GameReview } from "./GameReview";
+import { BoardLayout } from "../../widgets/board-layout";
 import styles from "./game.module.css";
 
 type Action = "rematch" | "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
@@ -107,24 +108,23 @@ export function GamePage() {
     if (game) submit({ action, version: game.version, command_id: commandId() });
   }
 
-  return <main className={styles.app}>
-    {game?.result ? <GameReview key={game.id} game={game} /> : <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending && !game.result}
-      onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />}
-    {!game && (invite
-      ? <><p>{inviteControl}</p><button disabled={busy || !inviteControl} onClick={() => create(true)}>Играть за чёрных</button></>
-      : <TimeSetup busy={busy} create={create} />)}
-    {game?.clock && <ClockPanel game={game} clock={game.clock} />}
-    {game?.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
+  const board = <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending}
+      onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />;
+  const context = game ? <>
+    <p>{game.rated ? "Рейтинговая игра" : "Нерейтинговая игра"}</p>
+    {game.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}
-    {game && <section aria-live="polite">
-      <p>{game.waiting ? "Ожидание соперника" : game.result ?? (game.turn === "white" ? "Ход белых" : "Ход чёрных")}</p>
+  </> : invite ? <><p>{inviteControl}</p><button disabled={busy || !inviteControl} onClick={() => create(true)}>Играть за чёрных</button></>
+    : <TimeSetup busy={busy} create={create} />;
+  const status = game && <span aria-live="polite">{game.waiting ? "Ожидание соперника" :
+    game.result ?? (game.turn === "white" ? "Ход белых" : "Ход чёрных")}</span>;
+  const actions = game && <>
       {game.previous_game && <a href={"?game=" + game.previous_game}>Предыдущая партия</a>}
       {game.next_game ? <a href={"?game=" + game.next_game}>Открыть реванш</a> :
         game.result && game.side !== "both" && (game.rematch_offer === game.side ? <p>Реванш предложен</p> :
           <button disabled={busy || !!pending} onClick={() => act("rematch")}>
             {game.rematch_offer ? "Принять реванш" : "Предложить реванш"}
           </button>)}
-      <p>{game.rated ? "Рейтинговая игра" : "Нерейтинговая игра"}</p>
       {game.reason && <p>{reasons[game.reason] ?? game.reason}</p>}
       {!game.result && (game.side === "both" || game.side === game.turn) && Object.entries(game.claims ?? {}).map(([key, reason]) =>
         <button key={key} disabled={busy || !!pending} onClick={() => act(key === "claim" ? "claim" : `claim:${key.slice(6)}`)}>
@@ -137,10 +137,18 @@ export function GamePage() {
             <button onClick={() => act("decline")}>Отклонить ничью</button></>}
         <button onClick={() => act("resign")}>Сдаться</button>
       </fieldset>}
-      <p>{game.moves.join(" ")}</p>
-    </section>}
+      {game.moves.length > 0 && <ol aria-label="Запись ходов" className={styles.history}>
+        {game.moves.map((move, index) => index % 2 === 0 && <li key={index}>
+          <span>{move}</span>{" "}<span>{game.moves[index + 1]}</span>{" "}
+        </li>)}
+      </ol>}
     {disconnected && onlineId && <p role="status">Восстанавливаем связь с партией…</p>}
     {error && <p role="alert">{error}</p>}
     {pending && !busy && <button onClick={() => submit(pending)}>Повторить отправку</button>}
-  </main>;
+  </>;
+  function render(position: React.ReactElement, controls?: React.ReactElement) {
+    return <BoardLayout board={game ? <ClockPanel game={game}>{position}</ClockPanel> : position}
+    context={<>{context}{!game && error && <p role="alert">{error}</p>}</>} actions={controls ? <>{controls}{actions}</> : actions} status={status} />;
+  }
+  return game?.result ? <GameReview key={game.id} game={game} render={render} /> : render(board);
 }

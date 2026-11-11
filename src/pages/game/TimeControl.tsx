@@ -37,20 +37,31 @@ export function TimeSetup({ create, busy }: {
   </fieldset>;
 }
 
-export function ClockPanel({ game, clock }: { game: Game; clock: NonNullable<Game["clock"]> }) {
+export function ClockPanel({ game, children }: { game: Game; children: React.ReactNode }) {
+  const { clock } = game;
   const [, tick] = useState(0);
   useEffect(() => {
-    if (clock.deadline_ms === null) return;
+    if (clock?.deadline_ms == null) return;
     const timer = setInterval(() => tick(value => value + 1), 200);
     return () => clearInterval(timer);
-  }, [clock.deadline_ms]);
-  const now = clock.server_ms + performance.now() - clock.received_ms;
-  return <section aria-label="Шахматные часы">
-    <strong>{clock.base_minutes}+{clock.increment_seconds}</strong>
-    {(["white", "black"] as const).map(side => {
-      const ms = game.turn === side && clock.deadline_ms !== null ? clock.deadline_ms - now : clock[side + "_ms" as "white_ms" | "black_ms"];
-      const seconds = Math.max(0, Math.ceil(ms / 1000));
-      return <span key={side} className={styles.clock}>{side === "white" ? "Белые" : "Чёрные"} {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</span>;
-    })}
+  }, [clock?.deadline_ms]);
+
+  function player(side: "white" | "black") {
+    let time = "";
+    if (clock) {
+      const now = clock.server_ms + performance.now() - clock.received_ms;
+      const remaining = game.turn === side && clock.deadline_ms !== null ? clock.deadline_ms - now :
+        side === "white" ? clock.white_ms : clock.black_ms;
+      const seconds = Math.max(0, Math.ceil(remaining / 1000));
+      time = Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+    }
+    return <div className={styles.player}><span>{side === "white" ? "Белые" : "Чёрные"}
+      {side === game.side && " · Вы"}</span><strong>{time}</strong></div>;
+  }
+  return <section aria-label={clock ? "Шахматные часы" : "Стороны партии"}>
+    {clock && <small>{clock.base_minutes}+{clock.increment_seconds}</small>}
+    {player(game.side === "black" ? "white" : "black")}
+    {children}
+    {player(game.side === "black" ? "black" : "white")}
   </section>;
 }

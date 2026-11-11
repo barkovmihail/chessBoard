@@ -1,0 +1,31 @@
+.layout {
+  max-width: 1320px;
+  margin: 20px auto;
+  padding: 0 16px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 620px) minmax(210px, 1fr);
+  grid-template-areas: "context status actions" "context board actions";
+  align-items: start;
+}
+.board { grid-area: board; min-width: 0; --board-width: calc(100% - 32px); --board-margin: 8px 24px 24px 8px; }
+.status { grid-area: status; font-weight: 600; }
+.context { grid-area: context; }
+.actions { grid-area: actions; }
+.context, .actions { min-width: 0; padding: 14px; border: 1px solid var(--edge); background: var(--panel); border-radius: 6px; }
+.layout fieldset { min-width: 0; margin: 0; }
+.layout input { max-width: 100%; }
+.layout button:not([data-square]) { padding: 6px 9px; }
+.layout a { color: var(--link); }
+@media (min-width: 1001px) {
+  .layout:not(:has(.actions)) { max-width: 1000px; grid-template-columns: minmax(225px, 1fr) minmax(0, 620px); grid-template-areas: "context board"; }
+}
+@media (max-width: 1000px) {
+  .layout { grid-template-columns: minmax(0, 1fr) minmax(205px, 32%); grid-template-areas: "status actions" "board actions" "context context"; }
+  .layout:not(:has(.actions)) { grid-template-areas: "board context"; }
+}
+@media (max-width: 680px) {
+  .layout { margin: 12px auto; padding: 0 8px; gap: 8px; grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "status" "board" "actions" "context"; }
+  .layout:not(:has(.actions)) { grid-template-areas: "context" "board"; }
+}

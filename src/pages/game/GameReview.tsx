@@ -3,7 +3,9 @@ import { Chess } from "chess.js";
 import { Board, boardPosition } from "../../entities/board";
 import type { Game } from "../../features/play";
 
-export function GameReview({ game }: { game: Game }) {
+export function GameReview({ game, render }: {
+  game: Game; render: (board: React.ReactElement, controls: React.ReactElement) => React.ReactElement;
+}) {
   const [ply, setPly] = useState(game.moves.length);
   const { position, lastMove } = useMemo(() => {
     const board = new Chess();
@@ -18,8 +20,7 @@ export function GameReview({ game }: { game: Game }) {
     if (game.clock) board.setHeader("TimeControl", game.clock.base_minutes * 60 + "+" + game.clock.increment_seconds);
     return board.pgn();
   }, [game]);
-  return <>
-    <Board position={position} flipped={game.side === "black"} lastMove={lastMove} />
+  return render(<Board position={position} flipped={game.side === "black"} lastMove={lastMove} />, <>
     <nav aria-label="Просмотр партии">
       <p aria-live="polite">{ply ? Math.ceil(ply / 2) + (ply % 2 ? ". " : "… ") + game.moves[ply - 1] : "Начальная позиция"}</p>
       <button disabled={!ply} onClick={() => setPly(0)}>В начало</button>
@@ -30,5 +31,5 @@ export function GameReview({ game }: { game: Game }) {
     <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}
       download={game.id + ".pgn"}>Скачать PGN</a>
     <a href={"?section=analysis&game=" + game.id + "&ply=" + ply}>Разобрать позицию</a>
-  </>;
+  </>);
 }
