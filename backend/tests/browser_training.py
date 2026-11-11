@@ -73,7 +73,7 @@ class TrainingTest(unittest.TestCase):
                         square = page.locator('[data-square="e4"]')
                         top = square.evaluate("el => el.getBoundingClientRect().top + window.scrollY")
                         touch_drag("e2", "e4")
-                        expect(page.locator('[data-square="e5"] [role="img"]')).to_be_visible()
+                        expect(page.locator('[data-square="e5"] [data-sprite]')).to_be_visible()
                         self.assertAlmostEqual(top, square.evaluate("el => el.getBoundingClientRect().top + window.scrollY"), delta=1)
                         expect(page.get_by_text("Ответ e5.", exact=False)).to_be_visible()
                         page.get_by_role("button", name="Показать ход").tap()

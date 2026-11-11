@@ -19,11 +19,11 @@ test("game page renders the initial position with a8 at the top left", async () 
       const backRow = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"];
       for (const [i, file] of [..."abcdefgh"].entries()) {
         for (const [rank, type] of [[backRank, backRow[i]], [pawnRank, "pawn"]]) {
-          assert.match(html, new RegExp(`data-square="${file}${rank}"[^>]*><div role="img" aria-label="${color} ${type} ${file}${rank}"`));
+          assert.match(html, new RegExp(`data-square="${file}${rank}"[^>]*><div aria-hidden="true" data-sprite="${color[0]}${type === "knight" ? "N" : type[0].toUpperCase()}"`));
         }
       }
     }
-    assert.equal(html.match(/role="img"/g).length, 32);
+    assert.equal(html.match(/data-sprite=/g).length, 32);
   } finally {
     await server.close();
   }
