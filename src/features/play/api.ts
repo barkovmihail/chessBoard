@@ -4,7 +4,8 @@ export interface Game {
   id: string;
   arena_id?: string | null;
   chess960?: number | null;
-  review960?: { fens: string[]; pgn: string };
+  last_uci?: string | null;
+  review960?: { fens: string[]; pgn: string; uci?: string[] };
   watch_key?: string | null;
   engine_name?: "lc0" | "stockfish" | null;
   engine_level?: "easy" | "normal" | null;
@@ -52,6 +53,9 @@ function parseGame(data: any): Game {
   if (data.claims !== undefined && (!data.claims || typeof data.claims !== "object" || Array.isArray(data.claims) ||
       !Object.entries(data.claims).every(([key, value]) => /^claim(:[a-h][1-8][a-h][1-8][qrbn]?)?$/.test(key) &&
         (value === "threefold_repetition" || value === "fifty_moves")))) throw new Error("invalid_claims");
+  const validMove = (uci: unknown) => typeof uci === "string" && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci);
+  if ((data.last_uci != null && !validMove(data.last_uci)) || (data.review960?.uci !== undefined &&
+      (!Array.isArray(data.review960.uci) || data.review960.uci.length !== data.moves.length || !data.review960.uci.every(validMove)))) throw Error("invalid_move");
   if (data.chess960 != null && (!Number.isInteger(data.chess960) || data.chess960 < 0 || data.chess960 > 959 ||
       (data.result && (!Array.isArray(data.review960?.fens) || data.review960.fens.length !== data.moves.length + 1 ||
         !data.review960.fens.every((fen: unknown) => typeof fen === "string") || typeof data.review960.pgn !== "string"))))

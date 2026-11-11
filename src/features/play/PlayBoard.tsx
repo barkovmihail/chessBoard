@@ -4,7 +4,7 @@ import type { Square } from "../../entities/board";
 import type { Game } from "./api";
 
 interface Props {
-  game?: Pick<Game, "legal" | "position" | "turn" | "side">;
+  game?: Pick<Game, "legal" | "position" | "turn" | "side" | "last_uci">;
   enabled: boolean;
   onMove: (uci: string) => void;
 }
@@ -29,7 +29,7 @@ export function PlayBoard({ game, enabled, onMove }: Props) {
   }
   const names: Record<string, string> = { q: "Ферзь", r: "Ладья", b: "Слон", n: "Конь" };
   return <>
-    <Board flipped={game?.side === "black"} position={game?.position ?? initialPosition} selected={selected}
+    <Board flipped={game?.side === "black"} position={game?.position ?? initialPosition} selected={selected} highlight={game?.last_uci ?? undefined}
       movableColor={game?.turn} onMove={enabled ? drop : undefined}
       targets={choices.map(move => move.slice(2, 4))} onSquare={enabled ? choose : undefined} />
     {enabled && promotions.map(move => <button key={move} onClick={() => {

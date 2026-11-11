@@ -25,7 +25,7 @@ def review960(index, history, result):
     record = chess.pgn.Game.from_board(board)
     record.headers["Variant"] = "Chess960"
     record.headers["Result"] = result
-    return {"fens": fens, "pgn": str(record)}
+    return {"fens": fens, "pgn": str(record), "uci": history}
 
 
 def replay(history, index=None):
@@ -64,7 +64,7 @@ def snapshot(game_id, history, index=None):
     board, notation = replay(history, index)
     outcome = board.outcome()
     return {
-        "id": game_id, "version": len(history), "moves": notation,
+        "id": game_id, "last_uci": history[-1] if history else None, "version": len(history), "moves": notation,
         "turn": "white" if board.turn else "black",
         "result": outcome.result() if outcome else None,
         "reason": outcome.termination.name.lower() if outcome else None,

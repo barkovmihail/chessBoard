@@ -5,7 +5,7 @@ import { reasons } from "../../features/play";
 import { BoardLayout } from "../../shared/board-layout";
 
 interface View {
-  board: Chess; notation: string[]; result: string | null; reason: string | null; waiting: boolean;
+  board: Chess; lastUci?: string; notation: string[]; result: string | null; reason: string | null; waiting: boolean;
 }
 
 export function WatchPage({ token }: { token: string }) {
@@ -34,7 +34,7 @@ export function WatchPage({ token }: { token: string }) {
           const notation = data.fen ? data.notation : board.history();
           if (!Array.isArray(notation) || !notation.every(m => typeof m === "string")) throw Error();
           if (abort.signal.aborted) return;
-          setView({ board, notation, result: data.result, reason: data.reason, waiting: data.waiting });
+          setView({ board, lastUci: data.moves[data.moves.length - 1], notation, result: data.result, reason: data.reason, waiting: data.waiting });
           version = data.waiting ? undefined : data.version;
         }
         setError("");
@@ -49,7 +49,7 @@ export function WatchPage({ token }: { token: string }) {
   }, [token]);
   if (!view) return <main><h1>Просмотр партии</h1><p role="status">{error || "Загружаем позицию…"}</p></main>;
   const history = view.board.history({ verbose: true });
-  return <BoardLayout context={<h1>Просмотр партии</h1>} board={<Board position={boardPosition(view.board)} lastMove={history[history.length - 1]} />}
+  return <BoardLayout context={<h1>Просмотр партии</h1>} board={<Board position={boardPosition(view.board)} lastMove={history[history.length - 1]} highlight={view.lastUci} />}
     status={<p role="status">{error || (view.result ? view.result + " · " + (reasons[view.reason ?? ""] ?? "") :
       view.waiting ? "Ожидание соперника" : view.board.turn() === "w" ? "Ход белых" : "Ход чёрных")}</p>}
     actions={<p aria-label="Запись ходов">{view.notation.map((m, i) => (i % 2 === 0 ? (i / 2 + 1) + ". " : "") + m).join(" ")}</p>} />;

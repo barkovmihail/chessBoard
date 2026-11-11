@@ -23,7 +23,7 @@ export function GameReview({ game, render }: {
     if (game.clock) board.setHeader("TimeControl", game.clock.base_minutes * 60 + "+" + game.clock.increment_seconds);
     return board.pgn();
   }, [game]);
-  return render(<Board position={position} flipped={game.side === "black"} lastMove={lastMove} />, <>
+  return render(<Board position={position} flipped={game.side === "black"} lastMove={lastMove} highlight={game.review960?.uci?.[ply - 1]} />, <>
     <nav aria-label="Просмотр партии">
       <p aria-live="polite">{ply ? Math.ceil(ply / 2) + (ply % 2 ? ". " : "… ") + game.moves[ply - 1] : "Начальная позиция"}</p>
       <button disabled={!ply} onClick={() => setPly(0)}>В начало</button>

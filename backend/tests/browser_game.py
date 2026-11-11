@@ -129,6 +129,10 @@ class BrowserGameTest(TestCase):
                     page.locator('[data-square="e4"]').tap()
                     expect(page.get_by_text("Ход чёрных")).to_be_visible()
                     expect(viewer.get_by_label("Запись ходов")).to_have_text("1. e4")
+                    for surface in (page, viewer):
+                        expect(surface.locator("[data-last-move=true]")).to_have_count(2)
+                        for square in ("e2", "e4"):
+                            expect(surface.locator(f'[data-square="{square}"]')).to_have_attribute("data-last-move", "true")
                     viewer.reload()
                     expect(viewer.locator('[data-square="e4"] [role="img"]')).to_be_visible()
                     page.get_by_role("button", name="Закрыть просмотр").click()
@@ -570,6 +574,8 @@ class BrowserGameTest(TestCase):
                     expect(white.get_by_label("Запись ходов")).to_contain_text("O-O")
                     white.reload()
                     expect(white.locator('[data-square="g1"] [role=img]')).to_have_attribute("aria-label", "white king g1")
+                    for square in ("f1", "g1"):
+                        expect(white.locator(f'[data-square="{square}"]')).to_have_attribute("data-last-move", "true")
                     expect(white.locator('[data-square="f1"] [role=img]')).to_have_attribute("aria-label", "white rook f1")
                     for player in (white, black):
                         player.goto(base)

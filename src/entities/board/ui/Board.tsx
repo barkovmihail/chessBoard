@@ -10,14 +10,16 @@ interface BoardProps {
   selected?: Square;
   flipped?: boolean;
   lastMove?: { from: Square; to: Square };
+  highlight?: string;
   targets?: readonly string[];
   onMove?: (from: Square, to: Square) => void;
   movableColor?: BoardPiece["color"] | "white" | "black";
   onSquare?: (square: Square) => void;
 }
 
-export function Board({ position, selected, targets, onSquare, flipped, lastMove, onMove, movableColor }: BoardProps) {
+export function Board({ position, selected, targets, onSquare, flipped, lastMove, highlight, onMove, movableColor }: BoardProps) {
   const pointer = usePieceDrag(onMove);
+  const squares = highlight ?? (lastMove && lastMove.from + lastMove.to);
   const occupied = new Map(position.map(piece => [piece.square, piece]));
   const visibleFiles = flipped ? [...files].reverse() : files;
   const visibleRanks = flipped ? [...ranks].reverse() : ranks;
@@ -37,6 +39,7 @@ export function Board({ position, selected, targets, onSquare, flipped, lastMove
           return (
             <button type="button" key={square} data-square={square} aria-label={square}
               disabled={!onSquare} aria-pressed={selected === square} data-target={targets?.includes(square)}
+              data-last-move={squares && (square === squares.slice(0, 2) || square === squares.slice(2, 4)) || undefined}
               data-movable={movable}
               onPointerDown={event => pointer.start(event, square, movable)}
               onPointerMove={pointer.move} onPointerUp={event => pointer.end(event, true)}
