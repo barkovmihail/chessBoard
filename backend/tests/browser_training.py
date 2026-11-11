@@ -111,6 +111,8 @@ class TrainingTest(unittest.TestCase):
                 page.get_by_role("link", name="Шахматные задачи").click()
             check_layout()
             self.assertEqual(fetched.value.status, 200)
+            expect(page.get_by_label("Тема задачи")).to_be_hidden()
+            page.get_by_text("Выбор темы · Все темы", exact=True).click()
             with page.expect_response(lambda res: "theme=fork" in res.url) as themed:
                 page.get_by_label("Тема задачи").select_option("fork")
             self.assertIn("fork", themed.value.json()["themes"])
@@ -122,6 +124,8 @@ class TrainingTest(unittest.TestCase):
             board = chess.Board(puzzle["fen"])
             board.push_uci(puzzle["moves"][0])
             source = puzzle["moves"][1][:2]
+            expect(page.locator('[data-target="true"]')).to_have_count(0)
+            expect(page.get_by_text("Выбор темы · Вилка", exact=True)).to_be_visible()
             illegal = next(chess.square_name(sq) for sq in chess.SQUARES
                            if not board.piece_at(sq) and not any(m.from_square == chess.parse_square(source)
                            and m.to_square == sq for m in board.legal_moves))
@@ -159,6 +163,10 @@ class TrainingTest(unittest.TestCase):
             expect(page.get_by_role("heading", name="Задача решена")).to_be_visible()
             result = page.get_by_role("listitem").filter(has_text=f"Задача {puzzle['puzzle_id']} · Решена · Ошибок 1")
             expect(result).to_be_visible()
+            with page.expect_response(lambda res: "theme=fork" in res.url):
+                page.get_by_role("button", name="Следующая задача").tap()
+            expect(page.get_by_role("heading", name="Ваш ход")).to_be_visible()
+            expect(page.locator('[data-target="true"]')).to_have_count(0)
             page.reload()
             expect(page.get_by_role("button", name="Начать заново")).to_be_visible()
             page.get_by_text("История попыток", exact=True).click()

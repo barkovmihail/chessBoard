@@ -1,5 +1,6 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useMemo, useState } from "react";
+import styles from "./trainer.module.css";
 import { ArchiveMoves } from "./ArchiveMoves";
 import { BoardLayout } from "../../shared/board-layout";
 import { Chess } from "chess.js";
@@ -10,13 +11,14 @@ interface Props {
   steps: readonly [string, string][];
   side: "w" | "b";
   puzzle?: boolean;
+  themeLabel?: string;
   onAttempt?: (wrong: boolean, solved: boolean) => void;
   onRestart?: () => void;
   context: React.ReactNode;
   next?: React.ReactNode;
 }
 
-export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, onRestart }: Props) {
+export function Trainer({ fen, steps, side, puzzle, themeLabel, context, next, onAttempt, onRestart }: Props) {
   const { language, t } = useLanguage();
   const [ply, advance] = useState(0);
   const [selected, select] = useState<Square>();
@@ -86,9 +88,11 @@ export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, on
       onSquare={automatic || complete ? undefined : click} />}
     status={<>
       <h2>{complete ? (puzzle ? t("Задача решена", "Puzzle solved", "Problema resuelto") : t("Линия пройдена", "Line completed", "Variante completada")) : automatic ? t("Ответ соперника", "Opponent’s reply", "Respuesta del rival") : t("Ваш ход", "Your turn", "Tu turno")}</h2>
-      <p>{side === "w" ? t("Вы играете белыми", "You play White", "Juegas con blancas") : t("Вы играете чёрными", "You play Black", "Juegas con negras")}</p>
+      <p>{side === "w" ? t("Вы играете белыми", "You play White", "Juegas con blancas") : t("Вы играете чёрными", "You play Black", "Juegas con negras")}{themeLabel && <> · {themeLabel}</>}</p>
+      {puzzle && <p className={styles.feedback} aria-live="polite">{feedbackText()}</p>}
     </>} actions={<>
-      <p aria-live="polite">{feedbackText()}</p>
+      {!puzzle && <p aria-live="polite">{feedbackText()}</p>}
+      {puzzle && complete && <div className={styles.primary}>{next}</div>}
       {!puzzle && lastMove && lastMove.color !== side && <p>{t("Ответ", "Reply", "Respuesta")} {lastMove.san}. {steps[ply - 1][1]}</p>}
       {!complete && !automatic && <button onClick={() => showHint(true)}>{t("Показать ход", "Show move", "Mostrar jugada")}</button>}
       {hint && target && !complete && <p>{target.san} · {target.from} → {target.to}. {expected[1]}</p>}
@@ -97,6 +101,6 @@ export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, on
       {history.length > 0 && <p aria-label={t("Сыгранные ходы", "Moves played", "Jugadas realizadas")}>{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
       <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(undefined); promote(undefined); setOtherMate(""); }}>{t("Начать заново", "Restart", "Volver a empezar")}</button>
       {!puzzle && <ArchiveMoves prefix={history.map(move => move.lan).join(",")} />}
-      {next}
+      {(!puzzle || !complete) && next}
     </>} />;
 }

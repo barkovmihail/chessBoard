@@ -68,12 +68,17 @@ export function PuzzlesPage() {
     });
     return () => abort.abort();
   }, [sequence, theme]);
+  const themes: Record<string, string> = {
+    "": t("Все темы", "All themes", "Todos los temas"), mateIn1: t("Мат в один ход", "Mate in one", "Mate en una"),
+    mateIn2: t("Мат в два хода", "Mate in two", "Mate en dos"), fork: t("Вилка", "Fork", "Ataque doble"),
+    pin: t("Связка", "Pin", "Clavada"), endgame: t("Эндшпиль", "Endgame", "Final"),
+  };
   const title = <><h1>{t("Шахматные задачи", "Puzzles", "Problemas de ajedrez")}</h1>
-    <label>{t("Тема задачи", "Puzzle theme", "Tema del problema")} <select value={theme} onChange={e => setTheme(e.target.value)}>
-      <option value="">{t("Все темы", "All themes", "Todos los temas")}</option><option value="mateIn1">{t("Мат в один ход", "Mate in one", "Mate en una")}</option>
-      <option value="mateIn2">{t("Мат в два хода", "Mate in two", "Mate en dos")}</option><option value="fork">{t("Вилка", "Fork", "Ataque doble")}</option>
-      <option value="pin">{t("Связка", "Pin", "Clavada")}</option><option value="endgame">{t("Эндшпиль", "Endgame", "Final")}</option>
-    </select></label>
+    <details><summary>{t("Выбор темы", "Choose theme", "Elegir tema")} · {themes[theme]}</summary>
+      <label>{t("Тема задачи", "Puzzle theme", "Tema del problema")} <select value={theme} onChange={e => setTheme(e.target.value)}>
+        {Object.entries(themes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select></label>
+    </details>
     <AttemptHistory revision={revision} />
     {failed.length > 0 ? <p role="alert">{t("История не сохранена.", "History could not be saved.", "No se pudo guardar el historial.")} <button onClick={() => { setFailed([]); failed.forEach(entry => void save(entry)); }}>{t("Повторить сохранение", "Retry saving", "Volver a guardar")}</button></p> :
       pending > 0 && <p role="status">{t("Сохраняем попытку…", "Saving attempt…", "Guardando el intento…")}</p>}
@@ -84,6 +89,6 @@ export function PuzzlesPage() {
   if (!puzzle) return <main lang={language} className="study-page">{title}
     <p role="status">{error === "empty" ? t("По этой теме нет задач. Выберите другую тему.", "No puzzles for this theme. Choose another theme.", "No hay problemas de este tema. Elige otro.") : error === "load" ? t("Не удалось загрузить задачу из каталога.", "Could not load the puzzle.", "No se pudo cargar el problema.") : t("Загружаем позицию…", "Loading position…", "Cargando la posición…")}</p>{button}
   </main>;
-  return <Trainer key={puzzle.id + sequence} fen={puzzle.fen} onAttempt={record} onRestart={() => { attempt.current = null; }} steps={puzzle.steps} side={puzzle.side} puzzle
+  return <Trainer key={puzzle.id + sequence} fen={puzzle.fen} onAttempt={record} onRestart={() => { attempt.current = null; }} steps={puzzle.steps} side={puzzle.side} puzzle themeLabel={themes[theme]}
     context={<>{title}<p>{t("Задача", "Puzzle", "Problema")} {puzzle.id} · {t("Рейтинг", "Rating", "Puntuación")} {puzzle.rating}</p></>} next={button} />;
 }

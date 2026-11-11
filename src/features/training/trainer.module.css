@@ -1,0 +1,9 @@
+.feedback { min-height: 1.5em; font-weight: 400; }
+.primary { margin-bottom: 8px; }
+.primary.primary button:not([data-square]) {
+  min-height: 44px;
+  width: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+}
