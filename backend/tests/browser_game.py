@@ -33,12 +33,13 @@ class BrowserGameTest(TestCase):
                 with sync_playwright() as playwright:
                     browser = playwright.chromium.launch(channel=os.getenv("BROWSER_CHANNEL") or None)
                     page = browser.new_page(viewport={"width": 390, "height": 844}, has_touch=True)
-                    page.add_init_script("""window.played = [];
+                    track_audio = """window.played = [];
                         const start = AudioBufferSourceNode.prototype.start;
                         AudioBufferSourceNode.prototype.start = function (...args) {
                             window.played.push(this.buffer.duration);
                             return start.apply(this, args);
-                        };""")
+                        };"""
+                    page.add_init_script(track_audio)
                     page.goto(f"http://127.0.0.1:{port}")
                     page.get_by_text("Оформление", exact=True).tap()
                     for label, value in [("Доска", "green"), ("Фигуры", "merida"), ("Тема", "dark")]:
@@ -360,6 +361,43 @@ class BrowserGameTest(TestCase):
                     row.get_by_role("link", name="Открыть партию").click()
                     expect(white).to_have_url(game_url)
                     expect(white.get_by_text("Сдача", exact=True)).to_be_visible()
+                    white.add_init_script(track_audio)
+                    white.goto(base + "/?section=profile")
+                    white.get_by_text("Настройки уведомлений", exact=True).click()
+                    with white.expect_response(lambda r: r.url.endswith("/api/notification-settings") and r.request.method == "POST"):
+                        white.get_by_label("Звуковой сигнал уведомлений").check()
+                    white.locator("summary").filter(has_text="Уведомления").click()
+                    feed = white.get_by_role("region", name="Лента уведомлений")
+                    expect(feed).to_contain_text("Партия завершена")
+                    self.assertEqual(white.evaluate("window.played.length"), 0)
+                    black.get_by_label("Вызовы и текущие игры", exact=True).click()
+                    black.get_by_label("Имя соперника").fill("WhiteKnight")
+                    black.get_by_role("button", name="Отправить вызов").click()
+                    expect(feed).to_contain_text("Новый вызов · BlackKnight", timeout=10000)
+                    white.wait_for_function("window.played.length === 1")
+                    white.reload()
+                    white.locator("summary").filter(has_text="Уведомления").click()
+                    expect(feed).to_contain_text("Новый вызов · BlackKnight")
+                    self.assertEqual(white.evaluate("window.played.length"), 0)
+                    white.locator("summary").filter(has_text="Уведомления").click()
+                    white.get_by_text("Звук", exact=True).click()
+                    white.get_by_label("Звуки игры").uncheck()
+                    white.get_by_text("Звук", exact=True).click()
+                    black.get_by_role("button", name="Отменить вызов").click()
+                    expect(black.get_by_role("button", name="Отменить вызов")).to_have_count(0)
+                    black.get_by_role("button", name="Отправить вызов").click()
+                    expect(black.get_by_role("button", name="Отменить вызов")).to_be_visible()
+                    white.locator("summary").filter(has_text="Уведомления").click()
+                    expect(feed.get_by_role("listitem").filter(has_text="Новый вызов · BlackKnight")).to_have_count(2)
+                    self.assertEqual(white.evaluate("window.played.length"), 0)
+                    third.goto(base + "/?section=profile")
+                    third.get_by_label("Имя игрока").fill("whiteknight")
+                    third.get_by_label("Пароль").fill("test-password-w")
+                    third.get_by_role("button", name="Войти").click()
+                    expect(third.get_by_role("heading", name="WhiteKnight")).to_be_visible()
+                    third.locator("summary").filter(has_text="Уведомления").click()
+                    third.get_by_role("button", name="Прочитать все").click()
+                    expect(feed.get_by_role("button", name="Прочитать все")).to_have_count(0, timeout=10000)
                     browser.close()
             finally:
                 server.should_exit = True

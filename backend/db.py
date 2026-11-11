@@ -7,6 +7,7 @@ from sqlalchemy.engine import URL
 
 metadata = MetaData()
 accounts = Table("accounts", metadata,
+    Column("notify_sound", Boolean, nullable=False, server_default="0"),
     Column("notify_turn", Boolean, nullable=False, server_default="1"),
     Column("notify_finish", Boolean, nullable=False, server_default="1"),
     Column("notify_challenge", Boolean, nullable=False, server_default="1"),

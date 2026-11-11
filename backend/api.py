@@ -34,7 +34,7 @@ class QueueVersion(BaseModel):
 
 
 class NotificationPreference(BaseModel):
-    setting: Literal["notify_challenge", "notify_response", "notify_turn", "notify_finish"]
+    setting: Literal["notify_challenge", "notify_response", "notify_turn", "notify_finish", "notify_sound"]
     enabled: bool
 
 
@@ -162,7 +162,7 @@ def create_app(path: Path):
     def notification_feed(request: Request, before: int | None = Query(None, gt=0)):
         player, name = current(request)
         if not name:
-            return {"items": [], "unread": 0, "before": None}
+            return {"items": [], "unread": 0, "before": None, "sound": False}
         return app.state.notifications.feed(player, before)
 
     @app.post("/api/notifications/read")

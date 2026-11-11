@@ -39,9 +39,10 @@ class Notifications:
             query = query.where(n.id < before)
         with self.engine.connect() as db:
             db.exec_driver_sql("BEGIN")
+            sound = db.scalar(select(accounts.c.notify_sound).where(accounts.c.player == player))
             unread = db.scalar(select(func.count()).select_from(notifications).where(n.player == player, ~n.seen))
             rows = db.execute(query.order_by(n.id.desc()).limit(21)).mappings().all()
-        return {"unread": unread, "items": [dict(row) for row in rows[:20]],
+        return {"sound": bool(sound), "unread": unread, "items": [dict(row) for row in rows[:20]],
                 "before": rows[19]["id"] if len(rows) > 20 else None}
 
     def read(self, player, item):
@@ -56,5 +57,5 @@ class Notifications:
             if changes:
                 db.execute(update(accounts).where(accounts.c.player == player).values(**changes))
             return dict(db.execute(select(accounts.c.notify_challenge, accounts.c.notify_response,
-                                          accounts.c.notify_turn, accounts.c.notify_finish)
+                                          accounts.c.notify_turn, accounts.c.notify_finish, accounts.c.notify_sound)
                 .where(accounts.c.player == player)).mappings().one())

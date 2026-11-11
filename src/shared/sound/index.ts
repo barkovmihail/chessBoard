@@ -1,4 +1,4 @@
-export type Cue = "move" | "capture" | "castle" | "promotion" | "check" | "start" | "finish";
+export type Cue = "move" | "capture" | "castle" | "promotion" | "check" | "start" | "finish" | "notice";
 export interface SoundSettings { enabled: boolean; volume: number }
 
 const storageKey = "chessboard.sound";
@@ -30,6 +30,7 @@ export function unlockSound() {
 
 // Delay, resonance frequency and decay of each strike in the original synthesized set.
 const strikes: Record<Cue, [number, number, number][]> = {
+  notice: [[0, 950, .035], [.08, 1260, .045]],
   move: [[0, 780, .023]], capture: [[0, 470, .035]],
   castle: [[0, 740, .024], [.10, 590, .025]],
   promotion: [[0, 730, .022], [.09, 1100, .05]],

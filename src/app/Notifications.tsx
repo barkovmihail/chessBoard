@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+
+import { playSound } from "../shared/sound";
 
 const labels = { turn: "Ваш ход", finish: "Партия завершена", challenge: "Новый вызов", accepted: "Вызов принят", declined: "Вызов отклонён", canceled: "Вызов отменён" };
 interface Notice {
@@ -7,6 +9,7 @@ interface Notice {
 interface Feed { items: Notice[]; unread: number; before: number | null }
 
 export function Notifications({ onInbox }: { onInbox: () => void }) {
+  const latest = useRef<number>();
   const [open, setOpen] = useState(false);
   const [before, setBefore] = useState<number>();
   const [feed, setFeed] = useState<Feed>();
@@ -19,12 +22,28 @@ export function Notifications({ onInbox }: { onInbox: () => void }) {
       try {
         const res = await fetch("/api/notifications" + (before ? "?before=" + before : ""), { signal: abort.signal, cache: "no-store" });
         const data = await res.json();
-        if (!res.ok || !Number.isInteger(data.unread) || !(data.before === null || Number.isInteger(data.before)) ||
+        if (!res.ok || typeof data.sound !== "boolean" || !Number.isInteger(data.unread) || !(data.before === null || Number.isInteger(data.before)) ||
             !Array.isArray(data.items) || !data.items.every((n: Notice) => n && Object.prototype.hasOwnProperty.call(labels, n.kind) &&
             Number.isInteger(n.id) && Number.isInteger(n.created) && typeof n.opponent === "string" &&
             (n.result === null || typeof n.result === "string") && typeof n.seen === "boolean" && (n.game_id === null || typeof n.game_id === "string"))) throw Error();
-        if (!abort.signal.aborted) { setFeed(data); setError(""); }
-      } catch { if (!abort.signal.aborted) setError("Не удалось загрузить уведомления."); }
+        if (abort.signal.aborted) return;
+        if (!before) {
+          const params = new URLSearchParams(location.search);
+          const currentGame = params.has("section") ? null : params.get("game");
+          const previous = latest.current;
+          if (data.sound && previous !== undefined && data.items.some((notice: Notice) =>
+            notice.id > previous && !notice.seen && !(currentGame && notice.game_id === currentGame &&
+              (notice.kind === "turn" || notice.kind === "finish")))) playSound("notice");
+          latest.current = data.items[0]?.id ?? 0;
+        }
+        setFeed(data);
+        setError("");
+      } catch {
+        if (!abort.signal.aborted) {
+          latest.current = undefined;
+          setError("Не удалось загрузить уведомления.");
+        }
+      }
       if (!abort.signal.aborted) timer = setTimeout(load, open ? 4000 : 12000);
     }
     void load();
@@ -53,7 +72,7 @@ export function Notifications({ onInbox }: { onInbox: () => void }) {
         {!n.seen && <button onClick={() => read(n.id)}>Отметить прочитанным</button>}
       </li>)}</ul>
       {before && <button onClick={() => setBefore(undefined)}>К новым</button>}
-      {feed?.before && <button onClick={() => setBefore(feed.before!)}>Более ранние</button>}
+      {feed?.before && <button onClick={() => { latest.current = undefined; setBefore(feed.before!); }}>Более ранние</button>}
     </section>
   </details>;
 }
