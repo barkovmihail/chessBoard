@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import { playSound } from "../shared/sound";
 
+const spanish = { turn: "Tu turno", finish: "Partida terminada", challenge: "Nuevo desafío", accepted: "Desafío aceptado", declined: "Desafío rechazado", canceled: "Desafío cancelado" };
 const english = { turn: "Your turn", finish: "Game finished", challenge: "New challenge", accepted: "Challenge accepted", declined: "Challenge declined", canceled: "Challenge canceled" };
 const labels = { turn: "Ваш ход", finish: "Партия завершена", challenge: "Новый вызов", accepted: "Вызов принят", declined: "Вызов отклонён", canceled: "Вызов отменён" };
 interface Notice {
@@ -64,19 +65,19 @@ export function Notifications({ onInbox }: { onInbox: () => void }) {
     setOpen(e.currentTarget.open);
     if (!e.currentTarget.open) setBefore(undefined);
   }}>
-    <summary className="nav-trigger" title={t("Уведомления", "Notifications")} aria-label={[t("Уведомления", "Notifications"), feed?.unread || ""].join(" ").trim()}><NavIcon name="bell" />{!!feed?.unread && <small>{feed.unread}</small>}</summary>
-    <section aria-label={t("Лента уведомлений", "Notification feed")}>
-      {error && <p role="alert">{error === "load" ? t("Не удалось загрузить уведомления.", "Could not load notifications.") : t("Не удалось отметить прочитанным.", "Could not mark as read.")}</p>}
-      {feed?.unread ? <button onClick={() => read()}>{t("Прочитать все", "Mark all as read")}</button> : null}
-      {feed && !feed.items.length && <p>{t("Уведомлений пока нет", "No notifications yet")}</p>}
+    <summary className="nav-trigger" title={t("Уведомления", "Notifications", "Notificaciones")} aria-label={[t("Уведомления", "Notifications", "Notificaciones"), feed?.unread || ""].join(" ").trim()}><NavIcon name="bell" />{!!feed?.unread && <small>{feed.unread}</small>}</summary>
+    <section aria-label={t("Лента уведомлений", "Notification feed", "Lista de notificaciones")}>
+      {error && <p role="alert">{error === "load" ? t("Не удалось загрузить уведомления.", "Could not load notifications.", "No se pudieron cargar las notificaciones.") : t("Не удалось отметить прочитанным.", "Could not mark as read.", "No se pudo marcar como leído.")}</p>}
+      {feed?.unread ? <button onClick={() => read()}>{t("Прочитать все", "Mark all as read", "Marcar todas como leídas")}</button> : null}
+      {feed && !feed.items.length && <p>{t("Уведомлений пока нет", "No notifications yet", "Todavía no hay notificaciones")}</p>}
       <ul>{feed?.items.map(n => <li key={n.id}>
-        <p>{t(labels[n.kind], english[n.kind])}{n.result && " · " + n.result} · {n.opponent === "Гость" ? t("Гость", "Guest") : n.opponent === "На одном устройстве" ? t("На одном устройстве", "On one device") : n.opponent} · {new Date(n.created).toLocaleString(language)}</p>
-        {n.game_id ? <a href={"?game=" + encodeURIComponent(n.game_id)}>{t("Открыть партию", "Open game")}</a> :
-          <button onClick={() => { setOpen(false); onInbox(); }}>{t("К вызовам", "View challenges")}</button>}
-        {!n.seen && <button onClick={() => read(n.id)}>{t("Отметить прочитанным", "Mark as read")}</button>}
+        <p>{t(labels[n.kind], english[n.kind], spanish[n.kind])}{n.result && " · " + n.result} · {n.opponent === "Гость" ? t("Гость", "Guest", "Invitado") : n.opponent === "На одном устройстве" ? t("На одном устройстве", "On one device", "En un solo dispositivo") : n.opponent} · {new Date(n.created).toLocaleString(language)}</p>
+        {n.game_id ? <a href={"?game=" + encodeURIComponent(n.game_id)}>{t("Открыть партию", "Open game", "Abrir partida")}</a> :
+          <button onClick={() => { setOpen(false); onInbox(); }}>{t("К вызовам", "View challenges", "Ver desafíos")}</button>}
+        {!n.seen && <button onClick={() => read(n.id)}>{t("Отметить прочитанным", "Mark as read", "Marcar como leída")}</button>}
       </li>)}</ul>
-      {before && <button onClick={() => setBefore(undefined)}>{t("К новым", "Newest")}</button>}
-      {feed?.before && <button onClick={() => { latest.current = undefined; setBefore(feed.before!); }}>{t("Более ранние", "Older")}</button>}
+      {before && <button onClick={() => setBefore(undefined)}>{t("К новым", "Newest", "Más recientes")}</button>}
+      {feed?.before && <button onClick={() => { latest.current = undefined; setBefore(feed.before!); }}>{t("Более ранние", "Older", "Anteriores")}</button>}
     </section>
   </details>;
 }
