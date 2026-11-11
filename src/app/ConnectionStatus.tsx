@@ -1,3 +1,4 @@
+import { useLanguage } from "../shared/language";
 import React, { useEffect, useState } from "react";
 
 type Sample = { ping: number; server: number };
@@ -54,10 +55,11 @@ export function useConnectionSample(open: boolean) {
 
 export function ConnectionStatus({ sample }: { sample: ConnectionSample }) {
 
-  return <div role="group" aria-label="Качество связи" className="connection-status">
-    {sample === "offline" ? "Нет связи" : sample === null ? "Проверка связи…" : <>
-      <span>{sample.ping < 150 ? "Хорошая связь" : sample.ping < 400 ? "Средняя задержка" : "Высокая задержка"}</span>
-      <span>PING {sample.ping} мс</span><span>SERVER {sample.server} мс</span>
+  const { t } = useLanguage();
+  return <div role="group" aria-label={t("Качество связи", "Connection quality")} className="connection-status">
+    {sample === "offline" ? t("Нет связи", "Disconnected") : sample === null ? t("Проверка связи…", "Checking connection…") : <>
+      <span>{sample.ping < 150 ? t("Хорошая связь", "Good connection") : sample.ping < 400 ? t("Средняя задержка", "Moderate latency") : t("Высокая задержка", "High latency")}</span>
+      <span>PING {sample.ping} {t("мс", "ms")}</span><span>SERVER {sample.server} {t("мс", "ms")}</span>
     </>}
   </div>;
 }

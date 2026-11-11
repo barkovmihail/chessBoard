@@ -1,3 +1,4 @@
+import { useLanguage } from "../shared/language";
 import React, { useEffect, useState } from "react";
 
 import { KnightPreview } from "../entities/board";
@@ -11,6 +12,7 @@ type Setting = keyof typeof options;
 type Settings = Record<Setting, string>;
 const defaults: Settings = { board: "brown", pieces: "cburnett", theme: "light" };
 const keys = Object.keys(options) as Setting[];
+const english: Record<string, string> = { board: "Board", pieces: "Pieces", theme: "Theme", brown: "Classic", green: "Green", blue: "Blue", light: "Light", dark: "Dark" };
 const labels = { board: "Доска", pieces: "Фигуры", theme: "Тема" };
 const storageKey = "chessboard.appearance";
 
@@ -26,20 +28,21 @@ function readSettings() {
 }
 
 export function Appearance() {
+  const { language, t } = useLanguage();
   const [settings, setSettings] = useState(readSettings);
   useEffect(() => {
     for (const key of keys) document.documentElement.dataset[key] = settings[key];
     try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch { /* Session-only settings. */ }
   }, [settings]);
-  return <details className="appearance"><summary>Оформление</summary>
+  return <details className="appearance"><summary>{t("Оформление", "Appearance")}</summary>
     <div className="appearance-options">
-      {keys.map(key => <fieldset key={key}><legend>{labels[key]}</legend>
+      {keys.map(key => <fieldset key={key}><legend>{t(labels[key], english[key])}</legend>
         {Object.entries(options[key]).map(([value, label]) => <label key={value}>
           <input type="radio" name={key} checked={settings[key] === value}
             onChange={() => setSettings({ ...settings, [key]: value })} />
           {key === "pieces" && <KnightPreview set={value} />}
           {key === "board" && <span aria-hidden="true" className={"palette " + value} />}
-          {label}
+          {language === "en" ? english[value] ?? label : label}
         </label>)}
       </fieldset>)}
     </div>

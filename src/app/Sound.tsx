@@ -1,7 +1,9 @@
+import { useLanguage } from "../shared/language";
 import React, { useEffect, useState } from "react";
 import { playSound, readSound, saveSound, SoundSettings, unlockSound } from "../shared/sound";
 
 export function Sound() {
+  const { t } = useLanguage();
   const [settings, setSettings] = useState(readSound);
   useEffect(() => {
     window.addEventListener("pointerup", unlockSound, true);
@@ -16,13 +18,13 @@ export function Sound() {
     setSettings(next);
     if (next.enabled) unlockSound();
   }
-  return <details className="appearance"><summary>Звук</summary>
+  return <details className="appearance"><summary>{t("Звук", "Sound")}</summary>
     <div className="appearance-options">
       <label><input type="checkbox" checked={settings.enabled}
-        onChange={e => change({ ...settings, enabled: e.target.checked })} />Звуки игры</label>
-      <label>Громкость <input type="range" min="0" max="100" value={settings.volume}
+        onChange={e => change({ ...settings, enabled: e.target.checked })} />{t("Звуки игры", "Game sounds")}</label>
+      <label>{t("Громкость", "Volume")} <input type="range" min="0" max="100" value={settings.volume}
         onChange={e => change({ ...settings, volume: Number(e.target.value) })} />{settings.volume}%</label>
-      <button disabled={!settings.enabled || !settings.volume} onClick={() => playSound("move")}>Прослушать</button>
+      <button disabled={!settings.enabled || !settings.volume} onClick={() => playSound("move")}>{t("Прослушать", "Preview")}</button>
     </div>
   </details>;
 }

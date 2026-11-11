@@ -1,6 +1,14 @@
+import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
 import { Account } from "./Account";
 import { reasons } from "../../features/play";
+
+const englishReasons: Record<string, string> = {
+  threefold_repetition: "Threefold repetition", fifty_moves: "Fifty-move rule",
+  timeout: "Time expired", resignation: "Resignation", agreement: "Draw by agreement",
+  checkmate: "Checkmate", stalemate: "Stalemate", insufficient_material: "Insufficient material",
+  fivefold_repetition: "Fivefold repetition", seventyfive_moves: "Seventy-five-move rule",
+};
 
 interface Entry {
   id: string;
@@ -20,6 +28,7 @@ function validEntry(row: Entry) {
 }
 
 export function ProfilePage({ onInbox }: { onInbox: () => void }) {
+  const { language, t } = useLanguage();
   const [offset, setOffset] = useState(0);
   const [page, setPage] = useState<{items: Entry[]; next_offset: number | null}>();
   const [error, setError] = useState(false);
@@ -37,17 +46,17 @@ export function ProfilePage({ onInbox }: { onInbox: () => void }) {
     }).catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [offset, retry]);
-  return <main><h1>Профиль</h1><Account /><a href="?section=teams">Команды</a> <button onClick={onInbox}>Входящие</button><h2>История игр</h2>
-    {error ? <p role="alert">Не удалось загрузить партии. <button onClick={() => setRetry(retry + 1)}>Повторить</button></p> :
-      !page ? <p>Загрузка…</p> : <>
-        {!page.items.length && <p>Завершённых партий пока нет</p>}
+  return <main lang={language}><h1>{t("Профиль", "Profile")}</h1><Account /><a href="?section=teams">{t("Команды", "Teams")}</a> <button onClick={onInbox}>{t("Входящие", "Inbox")}</button><h2>{t("История игр", "Game history")}</h2>
+    {error ? <p role="alert">{t("Не удалось загрузить партии.", "Could not load games.")} <button onClick={() => setRetry(retry + 1)}>{t("Повторить", "Retry")}</button></p> :
+      !page ? <p>{t("Загрузка…", "Loading\u2026")}</p> : <>
+        {!page.items.length && <p>{t("Завершённых партий пока нет", "No finished games yet")}</p>}
         <ul>{page.items.map(game => <li key={game.id}><a href={"?game=" + encodeURIComponent(game.id)}>
-          {game.finished_ms === null ? "Дата неизвестна" : new Date(game.finished_ms).toLocaleString("ru-RU")} · {
-          game.side === "both" ? "На одном устройстве" : (game.opponent ?? "Гость") + " · " + (game.side === "white" ? "Вы играли белыми" : "Вы играли чёрными")} · {
-          game.base_minutes === null ? "Без часов" : game.base_minutes + "+" + game.increment_seconds} · {
-          game.result} · {reasons[game.reason] ?? game.reason}</a></li>)}</ul>
-        {offset > 0 && <button onClick={() => setOffset(Math.max(0, offset - 20))}>Предыдущая страница</button>}
-        {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>Следующая страница</button>}
+          {game.finished_ms === null ? t("Дата неизвестна", "Unknown date") : new Date(game.finished_ms).toLocaleString(language)} · {
+          game.side === "both" ? t("На одном устройстве", "On one device") : (game.opponent ?? t("Гость", "Guest")) + " · " + (game.side === "white" ? t("Вы играли белыми", "You played White") : t("Вы играли чёрными", "You played Black"))} · {
+          game.base_minutes === null ? t("Без часов", "Unlimited") : game.base_minutes + "+" + game.increment_seconds} · {
+          game.result} · {language === "ru" ? reasons[game.reason] ?? game.reason : englishReasons[game.reason] ?? game.reason}</a></li>)}</ul>
+        {offset > 0 && <button onClick={() => setOffset(Math.max(0, offset - 20))}>{t("Предыдущая страница", "Previous page")}</button>}
+        {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Следующая страница", "Next page")}</button>}
       </>}
   </main>;
 }
