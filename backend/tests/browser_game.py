@@ -75,6 +75,16 @@ class BrowserGameTest(TestCase):
                             board.push_san(san)
                         bot.get_by_role("button", name="Остановить анализ").click()
                         expect(score).to_have_count(0)
+                    if played_engines:
+                        bot.get_by_role("link", name="Тренажёр дебютов").click()
+                        bot.get_by_text("Ходы из моего архива").click()
+                        total = len(played_engines)
+                        expect(bot.get_by_text(f"e4 · {total} из {total} · 100%")).to_be_visible()
+                        bot.get_by_label("Дебют", exact=True).select_option("queens-gambit")
+                        bot.locator('[data-square="d2"]').click()
+                        bot.locator('[data-square="d4"]').click()
+                        bot.get_by_text("Ходы из моего архива").click()
+                        expect(bot.get_by_text("В вашем архиве нет продолжений этой линии.")).to_be_visible()
                     bot.close()
                     track_audio = """window.played = [];
                         const start = AudioBufferSourceNode.prototype.start;

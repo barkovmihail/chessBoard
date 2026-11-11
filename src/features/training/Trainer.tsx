@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ArchiveMoves } from "./ArchiveMoves";
 import { BoardLayout } from "../../shared/board-layout";
 import { Chess } from "chess.js";
 import { Board, boardPosition, Square } from "../../entities/board";
@@ -84,6 +85,7 @@ export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, on
         <button key={p} onClick={() => attempt(promotion, p)}>{["Ферзь","Ладья","Слон","Конь"][i]}</button>)}</div>}
       {history.length > 0 && <p aria-label="Сыгранные ходы">{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
       <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(""); promote(undefined); setOtherMate(""); }}>Начать заново</button>
+      {!puzzle && <ArchiveMoves prefix={history.map(move => move.lan).join(",")} />}
       {next}
     </>} />;
 }

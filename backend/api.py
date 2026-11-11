@@ -24,6 +24,7 @@ from .db import open_database
 from .domain import GameError
 from .matchmaking import Matchmaking
 from .puzzle_attempts import PuzzleAttempts
+from .opening_frequency import continuations
 from .puzzles import random_puzzle
 from .service import Games
 from .studies import Studies
@@ -325,6 +326,11 @@ def create_app(path: Path):
         await app.state.events.stream(socket, game_id, lambda: app.state.games.get(game_id, current(socket)[0]))
 
     catalogue = Path(os.environ.get("CHESSBOARD_PUZZLES_DB", path.with_name("puzzles.sqlite3")))
+
+    @app.get("/api/openings/frequencies")
+    def frequencies(request: Request, response: Response, line: str = Query("", max_length=599)):
+        response.headers["Cache-Control"] = "private, no-store"
+        return continuations(app.state.games.engine, current(request)[0], line.split(",") if line else [])
 
     @app.post("/api/studies", status_code=201)
     def create_chapter(chapter: Chapter):
