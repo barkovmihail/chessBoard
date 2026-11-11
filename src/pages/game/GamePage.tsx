@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Game, PlayBoard, RequestError, requestGame, subscribeGame } from "../../features/play";
+import { ClockPanel, TimeSetup } from "./TimeControl";
 import styles from "./game.module.css";
 
 type Action = "offer" | "accept" | "decline" | "resign";
 type Command = { version: number; command_id: string } & ({ uci: string } | { action: Action });
 
 const reasons: Record<string, string> = {
-  resignation: "Сдача", agreement: "Ничья по соглашению", checkmate: "Мат", stalemate: "Пат",
+  timeout: "Время истекло", resignation: "Сдача", agreement: "Ничья по соглашению", checkmate: "Мат", stalemate: "Пат",
   insufficient_material: "Недостаточно материала", fivefold_repetition: "Пятикратное повторение",
   seventyfive_moves: "Правило 75 ходов",
 };
@@ -21,6 +22,7 @@ export function GamePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [disconnected, setDisconnected] = useState(false);
+  const [inviteControl, setInviteControl] = useState("");
   const [invite, setInvite] = useState<string>();
   const [pending, setPending] = useState<Command>();
 
@@ -38,7 +40,18 @@ export function GamePage() {
     return () => { active = false; };
   }, []);
 
-  const onlineId = game && game.side !== "both" && !game.result ? game.id : undefined;
+  useEffect(() => {
+    if (!invite) return;
+    const abort = new AbortController();
+    fetch("/api/games/" + encodeURIComponent(invite) + "/invitation", { signal: abort.signal })
+      .then(response => response.ok ? response.json() : Promise.reject())
+      .then(control => setInviteControl(control.base_minutes === null ? "Без часов" :
+        control.base_minutes + "+" + control.increment_seconds))
+      .catch(() => { if (!abort.signal.aborted) setInviteControl("Не удалось загрузить контроль времени"); });
+    return () => abort.abort();
+  }, [invite]);
+
+  const onlineId = game && (game.side !== "both" || game.clock) && !game.result ? game.id : undefined;
   useEffect(() => {
     if (!onlineId) return;
     return subscribeGame(onlineId, result => {
@@ -46,12 +59,12 @@ export function GamePage() {
     }, setDisconnected);
   }, [onlineId]);
 
-  async function create(online: boolean) {
+  async function create(online: boolean, control?: { minutes: number; increment: number }) {
     setBusy(true);
     setError("");
     try {
       const result = invite ? await requestGame("/" + encodeURIComponent(invite) + "/join", {})
-        : await requestGame("", { online });
+        : await requestGame("", { online, control });
       setInvite(undefined);
       history.replaceState(null, "", "?game=" + result.id);
       setGame(result);
@@ -88,9 +101,9 @@ export function GamePage() {
     <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending && !game.result}
       onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />
     {!game && (invite
-      ? <button disabled={busy} onClick={() => create(true)}>Играть за чёрных</button>
-      : <><button disabled={busy} onClick={() => create(false)}>Начать партию</button>
-        <button disabled={busy} onClick={() => create(true)}>Пригласить друга</button></>)}
+      ? <><p>{inviteControl}</p><button disabled={busy || !inviteControl} onClick={() => create(true)}>Играть за чёрных</button></>
+      : <TimeSetup busy={busy} create={create} />)}
+    {game?.clock && <ClockPanel game={game} clock={game.clock} />}
     {game?.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}
     {game && <section aria-live="polite">

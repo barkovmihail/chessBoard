@@ -12,6 +12,8 @@ export interface Game {
   draw_offer: "white" | "black" | null;
   side: "white" | "black" | "both";
   waiting: boolean;
+  clock?: { base_minutes: number; increment_seconds: number; white_ms: number; black_ms: number;
+    deadline_ms: number | null; server_ms: number; received_ms: number };
 }
 
 export class RequestError extends Error {}
@@ -34,6 +36,12 @@ function parseGame(data: any): Game {
         ["white", "black"].includes(p.color) && ["king","queen","rook","bishop","knight","pawn"].includes(p.type)) ||
       ![data.legal, data.moves].every(list => Array.isArray(list) && list.every(value => typeof value === "string")) ||
       !(data.result === null || typeof data.result === "string")) throw new Error("invalid_snapshot");
+  if (data.clock) {
+    const c = data.clock;
+    if (![c.base_minutes, c.increment_seconds, c.white_ms, c.black_ms, c.server_ms].every(Number.isSafeInteger)
+        || !(c.deadline_ms === null || Number.isSafeInteger(c.deadline_ms))) throw new Error("invalid_clock");
+    c.received_ms = performance.now();
+  }
   return data;
 }
 

@@ -4,3 +4,9 @@
   align-items: center;
   text-align: center;
 }
+
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; }
+.presets button { padding: 6px 10px; }
+.presets small { display: block; }
+.presets button[aria-pressed=true] { outline: 2px solid var(--link); outline-offset: -2px; }
+.clock { display: inline-block; padding: 8px; font-variant-numeric: tabular-nums; }

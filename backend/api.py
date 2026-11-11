@@ -1,7 +1,8 @@
+import asyncio
 import hashlib
 import os
 import secrets
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -20,7 +21,13 @@ from .service import Games
 from .events import GameEvents
 
 
+class TimeControl(BaseModel):
+    minutes: int = Field(ge=1, le=1440, strict=True)
+    increment: int = Field(ge=0, le=3600, strict=True)
+
+
 class CreateGame(BaseModel):
+    control: TimeControl | None = None
     online: bool = False
 
 
@@ -46,9 +53,19 @@ def create_app(path: Path):
         engine = open_database(path)
         app.state.games = Games(engine)
         app.state.events = GameEvents()
+        async def monitor():
+            while True:
+                for game_id in await asyncio.to_thread(app.state.games.expire_due):
+                    app.state.events.publish(game_id)
+                await asyncio.sleep(0.25)
+
+        timer = asyncio.create_task(monitor())
         try:
             yield
         finally:
+            timer.cancel()
+            with suppress(asyncio.CancelledError):
+                await timer
             engine.dispose()
 
     app = FastAPI(lifespan=lifespan)
@@ -72,7 +89,13 @@ def create_app(path: Path):
 
     @app.post("/api/games", status_code=201)
     def create(request: Request, response: Response, options: CreateGame | None = None):
-        return app.state.games.create(player_session(request, response), bool(options and options.online))
+        control = options.control if options else None
+        return app.state.games.create(player_session(request, response), bool(options and options.online),
+                                      (control.minutes, control.increment) if control else None)
+
+    @app.get("/api/games/{game_id}/invitation")
+    def invitation(game_id: str):
+        return app.state.games.invitation(game_id)
 
     @app.post("/api/games/{game_id}/join")
     def join(game_id: str, request: Request, response: Response):
