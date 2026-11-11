@@ -6,7 +6,7 @@ interface Row { san: string; count: number }
 export function ArchiveMoves({ prefix }: { prefix: string }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
-  return <details onToggle={e => setOpen(e.currentTarget.open)}><summary>{t("Ходы из моего архива", "Moves from my games")}</summary>
+  return <details onToggle={e => setOpen(e.currentTarget.open)}><summary>{t("Ходы из моего архива", "Moves from my games", "Jugadas de mis partidas")}</summary>
     {open && <Results key={prefix} prefix={prefix} />}
   </details>;
 }
@@ -27,9 +27,9 @@ function Results({ prefix }: { prefix: string }) {
       }).catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [prefix]);
-  if (error) return <p role="alert">{t("Не удалось загрузить статистику. Закройте и снова откройте список.", "Could not load statistics. Close and reopen the list.")}</p>;
-  if (!rows) return <p>{t("Загрузка…", "Loading…")}</p>;
-  if (!rows.length) return <p>{t("В вашем архиве нет продолжений этой линии.", "Your game history has no continuations for this line.")}</p>;
+  if (error) return <p role="alert">{t("Не удалось загрузить статистику. Закройте и снова откройте список.", "Could not load statistics. Close and reopen the list.", "No se pudieron cargar las estadísticas. Cierra la lista y vuelve a abrirla.")}</p>;
+  if (!rows) return <p>{t("Загрузка…", "Loading…", "Cargando…")}</p>;
+  if (!rows.length) return <p>{t("В вашем архиве нет продолжений этой линии.", "Your game history has no continuations for this line.", "En tus partidas no hay continuaciones para esta variante.")}</p>;
   const total = rows.reduce((sum, row) => sum + row.count, 0);
-  return <ul>{rows.map(row => <li key={row.san}>{row.san} · {row.count} {t("из", "of")} {total} · {Math.round(100 * row.count / total)}%</li>)}</ul>;
+  return <ul>{rows.map(row => <li key={row.san}>{row.san} · {row.count} {t("из", "of", "de")} {total} · {Math.round(100 * row.count / total)}%</li>)}</ul>;
 }
