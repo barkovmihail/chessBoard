@@ -109,6 +109,13 @@ class BrowserGameTest(TestCase):
                     expect(white).to_have_url(original_url)
                     expect(white.get_by_text("f3 e5 g4 Qh4#", exact=True)).to_be_visible()
                     expect(white.get_by_role("link", name="Открыть реванш")).to_be_visible()
+                    white.get_by_role("link", name="Профиль").click()
+                    record = white.get_by_role("link", name="Вы играли белыми", exact=False)
+                    expect(record).to_contain_text("3+0 · 0-1 · Мат")
+                    record.click()
+                    expect(white).to_have_url(original_url)
+                    third.get_by_role("link", name="Профиль").click()
+                    expect(third.get_by_text("Завершённых партий пока нет")).to_be_visible()
                     for action, reason in [("Сдаться", "Сдача"), ("Принять ничью", "Ничья по соглашению")]:
                         white.goto(f"http://127.0.0.1:{port}")
                         white.get_by_role("button", name="Пригласить друга").click()

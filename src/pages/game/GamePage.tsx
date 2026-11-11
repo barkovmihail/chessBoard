@@ -1,18 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Game, PlayBoard, RequestError, requestGame, subscribeGame } from "../../features/play";
+import { Game, PlayBoard, reasons, RequestError, requestGame, subscribeGame } from "../../features/play";
 import { ClockPanel, TimeSetup } from "./TimeControl";
 import { GameReview } from "./GameReview";
 import styles from "./game.module.css";
 
 type Action = "rematch" | "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
 type Command = { version: number; command_id: string } & ({ uci: string } | { action: Action });
-
-const reasons: Record<string, string> = {
-  threefold_repetition: "Троекратное повторение", fifty_moves: "Правило 50 ходов",
-  timeout: "Время истекло", resignation: "Сдача", agreement: "Ничья по соглашению", checkmate: "Мат", stalemate: "Пат",
-  insufficient_material: "Недостаточно материала", fivefold_repetition: "Пятикратное повторение",
-  seventyfive_moves: "Правило 75 ходов",
-};
 
 function commandId() {
   const bytes = crypto.getRandomValues(new Uint8Array(16));

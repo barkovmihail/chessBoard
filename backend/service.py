@@ -29,6 +29,20 @@ class Games:
                                         previous_game=previous_game, **clock))
         return game_id
 
+    def archive(self, player, offset, limit):
+        with self.engine.connect() as db:
+            rows = db.execute(select(games.c.id, games.c.owner, games.c.online, games.c.finished_ms,
+                games.c.base_minutes, games.c.increment_seconds, games.c.result, games.c.reason)
+                .where(games.c.result.is_not(None), (games.c.owner == player) | (games.c.guest == player))
+                .order_by(games.c.finished_ms.desc(), games.c.id.desc()).offset(offset).limit(limit + 1)).mappings().all()
+            items = []
+            for row in rows[:limit]:
+                item = dict(row)
+                owner, online = item.pop("owner"), item.pop("online")
+                item["side"] = ("white" if owner == player else "black") if online else "both"
+                items.append(item)
+            return {"items": items, "next_offset": offset + limit if len(rows) > limit else None}
+
     def invitation(self, game_id):
         with self.engine.connect() as db:
             control = db.execute(select(games.c.base_minutes, games.c.increment_seconds)
@@ -83,7 +97,7 @@ class Games:
         board, _ = replay(history)
         winner = not board.turn
         result = ("1-0" if winner else "0-1") if not board.has_insufficient_material(winner) else "1/2-1/2"
-        changes = {"result": result, "reason": "timeout", "deadline_ms": None, "draw_offer": None,
+        changes = {"result": result, "reason": "timeout", "finished_ms": self.now_ms(), "deadline_ms": None, "draw_offer": None,
                    "white_ms" if board.turn else "black_ms": 0, "version": game["version"] + 1}
         db.execute(update(games).where(games.c.id == game["id"]).values(**changes))
         return dict(game, **changes)
@@ -168,6 +182,9 @@ class Games:
                 history.append(command)
                 db.execute(insert(moves).values(game_id=game_id, ply=len(history), uci=command,
                                                 command_id=command_id))
+                outcome = replay(history)[0].outcome()
+                if outcome:
+                    changes.update(result=outcome.result(), reason=outcome.termination.name.lower())
                 if view["draw_offer"] != side:
                     changes["draw_offer"] = None
             if deadline is not None:
@@ -178,13 +195,12 @@ class Games:
                     changes[moving] = remaining + game["increment_seconds"] * 1000
                     opponent = "black_ms" if moving == "white_ms" else "white_ms"
                     changes["deadline_ms"] = now + game[opponent]
-                    outcome = replay(history)[0].outcome()
-                    if outcome:
-                        changes.update(result=outcome.result(), reason=outcome.termination.name.lower())
                 if changes.get("result"):
                     changes["deadline_ms"] = None
                     if not is_move:
                         changes[moving] = remaining
+            if changes.get("result"):
+                changes["finished_ms"] = now
             db.execute(update(games).where(games.c.id == game_id, games.c.version == version).values(**changes))
             result = self._view(dict(game, **changes), history, owner)
             db.execute(insert(receipts).values(game_id=game_id, command_id=command_id, player=owner,

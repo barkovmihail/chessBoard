@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 from anyio import from_thread
-from fastapi import FastAPI, Request, Response, WebSocket
+from fastapi import FastAPI, Query, Request, Response, WebSocket
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -85,6 +85,13 @@ def create_app(path: Path):
         response.set_cookie("player", token, httponly=True, samesite="lax",
                             secure=request.url.scheme == "https", max_age=31536000)
         return identity(token)
+
+    @app.get("/api/profile/games")
+    def archive(request: Request, offset: int = Query(0, ge=0)):
+        player = identity(request.cookies.get("player"))
+        if not player:
+            return {"items": [], "next_offset": None}
+        return app.state.games.archive(player, offset, 20)
 
     @app.post("/api/games", status_code=201)
     def create(request: Request, response: Response, options: CreateGame | None = None):
