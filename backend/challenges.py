@@ -19,6 +19,16 @@ class Challenges:
                        c.expires > self.games.now_ms()).order_by(c.expires, c.id)).mappings()
             return [dict(row) for row in rows]
 
+    def expired_incoming(self, player):
+        c = challenges.c
+        with self.games.engine.connect() as db:
+            rows = db.execute(select(c.id, accounts.c.name.label("opponent"), c.minutes, c.increment)
+                              .join(accounts, accounts.c.player == c.sender)
+                              .where(c.recipient == player, c.status.in_(["pending", "expired"]),
+                                     c.expires <= self.games.now_ms())
+                              .order_by(c.expires.desc(), c.id.desc()).limit(10)).mappings()
+            return [dict(row) for row in rows]
+
     def create(self, player, name, minutes, increment, challenge_id):
         c = challenges.c
         with self.games.engine.begin() as db:

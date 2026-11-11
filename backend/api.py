@@ -369,9 +369,10 @@ def create_app(path: Path):
         return app.state.notifications.preferences(member(request), {command.setting: command.enabled})
 
     @app.get("/api/challenges")
-    def pending_challenges(request: Request):
+    def pending_challenges(request: Request, include_expired: bool = False):
         player, name = current(request)
-        return {"member": bool(name), "items": app.state.challenges.pending(player) if name else []}
+        return {"member": bool(name), "items": app.state.challenges.pending(player) if name else [],
+                "expired": app.state.challenges.expired_incoming(player) if include_expired and name else []}
 
     @app.post("/api/challenges")
     def create_challenge(command: Challenge, request: Request):

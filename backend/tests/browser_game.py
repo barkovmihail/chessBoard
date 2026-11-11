@@ -749,6 +749,19 @@ class BrowserGameTest(TestCase):
                     expect(white.get_by_role("listitem").filter(has_text="Да, после партии.")).to_contain_text("From BlackKnight")
                     white.reload()
                     expect(white.get_by_text("Да, после партии.", exact=True)).to_be_visible()
+                    white.get_by_label("Profile menu").click()
+                    white.get_by_role("button", name="Inbox").click()
+                    white.get_by_label("Opponent’s username").fill("BlackKnight")
+                    white.get_by_role("button", name="Send challenge").click()
+                    expect(white.get_by_role("button", name="Cancel challenge")).to_be_visible()
+                    from backend.db import challenges
+                    with server.config.app.state.chat.engine.begin() as db:
+                        db.execute(update(challenges).where(challenges.c.status == "pending").values(expires=0))
+                    black.get_by_label("Меню профиля").click()
+                    black.get_by_role("button", name="Входящие").click()
+                    black.get_by_text("Истёкшие входящие вызовы", exact=True).click()
+                    expect(black.get_by_role("listitem").filter(has_text="WhiteKnight · 5+3 · Срок истёк")).to_be_visible()
+                    expect(black.get_by_role("button", name="Принять вызов")).to_have_count(0)
                     browser.close()
             finally:
                 server.should_exit = True

@@ -32,7 +32,11 @@ class ChallengesTest(TestCase):
             create("two")
             now += 600000
             self.assertEqual(service.pending("Bob"), [])
+            self.assertEqual([item["id"] for item in service.expired_incoming("Bob")], ["two"])
+            self.assertFalse(service.expired_incoming("Carol"))
+            self.assertFalse(service.expired_incoming("Alice"))
             self.assertEqual(service.respond("Bob", "two", "accept")["status"], "expired")
+            self.assertEqual([item["id"] for item in service.expired_incoming("Bob")], ["two"])
             create("three")
             with ThreadPoolExecutor(2) as pool:
                 accepted = pool.submit(service.respond, "Bob", "three", "accept")

@@ -15,9 +15,15 @@ interface Entry {
   id: string; opponent: string; incoming: boolean; minutes: number; increment: number;
 }
 
+function validChallenge(x: Omit<Entry, "incoming">) {
+  return x && typeof x.id === "string" && typeof x.opponent === "string" &&
+    Number.isInteger(x.minutes) && Number.isInteger(x.increment);
+}
+
 export function Challenges({ open, count }: { open: boolean; count: (n: number) => void }) {
   const { t } = useLanguage();
   const [items, setItems] = useState<Entry[]>([]);
+  const [expired, setExpired] = useState<Omit<Entry, "incoming">[]>([]);
   const [member, setMember] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -28,14 +34,15 @@ export function Challenges({ open, count }: { open: boolean; count: (n: number) 
     let timer: ReturnType<typeof setTimeout>;
     async function load() {
       try {
-        const res = await fetch("/api/challenges", { signal: abort.signal, cache: "no-store" });
+        const res = await fetch(open ? "/api/challenges?include_expired=true" : "/api/challenges", { signal: abort.signal, cache: "no-store" });
         const data = await res.json();
         if (!res.ok || typeof data.member !== "boolean" || !Array.isArray(data.items) ||
-          !data.items.every((x: Entry) => x && typeof x.id === "string" && typeof x.opponent === "string" &&
-          typeof x.incoming === "boolean" && Number.isInteger(x.minutes) && Number.isInteger(x.increment))) throw Error();
+          !data.items.every((x: Entry) => validChallenge(x) && typeof x.incoming === "boolean") ||
+          !Array.isArray(data.expired) || !data.expired.every(validChallenge)) throw Error();
         if (abort.signal.aborted) return;
         setMember(data.member);
         setItems(data.items);
+        setExpired(data.expired);
         count(data.items.filter((x: Entry) => x.incoming).length);
         setOffline(false);
       } catch { if (!abort.signal.aborted) setOffline(true); }
@@ -75,6 +82,9 @@ export function Challenges({ open, count }: { open: boolean; count: (n: number) 
         </div>)}
       </div>;
     })}
+    {expired.length > 0 && <details><summary>{t("Истёкшие входящие вызовы", "Expired incoming challenges")}</summary>
+      <ul>{expired.map(x => <li key={x.id}>{x.opponent} · {x.minutes}+{x.increment} · {t("Срок истёк", "Expired")}</li>)}</ul>
+    </details>}
     {member && <a href="?section=messages">{t("Личные сообщения", "Private messages")}</a>}
     {member && <form onSubmit={event => {
       event.preventDefault();
