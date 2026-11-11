@@ -1,3 +1,4 @@
+import { useLanguage } from "../shared/language";
 import React, { useEffect, useState } from "react";
 
 import { Challenges } from "./Challenges";
@@ -18,16 +19,17 @@ function isEntry(row: Entry) {
     typeof row.waiting === "boolean" && [row.base_minutes, row.increment_seconds].every(n => n === null || Number.isInteger(n));
 }
 
-function describe(row: Entry) {
-  const color = row.side === "white" ? "Белые" : "Чёрные";
-  const title = row.side === "both" ? "На одном устройстве" : row.waiting ? color : (row.opponent ?? "Гость") + " · " + color;
-  const status = row.waiting ? "Ожидание соперника" : row.side === "both" ?
-    (row.turn === "white" ? "Ход белых" : "Ход чёрных") : row.turn === row.side ? "Ваш ход" : "Ход соперника";
-  const clock = row.base_minutes === null ? "Без часов" : row.base_minutes + "+" + row.increment_seconds;
+function describe(row: Entry, t: (ru: string, en: string) => string) {
+  const color = row.side === "white" ? t("Белые", "White") : t("Чёрные", "Black");
+  const title = row.side === "both" ? t("На одном устройстве", "On one device") : row.waiting ? color : (row.opponent ?? t("Гость", "Guest")) + " · " + color;
+  const status = row.waiting ? t("Ожидание соперника", "Waiting for opponent") : row.side === "both" ?
+    (row.turn === "white" ? t("Ход белых", "White to move") : t("Ход чёрных", "Black to move")) : row.turn === row.side ? t("Ваш ход", "Your turn") : t("Ход соперника", "Opponent’s turn");
+  const clock = row.base_minutes === null ? t("Без часов", "Unlimited") : row.base_minutes + "+" + row.increment_seconds;
   return [title, clock, status].join(" · ");
 }
 
 export function CurrentGames({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
+  const { t } = useLanguage();
   const [count, setCount] = useState(0);
   const [offset, setOffset] = useState(0);
   const [page, setPage] = useState<{items: Entry[]; next_offset: number | null}>();
@@ -58,15 +60,15 @@ export function CurrentGames({ open, setOpen }: { open: boolean; setOpen: (open:
     setOpen(event.currentTarget.open);
     if (!event.currentTarget.open) setOffset(0);
   }}>
-    <summary aria-label={"Вызовы и текущие игры" + (count ? " · " + count : "")}>⚔ Вызовы и игры {count || ""}</summary>
+    <summary aria-label={t("Вызовы и текущие игры", "Challenges and current games") + (count ? " · " + count : "")}>⚔ {t("Вызовы и игры", "Challenges and games")} {count || ""}</summary>
     <section><Challenges open={open} count={setCount} />
-    <div role="region" aria-label="Текущие партии"><h3>Текущие игры</h3>
-      {error ? <p role="alert">Не удалось обновить список. Повторяем запрос…</p> : !page && <p>Загрузка…</p>}
+    <div role="region" aria-label={t("Текущие партии", "Active games")}><h3>{t("Текущие игры", "Current games")}</h3>
+      {error ? <p role="alert">{t("Не удалось обновить список. Повторяем запрос…", "Could not update the list. Retrying…")}</p> : !page && <p>{t("Загрузка…", "Loading…")}</p>}
       {page && <>
-        {!page.items.length && <p>Текущих игр нет</p>}
-        <ul>{page.items.map(row => <li key={row.id}><a href={"?game=" + encodeURIComponent(row.id)}>{describe(row)}</a></li>)}</ul>
-        {offset > 0 && <button onClick={() => setOffset(offset - 20)}>Назад</button>}
-        {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>Далее</button>}
+        {!page.items.length && <p>{t("Текущих игр нет", "No current games")}</p>}
+        <ul>{page.items.map(row => <li key={row.id}><a href={"?game=" + encodeURIComponent(row.id)}>{describe(row, t)}</a></li>)}</ul>
+        {offset > 0 && <button onClick={() => setOffset(offset - 20)}>{t("Назад", "Previous")}</button>}
+        {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Далее", "Next")}</button>}
       </>}
     </div></section>
   </details>;

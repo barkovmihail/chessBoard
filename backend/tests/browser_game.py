@@ -627,6 +627,15 @@ class BrowserGameTest(TestCase):
                     expect(white.get_by_role("main")).to_contain_text("Checkmate")
                     white.reload()
                     expect(white.get_by_role("heading", name="Game history")).to_be_visible()
+                    nav = white.get_by_role("navigation", name="Sections")
+                    expect(nav.get_by_role("link", name="Puzzles")).to_be_visible()
+                    nav.get_by_label("Challenges and current games").click()
+                    expect(nav.get_by_role("heading", name="Incoming challenges")).to_be_visible()
+                    expect(nav.get_by_label("Opponent’s username")).to_be_visible()
+                    expect(nav.get_by_role("region", name="Active games")).to_contain_text("turn")
+                    nav.get_by_label("Challenges and current games").click()
+                    nav.get_by_text(re.compile(r"^🔔 Notifications")).click()
+                    expect(nav.get_by_role("region", name="Notification feed")).to_contain_text("Open game")
                     browser.close()
             finally:
                 server.should_exit = True
