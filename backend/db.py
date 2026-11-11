@@ -28,10 +28,12 @@ accounts = Table("accounts", metadata,
     Column("password_hash", LargeBinary, nullable=False),
 )
 arenas = Table("arenas", metadata,
+    Column("ends", Integer),
     Column("id", String, primary_key=True), Column("name", String, nullable=False),
     Column("owner", ForeignKey("accounts.player"), nullable=False), Column("created", Integer, nullable=False),
 )
 arena_members = Table("arena_members", metadata,
+    Column("ready", Integer),
     Column("arena", ForeignKey("arenas.id"), primary_key=True),
     Column("player", ForeignKey("accounts.player"), primary_key=True),
 )
@@ -41,6 +43,7 @@ sessions = Table("account_sessions", metadata,
     Column("expires", Integer, nullable=False),
 )
 games = Table("games", metadata,
+    Column("arena_id", ForeignKey("arenas.id"), index=True),
     Column("watch_key", String, unique=True, index=True),
     Column("engine_level", String),
     Column("rated", Boolean, nullable=False, server_default="0"),

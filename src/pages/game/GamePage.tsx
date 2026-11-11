@@ -123,6 +123,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
   const context = game ? <>
     <p>{game.rated ? "Рейтинговая игра" : "Нерейтинговая игра"}</p>
     <button disabled={busy || !!pending} onClick={setVisibility}>{game.watch_key ? "Закрыть просмотр" : "Открыть просмотр по ссылке"}</button>
+    {game.arena_id && <a href={"?section=arenas&arena=" + game.arena_id}>Вернуться на арену</a>}
     {game.watch_key && <a href={"?watch=" + game.watch_key}>Ссылка для зрителей</a>}
     {game.engine_level && <p>Чёрные · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {game.engine_level === "easy" ? "Начальный" : "Обычный"}</p>}
     {game.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}

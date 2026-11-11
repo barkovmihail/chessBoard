@@ -234,6 +234,11 @@ def create_app(path: Path):
         player, name = current(request)
         return app.state.arenas.view(arena_id.hex, player if name else None)
 
+    @app.post("/api/arenas/{arena_id}/play/{action}")
+    def play_arena(arena_id: UUID, action: Literal["start", "finish", "ready", "pause"], request: Request,
+                   played: int = Query(0, ge=0)):
+        return app.state.arenas.control(arena_id.hex, member(request), action, played)
+
     @app.post("/api/arenas/{arena_id}/{action}")
     def arena_action(arena_id: UUID, action: Literal["join", "leave"], request: Request):
         return app.state.arenas.register(arena_id.hex, member(request), action == "join")

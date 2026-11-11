@@ -5,12 +5,23 @@ function arenaUrl(id: string) { return "?section=arenas&arena=" + encodeURICompo
 
 interface Arena {
   name: string; signed_in: boolean; joined: boolean; owner: boolean; players: string[];
+  phase: "registration" | "playing" | "finishing" | "finished"; ends: number | null;
+  game: string | null; played: number; ready: boolean; standings: { name: string; points: number }[];
 }
 
 async function request(path: string, options?: RequestInit) {
   const response = await fetch("/api/arenas" + path, { cache: "no-store", ...options });
-  if (!response.ok) throw Error(response.status === 403 ? "Для участия войдите в аккаунт." :
-    response.status === 404 || response.status === 422 ? "Проверьте адрес или название арены." : "Не удалось выполнить запрос.");
+  if (!response.ok) {
+    const { detail } = await response.json();
+    const messages: Record<string, string> = {
+      account_required: "Для участия войдите в аккаунт.", owner_required: "Управлять ареной может организатор.",
+      arena_missing: "Арена не найдена.", registration_closed: "Регистрация завершена.",
+      registration_required: "Для подбора требуется регистрация на арене.", arena_closed: "Подбор сейчас закрыт.",
+      need_two_players: "Для старта нужны два участника.", already_playing: "У вас уже идёт турнирная партия.",
+      empty_name: "Введите название арены.",
+    };
+    throw Error(messages[detail] ?? "Не удалось выполнить запрос.");
+  }
   return response.json();
 }
 
@@ -18,6 +29,7 @@ function ArenaRoom({ id }: { id: string }) {
   const [arena, setArena] = useState<Arena>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [refresh, update] = useState(0);
   useEffect(() => {
     const abort = new AbortController();
@@ -27,9 +39,13 @@ function ArenaRoom({ id }: { id: string }) {
         const data = await request("/" + id, { signal: abort.signal });
         if (!data || typeof data.name !== "string" || !Array.isArray(data.players) ||
           !data.players.every((p: unknown) => typeof p === "string") ||
-          ![data.joined, data.owner, data.signed_in].every(flag => typeof flag === "boolean")) throw Error("Некорректный ответ арены.");
-        if (!abort.signal.aborted) setArena(data);
-      } catch (e) { if (!abort.signal.aborted) setError((e as Error).message); }
+          !["registration", "playing", "finishing", "finished"].includes(data.phase) ||
+          !(data.game === null || /^[a-f0-9]{32}$/.test(data.game)) || !Number.isSafeInteger(data.played) ||
+          !(data.ends === null || Number.isSafeInteger(data.ends)) || !Array.isArray(data.standings) ||
+          !data.standings.every((r: { name: string; points: number }) => r && typeof r.name === "string" && Number.isSafeInteger(r.points)) ||
+          ![data.ready, data.joined, data.owner, data.signed_in].every(flag => typeof flag === "boolean")) throw Error("Некорректный ответ арены.");
+        if (!abort.signal.aborted) { setArena(data); setLoadError(""); }
+      } catch (e) { if (!abort.signal.aborted) setLoadError((e as Error).message); }
       if (!abort.signal.aborted) timer = setTimeout(load, 2500);
     }
     void load();
@@ -44,11 +60,27 @@ function ArenaRoom({ id }: { id: string }) {
     finally { setBusy(false); }
   }
   return <main className="study-page"><a href="?section=arenas">Все арены</a>
-    <h1>{arena?.name ?? "Турнирная арена"}</h1>{error && <p role="alert">{error}</p>}
+    <h1>{arena?.name ?? "Турнирная арена"}</h1>{(loadError || error) && <p role="alert">{loadError || error}</p>}
     {arena && <><p>Блиц 5+3</p>
-      {arena.signed_in ? <button disabled={busy} onClick={() => act(arena.joined ? "leave" : "join")}>
-        {arena.joined ? "Отменить регистрацию" : "Зарегистрироваться на арену"}</button> : <a href="?section=profile">Войти для участия</a>}
-      <h2>Участники ({arena.players.length})</h2><ul>{arena.players.map(p => <li key={p}>{p}</li>)}</ul>
+      {arena.phase === "registration" && <>
+        {arena.signed_in ? <button disabled={busy} onClick={() => act(arena.joined ? "leave" : "join")}>
+          {arena.joined ? "Отменить регистрацию" : "Зарегистрироваться на арену"}</button> : <a href="?section=profile">Войти для участия</a>}
+        {arena.owner && <button disabled={busy || arena.players.length < 2} onClick={() => act("play/start")}>Начать арену на 30 минут</button>}
+        <h2>Участники ({arena.players.length})</h2><ul>{arena.players.map(p => <li key={p}>{p}</li>)}</ul>
+      </>}
+      {arena.phase === "playing" && <>
+        <p>Арена идёт до {new Date(arena.ends!).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</p>
+        {arena.joined && !arena.game && <button disabled={busy} onClick={() => act("play/" + (arena.ready ? "pause" : "ready") + "?played=" + arena.played)}>
+          {arena.ready ? "Отменить ожидание" : "Готов к партии"}</button>}
+        {arena.owner && <button disabled={busy} onClick={() => act("play/finish")}>Завершить арену</button>}
+      </>}
+      {arena.game && <a href={"?game=" + arena.game}>Открыть турнирную партию</a>}
+      {arena.phase === "finishing" && <p>Идут последние партии</p>}
+      {arena.phase !== "registration" && <>
+        <h2>{arena.phase === "finished" ? "Итоговая таблица" : "Турнирная таблица"}</h2>
+        <table><thead><tr><th>Игрок</th><th>Очки</th></tr></thead><tbody>{arena.standings.map(row =>
+          <tr key={row.name}><td>{row.name}</td><td>{row.points}</td></tr>)}</tbody></table>
+      </>}
     </>}</main>;
 }
 

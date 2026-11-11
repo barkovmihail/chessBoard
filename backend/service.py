@@ -110,6 +110,7 @@ class Games:
         view["waiting"] = bool(game["online"] and not game["guest"])
         view["engine_name"] = game["guest"].split(":")[1] if game["engine_level"] else None
         view["engine_level"] = game["engine_level"]
+        view["arena_id"] = game["arena_id"]
         view["watch_key"] = game["watch_key"]
         view.update(rated=game["rated"], version=game["version"], draw_offer=game["draw_offer"])
         for key in ("previous_game", "next_game", "rematch_offer"):
