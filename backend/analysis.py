@@ -5,7 +5,7 @@ import chess
 import chess.engine
 
 from .computer import engine_command
-from .domain import GameError, start_board
+from .domain import GameError, display_fen, start_board
 
 
 async def evaluate(board, engine_name, compare=False):
@@ -65,3 +65,22 @@ async def analyse(game, ply, name, request, slots, compare=False):
             task.cancel()
             with suppress(asyncio.CancelledError):
                 await task
+
+def practice_position(game, ply, variation):
+    if not game["result"]:
+        raise GameError("unfinished_game", 409)
+    if not 1 <= ply <= len(game["moves"]):
+        raise GameError("invalid_ply", 422)
+    board = start_board(game.get("chess960"))
+    for san in game["moves"][:ply - 1]:
+        board.push_san(san)
+    notation = []
+    for uci in variation:
+        try:
+            move = board.parse_uci(uci)
+        except ValueError as exc:
+            raise GameError("illegal_move", 422) from exc
+        notation.append(board.san(move))
+        board.push(move)
+    return {"fen": display_fen(board), "moves": notation,
+            "legal": [] if board.is_game_over() else [move.uci() for move in board.legal_moves]}

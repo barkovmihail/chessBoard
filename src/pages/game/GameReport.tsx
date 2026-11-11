@@ -14,7 +14,7 @@ function positionScore(data: { cp?: number; mate?: number; outcome?: string; lin
   return { value: data.cp, label: (data.cp > 0 ? "+" : "") + (data.cp / 100).toFixed(2), best: data.line?.[0], bestUci: data.best_uci, legalCount: data.legal_count, alternativeGap: data.alternative_gap ?? undefined };
 }
 
-export function GameReport({ game, ply, select, scores, setScores }: { game: Game; ply: number; select: (ply: number) => void; scores: PositionScore[]; setScores: React.Dispatch<React.SetStateAction<PositionScore[]>> }) {
+export function GameReport({ game, ply, select, practise, scores, setScores }: { game: Game; ply: number; select: (ply: number) => void; practise: (ply: number) => void; scores: PositionScore[]; setScores: React.Dispatch<React.SetStateAction<PositionScore[]>> }) {
   const { t } = useLanguage();
   const [state, setState] = useState<"idle" | "running" | "error">("idle");
   const request = useRef<AbortController>();
@@ -49,8 +49,10 @@ export function GameReport({ game, ply, select, scores, setScores }: { game: Gam
     {state === "error" && <p role="alert">{t("Расчёт прерван. Можно повторить с этой позиции.", "Analysis interrupted. Retry from this position.", "Se ha interrumpido el análisis. Puedes continuar desde esta posición.")}</p>}
     {done && !moments.length && <p>{t("Движок не нашёл заметных потерь оценки.", "The engine found no substantial evaluation losses.", "El motor no ha encontrado jugadas que empeoren significativamente la posición.")}</p>}
     {moments.length > 0 && <><strong>{t("Ключевые моменты", "Key moments", "Momentos clave")}</strong><div>{moments.map(moment =>
-      <button key={moment.ply} aria-pressed={ply === moment.ply} onClick={() => select(moment.ply)}>
-        {Math.ceil(moment.ply / 2)}{moment.ply % 2 ? ". " : "… "}{game.moves[moment.ply - 1]}</button>)}</div></>}
+      <div key={moment.ply}><button aria-pressed={ply === moment.ply} onClick={() => select(moment.ply)}>
+        {Math.ceil(moment.ply / 2)}{moment.ply % 2 ? ". " : "… "}{game.moves[moment.ply - 1]}</button>
+        {scores[moment.ply - 1].bestUci && <button onClick={() => practise(moment.ply)}>{t("Решить самостоятельно", "Try unaided", "Resolver sin ayuda")}</button>}
+      </div>)}</div></>}
     {before && after && <p>{t("Оценка за белых до и после хода", "White’s evaluation before and after the move", "Evaluación para las blancas antes y después de la jugada")}: {before.label} → {after.label}.
       {before.best && before.best !== game.moves[ply - 1] && <> {t("Движок предлагал", "Engine preference", "Jugada recomendada por el motor")}: {before.best}.</>}</p>}
     {before && after && <p>{t("Плюс — преимущество белых, минус — чёрных. Одна единица примерно равна пешке. Знак # означает форсированный мат.", "Positive values favour White and negative values favour Black. One point is about one pawn. # indicates forced mate.", "Los valores positivos favorecen a las blancas y los negativos a las negras. Un punto equivale aproximadamente a un peón. El signo # indica mate forzado.")}</p>}

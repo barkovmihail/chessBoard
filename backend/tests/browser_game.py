@@ -155,6 +155,13 @@ class BrowserGameTest(TestCase):
                     guest.get_by_role("button", name="Ofrecer tablas").click()
                     host.get_by_role("button", name="Aceptar tablas").click()
                     expect(guest.get_by_text("Tablas por acuerdo", exact=True)).to_be_visible()
+                    # A stable report for a one-move game with no evaluation loss.
+                    host.route(re.compile(r"/analysis\?compare=true"), lambda route: route.fulfill(
+                        json={"cp": 20, "line": ["e4"], "best_uci": "e2e4"}))
+                    host.get_by_role("button", name="Buscar momentos clave").click()
+                    expect(host.get_by_text("El motor no ha encontrado jugadas que empeoren significativamente la posición.")).to_be_visible()
+                    expect(host.get_by_role("button", name="Resolver sin ayuda")).to_have_count(0)
+                    host.get_by_role("checkbox", name="Comparar con flechas desde la posición anterior").uncheck()
                     replay_es = host.get_by_role("navigation", name="Reproducción de la partida")
                     for width in (360, 768, 1440):
                         host.set_viewport_size({"width": width, "height": 900})
@@ -407,6 +414,23 @@ class BrowserGameTest(TestCase):
                         recommended = black.locator('[data-arrow="recommended"]')
                         expect(recommended).to_be_visible()
                         expect(black.locator('[data-arrow="mistake"]')).to_be_visible()
+                        solution = recommended.get_attribute("data-uci")
+                        played = black.locator('[data-arrow="mistake"]').get_attribute("data-uci")
+                        black.get_by_role("button", name="Повторить ошибку").click()
+                        expect(black.get_by_role("heading", name="Найдите улучшение")).to_be_visible()
+                        expect(black.locator("[data-arrow]")).to_have_count(0)
+                        expect(report).to_have_count(0)
+                        for sq in [played[:2], played[2:4]]:
+                            black.locator(f'[data-square="{sq}"]').click()
+                        expect(black.get_by_text("Движок выбрал другой ход.")).to_be_visible()
+                        black.get_by_role("button", name="Начать заново").click()
+                        black.get_by_role("button", name="Показать подсказку").click()
+                        expect(black.get_by_text(f"Подсказка · {solution[:2]} → {solution[2:4]}")).to_be_visible()
+                        for sq in [solution[:2], solution[2:4]]:
+                            black.locator(f'[data-square="{sq}"]').click()
+                        expect(black.get_by_text("Вы нашли ход движка.")).to_be_visible()
+                        black.get_by_role("button", name="Вернуться к разбору").click()
+                        expect(recommended).to_have_attribute("data-uci", solution)
                         arrows = black.get_by_role("checkbox", name="Сравнить стрелками из позиции до хода")
                         arrows.uncheck()
                         expect(recommended).to_have_count(0)

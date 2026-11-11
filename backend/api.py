@@ -19,7 +19,7 @@ from .private_messages import PrivateMessages
 from .chat import Chat
 from .teams import Teams
 from .arenas import Arenas
-from .analysis import analyse
+from .analysis import analyse, practice_position
 from .computer import executable, play_pending
 from .accounts import Accounts, SESSION_SECONDS, digest
 from .notifications import Notifications
@@ -51,6 +51,11 @@ class PuzzleProgress(BaseModel):
     puzzle: str = Field(pattern=r"^[A-Za-z0-9]{1,16}$")
     mistakes: int = Field(ge=0, le=1000000)
     solved: bool
+
+
+class ReviewVariation(BaseModel):
+    ply: int = Field(ge=1)
+    moves: list[Annotated[str, Field(pattern=r"^[a-h][1-8][a-h][1-8][qrbn]?$")]] = Field(max_length=256)
 
 
 class TimeControl(BaseModel):
@@ -452,6 +457,11 @@ def create_app(path: Path):
     @app.get("/api/games/{game_id}")
     def get(game_id: str, request: Request):
         return app.state.games.get(game_id, current(request)[0])
+
+    @app.post("/api/games/{game_id}/practice")
+    def practice(game_id: str, variation: ReviewVariation, request: Request):
+        game = app.state.games.get(game_id, current(request)[0])
+        return practice_position(game, variation.ply, variation.moves)
 
     @app.get("/api/games/{game_id}/move-times")
     def move_times(game_id: str, request: Request):

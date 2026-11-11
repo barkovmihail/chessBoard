@@ -2,7 +2,7 @@ import asyncio
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
 
-from backend.analysis import analyse
+from backend.analysis import analyse, practice_position
 from backend.domain import GameError
 
 
@@ -32,3 +32,18 @@ class AnalysisTest(IsolatedAsyncioTestCase):
             with self.assertRaises(GameError) as ctx:
                 await analyse({"moves": ["e4"], "result": result}, ply, "stockfish", AsyncMock(), asyncio.Semaphore(1))
             self.assertEqual(ctx.exception.code, code)
+
+    def test_practice_variation_isolated_from_game(self):
+        game = {"moves": ["e4", "e5"], "result": "1/2-1/2", "chess960": 518}
+        view = practice_position(game, 2, ["c7c5", "g1f3"])
+        self.assertEqual(view["moves"], ["c5", "Nf3"])
+        self.assertIn("b8c6", view["legal"])
+        self.assertEqual(game["moves"], ["e4", "e5"])
+        for changed, ply, line, code in [
+            ({**game, "result": None}, 1, [], "unfinished_game"),
+            (game, 3, [], "invalid_ply"),
+            (game, 2, ["a1a8"], "illegal_move"),
+        ]:
+            with self.assertRaises(GameError) as invalid:
+                practice_position(changed, ply, line)
+            self.assertEqual(invalid.exception.code, code)
