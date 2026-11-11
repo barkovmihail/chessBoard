@@ -53,6 +53,7 @@ class Search(QueueVersion):
 
 
 class CreateGame(BaseModel):
+    engine_name: Literal["lc0", "stockfish"] = "lc0"
     engine_level: Literal["easy", "normal"] | None = None
     control: TimeControl | None = None
     online: bool = False
@@ -251,10 +252,11 @@ def create_app(path: Path):
     def create(request: Request, response: Response, options: CreateGame | None = None):
         control = options.control if options else None
         level = options.engine_level if options else None
-        if level and not executable():
+        name = options.engine_name if options else "lc0"
+        if level and not executable(name):
             raise GameError("engine_unavailable", 503)
         return app.state.games.create(player_session(request, response), bool(options and options.online),
-                                      (control.minutes, control.increment) if control else None, engine_level=level)
+                                      (control.minutes, control.increment) if control else None, engine_level=level, engine_name=name)
 
     @app.get("/api/games/{game_id}/invitation")
     def invitation(game_id: str):

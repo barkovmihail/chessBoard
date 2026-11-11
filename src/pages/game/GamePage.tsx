@@ -65,18 +65,18 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     }, setDisconnected);
   }, [onlineId]);
 
-  async function create(online: boolean, control?: { minutes: number; increment: number }, engine_level?: Game["engine_level"]) {
+  async function create(online: boolean, control?: { minutes: number; increment: number }, engine_level?: Game["engine_level"], engine_name?: Game["engine_name"]) {
     setBusy(true);
     setError("");
     try {
       const result = invite ? await requestGame("/" + encodeURIComponent(invite) + "/join", {})
-        : await requestGame("", { online, control, engine_level });
+        : await requestGame("", { online, control, engine_level, engine_name });
       setInvite(undefined);
       onOpen(result.id);
       receive(result, true);
       if (!result.waiting && !result.result && !result.moves.length) playSound("start");
     } catch (failure) { setError(failure instanceof RequestError && failure.message === "seat_taken"
-      ? "Оба места уже заняты." : failure instanceof RequestError && failure.message === "engine_unavailable" ? "Lc0 недоступен на сервере." : "Не удалось открыть партию. Попробуйте ещё раз."); }
+      ? "Оба места уже заняты." : failure instanceof RequestError && failure.message === "engine_unavailable" ? "Выбранный движок недоступен на сервере." : "Не удалось открыть партию. Попробуйте ещё раз."); }
     finally { setBusy(false); }
   }
 
@@ -109,7 +109,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
       onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />;
   const context = game ? <>
     <p>{game.rated ? "Рейтинговая игра" : "Нерейтинговая игра"}</p>
-    {game.engine_level && <p>Чёрные · Leela Chess Zero · {game.engine_level === "easy" ? "Начальный" : "Обычный"}</p>}
+    {game.engine_level && <p>Чёрные · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {game.engine_level === "easy" ? "Начальный" : "Обычный"}</p>}
     {game.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}
   </> : invite ? <><p>{inviteControl}</p><button disabled={busy || !inviteControl} onClick={() => create(true)}>Играть за чёрных</button></>

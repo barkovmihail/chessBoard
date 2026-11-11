@@ -3,11 +3,16 @@ from uuid import uuid4
 
 from sqlalchemy import case, func, insert, select, update
 
-from .computer import COMPUTER
+from .computer import NAMES, SEATS
 from .db import accounts, games, moves, receipts
 from .notifications import notify_finish, notify_turn
 from .ratings import POOLS, rating, record_result
 from .domain import GameError, replay, snapshot
+
+
+def opponent_name():
+    return case({seat: NAMES[name] for name, seat in SEATS.items()},
+                value=games.c.guest, else_=accounts.c.name).label("opponent")
 
 
 class Games:
@@ -15,10 +20,10 @@ class Games:
         self.engine = engine
         self.now_ms = now_ms or (lambda: time_ns() // 1_000_000)
 
-    def create(self, owner, online=False, control=None, engine_level=None):
+    def create(self, owner, online=False, control=None, engine_level=None, engine_name="lc0"):
         with self.engine.begin() as db:
             game_id = self.insert_game(db, owner, online or bool(engine_level), control,
-                                       guest=COMPUTER if engine_level else None, engine_level=engine_level)
+                                       guest=SEATS[engine_name] if engine_level else None, engine_level=engine_level)
         return self.get(game_id, owner)
 
     def insert_game(self, db, owner, online, control, guest=None, previous_game=None, rated=False, engine_level=None):
@@ -42,7 +47,7 @@ class Games:
     def archive(self, player, offset, limit):
         with self.engine.connect() as db:
             rows = db.execute(select(games.c.id, games.c.owner, games.c.online, games.c.finished_ms,
-                games.c.base_minutes, games.c.increment_seconds, games.c.result, games.c.reason, case((games.c.guest == COMPUTER, "Leela Chess Zero"), else_=accounts.c.name).label("opponent"))
+                games.c.base_minutes, games.c.increment_seconds, games.c.result, games.c.reason, opponent_name())
                 .outerjoin(accounts, accounts.c.player == case((games.c.owner == player, games.c.guest), else_=games.c.owner))
                 .where(games.c.result.is_not(None), (games.c.owner == player) | (games.c.guest == player))
                 .order_by(games.c.finished_ms.desc(), games.c.id.desc()).offset(offset).limit(limit + 1)).mappings().all()
@@ -59,7 +64,7 @@ class Games:
         rival = case((games.c.owner == player, games.c.guest), else_=games.c.owner)
         query = (select(games.c.id, games.c.online, games.c.base_minutes, games.c.increment_seconds,
                         (games.c.owner == player).label("white"), games.c.guest.is_(None).label("empty_seat"),
-                        ply.label("ply"), case((games.c.guest == COMPUTER, "Leela Chess Zero"), else_=accounts.c.name).label("opponent"))
+                        ply.label("ply"), opponent_name())
                  .outerjoin(accounts, accounts.c.player == rival)
                  .where(games.c.result.is_(None), (games.c.owner == player) | (games.c.guest == player))
                  .order_by(games.c.id).offset(offset).limit(limit + 1))
@@ -101,6 +106,7 @@ class Games:
         view = snapshot(game["id"], history)
         view["side"] = ("white" if game["owner"] == player else "black") if game["online"] else "both"
         view["waiting"] = bool(game["online"] and not game["guest"])
+        view["engine_name"] = game["guest"].split(":")[1] if game["engine_level"] else None
         view["engine_level"] = game["engine_level"]
         view.update(rated=game["rated"], version=game["version"], draw_offer=game["draw_offer"])
         for key in ("previous_game", "next_game", "rematch_offer"):
