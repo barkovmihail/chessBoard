@@ -9,13 +9,13 @@ import { BoardLayout } from "../../shared/board-layout";
 import styles from "./game.module.css";
 
 const errors = {
-  open: ["Не удалось открыть партию. Обновите страницу.", "Could not open the game. Reload the page."],
-  full: ["Оба места уже заняты.", "Both seats are taken."],
-  engine: ["Выбранный движок недоступен на сервере.", "The selected engine is unavailable."],
-  create: ["Не удалось открыть партию. Попробуйте ещё раз.", "Could not open the game. Try again."],
-  visibility: ["Не удалось подтвердить изменение доступа. Проверьте ссылку и повторите попытку.", "Could not confirm spectator access. Check the link and try again."],
-  position: ["Позиция обновлена. Выберите ход ещё раз.", "The position has changed. Choose your move again."],
-  offline: ["Связь потеряна. Повторите отправку.", "Connection lost. Retry sending."],
+  open: ["Не удалось открыть партию. Обновите страницу.", "Could not open the game. Reload the page.", "No se pudo abrir la partida. Recarga la página."],
+  full: ["Оба места уже заняты.", "Both seats are taken.", "Las dos plazas ya están ocupadas."],
+  engine: ["Выбранный движок недоступен на сервере.", "The selected engine is unavailable.", "El motor seleccionado no está disponible."],
+  create: ["Не удалось открыть партию. Попробуйте ещё раз.", "Could not open the game. Try again.", "No se pudo abrir la partida. Inténtalo de nuevo."],
+  visibility: ["Не удалось подтвердить изменение доступа. Проверьте ссылку и повторите попытку.", "Could not confirm spectator access. Check the link and try again.", "No se pudo confirmar el acceso de espectadores. Comprueba el enlace e inténtalo de nuevo."],
+  position: ["Позиция обновлена. Выберите ход ещё раз.", "The position has changed. Choose your move again.", "La posición ha cambiado. Elige tu jugada de nuevo."],
+  offline: ["Связь потеряна. Повторите отправку.", "Connection lost. Retry sending.", "Se ha perdido la conexión. Vuelve a enviar la jugada."],
 } as const;
 
 type Action = "rematch" | "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
@@ -134,18 +134,18 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
   const board = <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending}
       onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />;
   const context = game ? <>
-    <p>{game.rated ? t("Рейтинговая игра", "Rated game") : t("Нерейтинговая игра", "Casual game")}</p>
-    <button disabled={busy || !!pending} onClick={setVisibility}>{game.watch_key ? t("Закрыть просмотр", "Disable spectator access") : t("Открыть просмотр по ссылке", "Allow spectators with the link")}</button>
+    <p>{game.rated ? t("Рейтинговая игра", "Rated game", "Partida puntuada") : t("Нерейтинговая игра", "Casual game", "Partida amistosa")}</p>
+    <button disabled={busy || !!pending} onClick={setVisibility}>{game.watch_key ? t("Закрыть просмотр", "Disable spectator access", "Desactivar el acceso de espectadores") : t("Открыть просмотр по ссылке", "Allow spectators with the link", "Permitir espectadores con el enlace")}</button>
     {game.arena_id && <a href={"?section=arenas&arena=" + game.arena_id}>{t("Вернуться на арену", "Return to arena")}</a>}
-    {game.watch_key && <a href={"?watch=" + game.watch_key}>{t("Ссылка для зрителей", "Spectator link")}</a>}
+    {game.watch_key && <a href={"?watch=" + game.watch_key}>{t("Ссылка для зрителей", "Spectator link", "Enlace para espectadores")}</a>}
     {game.chess960 != null && <p>Chess960 · {t("Расстановка №", "Position #")}{game.chess960}. {t("Для рокировки переместите короля на свою ладью.", "To castle, move your king onto your rook.")}</p>}
-    {game.engine_level && <p>{t("Чёрные", "Black")} · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {t(levelLabels[game.engine_level][0], levelLabels[game.engine_level][1])}</p>}
-    {game.waiting && <label>{t("Ссылка для соперника", "Opponent link")} <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
+    {game.engine_level && <p>{t("Чёрные", "Black", "Negras")} · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {t(levelLabels[game.engine_level][0], levelLabels[game.engine_level][1])}</p>}
+    {game.waiting && <label>{t("Ссылка для соперника", "Opponent link", "Enlace para el rival")} <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}
-  </> : invite ? <><p>{inviteFailed ? t("Не удалось загрузить контроль времени", "Could not load the time control") : inviteControl === "unlimited" ? t("Без часов", "Unlimited") : inviteControl}</p><button disabled={busy || (!inviteControl && !inviteFailed)} onClick={() => create(true)}>{t("Играть за чёрных", "Play as Black")}</button></>
+  </> : invite ? <><p>{inviteFailed ? t("Не удалось загрузить контроль времени", "Could not load the time control", "No se pudo cargar el ritmo de juego") : inviteControl === "unlimited" ? t("Без часов", "Unlimited", "Sin reloj") : inviteControl}</p><button disabled={busy || (!inviteControl && !inviteFailed)} onClick={() => create(true)}>{t("Играть за чёрных", "Play as Black", "Jugar con negras")}</button></>
     : null;
-  const status = game && <span aria-live="polite">{game.waiting ? t("Ожидание соперника", "Waiting for opponent") :
-    game.result ?? (game.turn === "white" ? t("Ход белых", "White to move") : t("Ход чёрных", "Black to move"))}</span>;
+  const status = game && <span aria-live="polite">{game.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") :
+    game.result ?? (game.turn === "white" ? t("Ход белых", "White to move", "Juegan blancas") : t("Ход чёрных", "Black to move", "Juegan negras"))}</span>;
   const actions = game && <>
       {game.previous_game && <a href={"?game=" + game.previous_game}>{t("Предыдущая партия", "Previous game")}</a>}
       {game.next_game ? <a href={"?game=" + game.next_game}>{t("Открыть реванш", "Open rematch")}</a> :
@@ -159,28 +159,28 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
           {t("Заявить ничью", "Claim a draw")} · {resultReason(reason, language)}{key.includes(":") && " · " + key.slice(6, 8) + "–" + key.slice(8)}
         </button>)}
       {game.side !== "both" && !game.result && !game.waiting && <fieldset disabled={busy || !!pending}>
-        {!game.engine_level && (game.draw_offer === null ? <button onClick={() => act("offer")}>{t("Предложить ничью", "Offer draw")}</button>
+        {!game.engine_level && (game.draw_offer === null ? <button onClick={() => act("offer")}>{t("Предложить ничью", "Offer draw", "Ofrecer tablas")}</button>
           : game.draw_offer === game.side ? <span>{t("Ничья предложена", "Draw offered")}</span>
           : <><button onClick={() => act("accept")}>{t("Принять ничью", "Accept draw")}</button>
             <button onClick={() => act("decline")}>{t("Отклонить ничью", "Decline draw")}</button></>)}
-        <button className="resign-action" onClick={() => act("resign")}>{t("Сдаться", "Resign")}</button>
+        <button className="resign-action" onClick={() => act("resign")}>{t("Сдаться", "Resign", "Abandonar")}</button>
       </fieldset>}
-      {!game.result && game.moves.length > 0 && <ol aria-label={t("Запись ходов", "Move list")} className={styles.history}>
+      {!game.result && game.moves.length > 0 && <ol aria-label={t("Запись ходов", "Move list", "Lista de jugadas")} className={styles.history}>
         {game.moves.map((move, index) => index % 2 === 0 && <li key={index}>
           <span>{move}</span>{" "}<span>{game.moves[index + 1]}</span>{" "}
         </li>)}
       </ol>}
-    {disconnected && onlineId && <p role="status">{t("Восстанавливаем связь с партией…", "Reconnecting to the game…")}</p>}
-    {error && <p role="alert">{t(errors[error][0], errors[error][1])}</p>}
-    {pending && !busy && <button onClick={() => submit(pending)}>{t("Повторить отправку", "Retry sending")}</button>}
+    {disconnected && onlineId && <p role="status">{t("Восстанавливаем связь с партией…", "Reconnecting to the game…", "Reconectando con la partida…")}</p>}
+    {error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}
+    {pending && !busy && <button onClick={() => submit(pending)}>{t("Повторить отправку", "Retry sending", "Reintentar el envío")}</button>}
   </>;
   function render(position: React.ReactElement, controls?: React.ReactElement) {
     return <BoardLayout board={game ? <ClockPanel game={game}>{position}</ClockPanel> : position}
-    context={<>{context}{!game && error && <p role="alert">{t(errors[error][0], errors[error][1])}</p>}</>} actions={controls ? <>{controls}{actions}</> : actions} status={status} />;
+    context={<>{context}{!game && error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}</>} actions={controls ? <>{controls}{actions}</> : actions} status={status} />;
   }
   if (!game && !invite) return <main>
     <TimeSetup busy={busy} create={create} board={board} />
-    {error && <p role="alert">{t(errors[error][0], errors[error][1])}</p>}
+    {error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}
   </main>;
   return game?.result ? <GameReview key={game.id} game={game} render={render} /> : render(board);
 }
