@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .chat import Chat
 from .teams import Teams
 from .arenas import Arenas
 from .analysis import analyse
@@ -76,6 +77,11 @@ class Search(QueueVersion):
     control: TimeControl
 
 
+class ChatPost(BaseModel):
+    token: UUID
+    body: str = Field(min_length=1, max_length=500)
+
+
 class InvitePlayer(BaseModel):
     name: str = Field(min_length=1, max_length=32)
 
@@ -124,6 +130,7 @@ def create_app(path: Path):
         app.state.notifications = Notifications(engine)
         app.state.accounts = Accounts(engine)
         app.state.games = Games(engine)
+        app.state.chat = Chat(engine)
         app.state.teams = Teams(engine)
         app.state.arenas = Arenas(app.state.games)
         app.state.challenges = Challenges(app.state.games)
@@ -226,6 +233,36 @@ def create_app(path: Path):
         if not name:
             raise GameError("account_required", 403)
         return player
+
+    @app.get("/api/chat")
+    def chat_feed(request: Request, response: Response):
+        response.headers["Cache-Control"] = "private, no-store"
+        return app.state.chat.feed(current(request)[0])
+
+    @app.post("/api/chat/messages")
+    def chat_send(command: ChatPost, request: Request):
+        app.state.chat.send(member(request), command.token.hex, command.body)
+        return {"ok": True}
+
+    @app.post("/api/chat/preferences/{action}")
+    def chat_mute(action: Literal["mute", "unmute"], request: Request):
+        app.state.chat.mute(member(request), action == "mute")
+        return {"ok": True}
+
+    @app.post("/api/chat/authors/{action}")
+    def chat_block(action: Literal["block", "unblock"], command: InvitePlayer, request: Request):
+        app.state.chat.block(member(request), command.name, action == "block")
+        return {"ok": True}
+
+    @app.post("/api/chat/messages/{seq}/report")
+    def chat_report(seq: int, request: Request):
+        app.state.chat.report(member(request), seq)
+        return {"ok": True}
+
+    @app.post("/api/chat/reports/{seq}/{decision}")
+    def chat_review(seq: int, decision: Literal["hide", "dismiss"], request: Request):
+        app.state.chat.review(member(request), seq, decision)
+        return {"ok": True}
 
     @app.get("/api/teams")
     def team_list(request: Request, response: Response):

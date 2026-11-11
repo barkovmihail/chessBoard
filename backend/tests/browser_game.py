@@ -541,6 +541,25 @@ class BrowserGameTest(TestCase):
                     black.reload()
                     expect(black.get_by_role("heading", name="Белая ладья")).to_be_visible()
                     expect(black.get_by_role("listitem").filter(has_text="WhiteKnight")).to_have_text("WhiteKnight")
+                    # Assign the moderator only in the temporary test database.
+                    from sqlalchemy import update
+                    from backend.db import accounts
+                    with server.config.app.state.chat.engine.begin() as db:
+                        db.execute(update(accounts).where(accounts.c.name == "WhiteKnight").values(chat_moderator=True))
+                    for player in (white, black):
+                        player.get_by_role("link", name="Чат", exact=True).click()
+                    white.get_by_label("Сообщение", exact=True).fill("Удачной игры!")
+                    white.get_by_role("button", name="Отправить сообщение").click()
+                    black.get_by_role("button", name="Скрыть автора").click()
+                    expect(black.get_by_label("Сообщения чата")).not_to_contain_text("Удачной игры!")
+                    black.get_by_role("button", name="Показывать сообщения от WhiteKnight").click()
+                    black.get_by_role("button", name="Пожаловаться").click()
+                    white.get_by_role("button", name="Скрыть сообщение для всех").click()
+                    expect(black.get_by_label("Сообщения чата")).not_to_contain_text("Удачной игры!")
+                    black.get_by_role("button", name="Отключить сообщения").click()
+                    expect(black.get_by_role("button", name="Включить сообщения")).to_be_visible()
+                    black.reload()
+                    expect(black.get_by_role("button", name="Включить сообщения")).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True

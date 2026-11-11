@@ -17,6 +17,8 @@ puzzle_attempts = Table("puzzle_attempts", metadata,
     Index("ix_attempts_history", "player", "started", "id"),
 )
 accounts = Table("accounts", metadata,
+    Column("chat_muted", Boolean, nullable=False, server_default="0"),
+    Column("chat_moderator", Boolean, nullable=False, server_default="0"),
     Column("notify_sound", Boolean, nullable=False, server_default="0"),
     Column("notify_turn", Boolean, nullable=False, server_default="1"),
     Column("notify_finish", Boolean, nullable=False, server_default="1"),
@@ -26,6 +28,18 @@ accounts = Table("accounts", metadata,
     Column("name", String(collation="NOCASE"), nullable=False, unique=True),
     Column("salt", LargeBinary, nullable=False),
     Column("password_hash", LargeBinary, nullable=False),
+)
+chat_messages = Table("chat_messages", metadata,
+    Column("seq", Integer, primary_key=True), Column("token", String, nullable=False),
+    Column("author", ForeignKey("accounts.player"), nullable=False), Column("body", String, nullable=False),
+    Column("hidden", Boolean, nullable=False, server_default="0"), UniqueConstraint("author", "token"),
+)
+chat_blocks = Table("chat_blocks", metadata,
+    Column("player", ForeignKey("accounts.player"), primary_key=True), Column("author", ForeignKey("accounts.player"), primary_key=True),
+)
+chat_reports = Table("chat_reports", metadata,
+    Column("message", ForeignKey("chat_messages.seq"), primary_key=True), Column("reporter", ForeignKey("accounts.player"), primary_key=True),
+    Column("decision", String), Column("reviewer", ForeignKey("accounts.player")),
 )
 teams = Table("teams", metadata,
     Column("id", String, primary_key=True), Column("name", String, nullable=False),
