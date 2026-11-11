@@ -1,5 +1,6 @@
 import React from "react";
 import { Appearance } from "./Appearance";
+import { AnalysisPage } from "../pages/analysis";
 import { ProfilePage } from "../pages/profile";
 import { GamePage } from "../pages/game";
 import { OpeningsPage } from "../pages/openings";
@@ -14,8 +15,9 @@ export default function App() {
       <a href="?section=openings" aria-current={section === "openings" ? "page" : undefined}>Тренажёр дебютов</a>
       <a href="?section=puzzles" aria-current={section === "puzzles" ? "page" : undefined}>Шахматные задачи</a>
       <a href="?section=profile" aria-current={section === "profile" ? "page" : undefined}>Профиль</a>
+      <a href="?section=analysis" aria-current={section === "analysis" ? "page" : undefined}>Анализ</a>
       <Appearance />
     </nav>
-    {section === "profile" ? <ProfilePage /> : section === "openings" ? <OpeningsPage /> : section === "puzzles" ? <PuzzlesPage /> : <GamePage />}
+    {section === "analysis" ? <AnalysisPage /> : section === "profile" ? <ProfilePage /> : section === "openings" ? <OpeningsPage /> : section === "puzzles" ? <PuzzlesPage /> : <GamePage />}
   </>;
 }

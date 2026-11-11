@@ -4,7 +4,7 @@ import type { Square } from "../../entities/board";
 import type { Game } from "./api";
 
 interface Props {
-  game?: Game;
+  game?: Pick<Game, "legal" | "position" | "turn" | "side">;
   enabled: boolean;
   onMove: (uci: string) => void;
 }

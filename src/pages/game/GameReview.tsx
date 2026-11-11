@@ -11,6 +11,13 @@ export function GameReview({ game }: { game: Game }) {
     for (const san of game.moves.slice(0, ply)) lastMove = board.move(san);
     return { position: boardPosition(board), lastMove };
   }, [game.moves, ply]);
+  const pgn = useMemo(() => {
+    const board = new Chess();
+    game.moves.forEach(move => board.move(move));
+    board.setHeader("Result", game.result ?? "*");
+    if (game.clock) board.setHeader("TimeControl", game.clock.base_minutes * 60 + "+" + game.clock.increment_seconds);
+    return board.pgn();
+  }, [game]);
   return <>
     <Board position={position} flipped={game.side === "black"} lastMove={lastMove} />
     <nav aria-label="Просмотр партии">
@@ -20,5 +27,8 @@ export function GameReview({ game }: { game: Game }) {
       <button disabled={ply === game.moves.length} onClick={() => setPly(ply + 1)}>Вперёд</button>
       <button disabled={ply === game.moves.length} onClick={() => setPly(game.moves.length)}>В конец</button>
     </nav>
+    <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}
+      download={game.id + ".pgn"}>Скачать PGN</a>
+    <a href={"?section=analysis&game=" + game.id + "&ply=" + ply}>Разобрать позицию</a>
   </>;
 }
