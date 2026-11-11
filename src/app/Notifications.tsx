@@ -1,3 +1,4 @@
+import { NavIcon } from "./NavIcon";
 import { useLanguage } from "../shared/language";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -63,7 +64,7 @@ export function Notifications({ onInbox }: { onInbox: () => void }) {
     setOpen(e.currentTarget.open);
     if (!e.currentTarget.open) setBefore(undefined);
   }}>
-    <summary>🔔 {t("Уведомления", "Notifications")} {feed?.unread || ""}</summary>
+    <summary className="nav-trigger" title={t("Уведомления", "Notifications")} aria-label={[t("Уведомления", "Notifications"), feed?.unread || ""].join(" ").trim()}><NavIcon name="bell" />{!!feed?.unread && <small>{feed.unread}</small>}</summary>
     <section aria-label={t("Лента уведомлений", "Notification feed")}>
       {error && <p role="alert">{error === "load" ? t("Не удалось загрузить уведомления.", "Could not load notifications.") : t("Не удалось отметить прочитанным.", "Could not mark as read.")}</p>}
       {feed?.unread ? <button onClick={() => read()}>{t("Прочитать все", "Mark all as read")}</button> : null}

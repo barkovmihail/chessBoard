@@ -1,12 +1,12 @@
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 400 900; font-display: swap; src: url("/fonts/nunito/nunito-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF,U+2000-206F,U+20AC,U+2122,U+2190-2199; }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 400 900; font-display: swap; src: url("/fonts/nunito/nunito-cyrillic-wght-normal.woff2") format("woff2"); unicode-range: U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: Nunito, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -15,11 +15,11 @@ body {
 .study-nav a[aria-current] { font-weight: 700; }
 .study-page { max-width: 960px; margin: 28px auto; padding: 0 20px 32px; color: var(--ink); }
 .study-page h1 { font-size: clamp(1.65rem, 4vw, 2.5rem); }
-.study-page select, .study-page button:not([data-square]) {
+.study-page select, .study-page button:not([data-square]):not(.rt-Button) {
   padding: 8px 12px; border: 1px solid var(--edge); border-radius: 5px; color: var(--ink); background: var(--panel); font: inherit;
 }
-:root { color-scheme: light; --ink: #26392f; --paper: #fff; --panel: #fafbf7; --link: #315744; --edge: #a8b4a9; }
-:root[data-theme=dark] { color-scheme: dark; --ink: #e0e7e2; --paper: #171c19; --panel: #242d28; --link: #b0d6bb; --edge: #5b695e; }
+:root { color-scheme: light; --ink: #252723; --paper: #f4f3ef; --panel: #fcfbf8; --link: #9b412a; --edge: #d4d1c7; }
+:root[data-theme=dark] { color-scheme: dark; --ink: #e0e7e2; --paper: #171c19; --panel: #242d28; --link: #ffb69b; --edge: #5b695e; }
 :root[data-board=green] { --square-light: #eeeed2; --square-dark: #769656; }
 :root[data-board=blue] { --square-light: #dee3e6; --square-dark: #8ca2ad; }
 body { background: var(--paper); color: var(--ink); }
@@ -56,3 +56,17 @@ body { background: var(--paper); color: var(--ink); }
 .profile-presence { display: flex; align-items: center; gap: .4em; padding: 0 8px .4rem; font-size: .85rem; }
 .profile-presence::before { content: ""; width: .65em; height: .65em; border-radius: 50%; background: currentColor; }
 .profile-presence[data-online="true"]::before { background: #649530; }
+
+.study-nav { align-items: center; gap: 4px 8px; padding: 6px 12px; }
+.study-nav > a, .study-nav .nav-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 4px 8px; border-radius: 5px; text-decoration: none; color: var(--ink); cursor: pointer; }
+.nav-trigger::-webkit-details-marker { display: none; }
+.study-nav > a[aria-current], .study-nav > details[open] > .nav-trigger { background: var(--panel); box-shadow: inset 0 -2px var(--link); }
+.study-nav > a:hover, .nav-trigger:hover { background: var(--panel); }
+.study-nav > a:focus-visible, .nav-trigger:focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+.nav-trigger small { background: var(--link); color: var(--paper); border-radius: 1em; padding: 1px 5px; font-size: 12px; }
+
+button, input, select, textarea { font-family: inherit; }
+.radix-themes { --default-font-family: Nunito, system-ui, sans-serif; --heading-font-family: var(--default-font-family); }
+.study-nav .brand { font-size: 22px; letter-spacing: -.06em; gap: 5px; }
+.brand img { width: 29px; height: 29px; }
+:root[data-theme=dark] .brand img { filter: invert(1); }

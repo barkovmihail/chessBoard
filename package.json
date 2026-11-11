@@ -2,7 +2,9 @@
   "name": "chess-board",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "start": "vite",
     "backend": ".venv/bin/python -m uvicorn backend.api:app --host 127.0.0.1 --port 8011",
@@ -11,6 +13,7 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
+    "@radix-ui/themes": "^3.3.0",
     "chess.js": "^1.4.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"

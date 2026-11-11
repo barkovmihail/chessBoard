@@ -1,3 +1,4 @@
+import { NavIcon } from "./NavIcon";
 import { useLanguage } from "../shared/language";
 import React, { useEffect, useState } from "react";
 
@@ -60,7 +61,7 @@ export function CurrentGames({ open, setOpen }: { open: boolean; setOpen: (open:
     setOpen(event.currentTarget.open);
     if (!event.currentTarget.open) setOffset(0);
   }}>
-    <summary aria-label={t("Вызовы и текущие игры", "Challenges and current games") + (count ? " · " + count : "")}>⚔ {t("Вызовы и игры", "Challenges and games")} {count || ""}</summary>
+    <summary className="nav-trigger" title={t("Вызовы и текущие игры", "Challenges and current games")} aria-label={t("Вызовы и текущие игры", "Challenges and current games") + (count ? " · " + count : "")}><NavIcon name="swords" />{count > 0 && <small>{count}</small>}</summary>
     <section><Challenges open={open} count={setCount} />
     <div role="region" aria-label={t("Текущие партии", "Active games")}><h3>{t("Текущие игры", "Current games")}</h3>
       {error ? <p role="alert">{t("Не удалось обновить список. Повторяем запрос…", "Could not update the list. Retrying…")}</p> : !page && <p>{t("Загрузка…", "Loading…")}</p>}

@@ -1,13 +1,6 @@
-# Chess board
-A simple checkerboard implementation using React and TypeScript. The application template can be used for quick development start.
+# chessBoard
 
-## App Interface
-The classic version of the chessboard was chosen. If desired, you can add styles with other variants of chess pieces.
-
-![alt text](https://github.com/barkovmihail/chessBoard/public/template.png)
-
-### License
-[MIT licensed](./LICENSE).
+Веб-приложение для шахматных партий, тренировки дебютов и решения задач. На главном экране «Игровой зал» выберите контроль времени и соперника. Для оформления используется Nunito с локальными файлами кириллицы и латиницы. [Лицензия шрифта](public/fonts/nunito/nunito-LICENSE.txt) · [Лицензия приложения](LICENSE)
 
 ## Разработка
 

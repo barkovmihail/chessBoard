@@ -1,3 +1,4 @@
+import { NavIcon } from "./NavIcon";
 import { useLanguage } from "../shared/language";
 import React, { useEffect, useRef, useState } from "react";
 import { ConnectionStatus, useConnectionSample } from "./ConnectionStatus";
@@ -49,8 +50,8 @@ export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current
       trigger.current?.focus();
     }
   }}>
-    <summary ref={trigger} aria-label={t("Меню профиля", "Profile menu")}>{name ?? t("Профиль", "Profile")}</summary>
-    <div className="profile-panel">
+    <summary className="nav-trigger" title={name ?? t("Профиль", "Profile")} ref={trigger} aria-label={t("Меню профиля", "Profile menu")}><NavIcon name="account" /></summary>
+    <div className="profile-panel">{name && <strong>{name}</strong>}
       <a href="?section=profile" aria-current={current ? "page" : undefined}>{t("Профиль", "Profile")}</a>
       {name && <span role="status" className="profile-presence" data-online={!!sample && sample !== "offline"}>
         {sample === null ? t("Проверяем связь…", "Checking connection…") : sample === "offline" ? t("Не в сети", "Offline") : t("В сети", "Online")}

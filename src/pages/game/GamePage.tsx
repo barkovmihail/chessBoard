@@ -143,7 +143,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     {game.waiting && <label>{t("Ссылка для соперника", "Opponent link")} <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}
   </> : invite ? <><p>{inviteFailed ? t("Не удалось загрузить контроль времени", "Could not load the time control") : inviteControl === "unlimited" ? t("Без часов", "Unlimited") : inviteControl}</p><button disabled={busy || (!inviteControl && !inviteFailed)} onClick={() => create(true)}>{t("Играть за чёрных", "Play as Black")}</button></>
-    : <TimeSetup busy={busy} create={create} />;
+    : null;
   const status = game && <span aria-live="polite">{game.waiting ? t("Ожидание соперника", "Waiting for opponent") :
     game.result ?? (game.turn === "white" ? t("Ход белых", "White to move") : t("Ход чёрных", "Black to move"))}</span>;
   const actions = game && <>
@@ -178,5 +178,9 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     return <BoardLayout board={game ? <ClockPanel game={game}>{position}</ClockPanel> : position}
     context={<>{context}{!game && error && <p role="alert">{t(errors[error][0], errors[error][1])}</p>}</>} actions={controls ? <>{controls}{actions}</> : actions} status={status} />;
   }
+  if (!game && !invite) return <main>
+    <TimeSetup busy={busy} create={create} board={board} />
+    {error && <p role="alert">{t(errors[error][0], errors[error][1])}</p>}
+  </main>;
   return game?.result ? <GameReview key={game.id} game={game} render={render} /> : render(board);
 }

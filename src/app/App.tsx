@@ -1,3 +1,4 @@
+import { NavIcon } from "./NavIcon";
 import { useLanguage } from "../shared/language";
 import React, { useState } from "react";
 import { MessagesPage } from "../pages/messages";
@@ -30,12 +31,13 @@ export default function App() {
   }
   return <>
     <nav lang={language} className="study-nav" aria-label={t("Разделы", "Sections")}>
-      <a href={game && (training || !section) ? gameQuery : section || watch ? "/" : query || "/"} aria-current={!section ? "page" : undefined}>{training && game ? t("Вернуться к партии", "Return to game") : t("Игра", "Play")}</a>
-      <a href={"?section=openings" + trainingSuffix} aria-current={section === "openings" ? "page" : undefined}>{t("Тренажёр дебютов", "Opening trainer")}</a>
-      <a href={"?section=puzzles" + trainingSuffix} aria-current={section === "puzzles" ? "page" : undefined}>{t("Шахматные задачи", "Puzzles")}</a>
-      <a href="?section=analysis" aria-current={section === "analysis" ? "page" : undefined}>{t("Анализ", "Analysis")}</a>
-      <a href="?section=arenas" aria-current={section === "arenas" ? "page" : undefined}>{t("Турниры", "Tournaments")}</a>
-      <a href="?section=chat" aria-current={section === "chat" ? "page" : undefined}>{t("Чат", "Chat")}</a>
+      <a className="brand" href="/" aria-label={t("Игровой зал chessBoard", "chessBoard lobby")}><img src="/staunton.svg" alt="" />chessBoard</a>
+      <a href={game && (training || !section) ? gameQuery : section || watch ? "/" : query || "/"} aria-current={!section ? "page" : undefined}><NavIcon name="board" />{training && game ? t("Вернуться к партии", "Return to game") : t("Игра", "Play")}</a>
+      <a href={"?section=openings" + trainingSuffix} title={t("Тренажёр дебютов", "Opening trainer")} aria-label={t("Тренажёр дебютов", "Opening trainer")} aria-current={section === "openings" ? "page" : undefined}><NavIcon name="book" />{t("Тренажёр дебютов", "Opening trainer")}</a>
+      <a href={"?section=puzzles" + trainingSuffix} title={t("Шахматные задачи", "Puzzles")} aria-label={t("Шахматные задачи", "Puzzles")} aria-current={section === "puzzles" ? "page" : undefined}><NavIcon name="puzzle" /></a>
+      <a href="?section=analysis" title={t("Анализ", "Analysis")} aria-label={t("Анализ", "Analysis")} aria-current={section === "analysis" ? "page" : undefined}><NavIcon name="chart" />{t("Анализ", "Analysis")}</a>
+      <a href="?section=arenas" title={t("Турниры", "Tournaments")} aria-label={t("Турниры", "Tournaments")} aria-current={section === "arenas" ? "page" : undefined}><NavIcon name="cup" /></a>
+      <a href="?section=chat" title={t("Чат", "Chat")} aria-label={t("Чат", "Chat")} aria-current={section === "chat" ? "page" : undefined}><NavIcon name="chat" /></a>
       <CurrentGames open={gamesOpen} setOpen={setGamesOpen} /><Notifications onInbox={() => setGamesOpen(true)} /><ProfileMenu current={section === "profile"} onInbox={() => setGamesOpen(true)} />
     </nav>
     {watch ? <WatchPage token={watch} /> : section === "messages" ? <MessagesPage /> : section === "chat" ? <ChatPage /> : section === "teams" ? <TeamsPage /> : section === "arenas" ? <ArenasPage /> : section === "analysis" ? <AnalysisPage /> : section === "profile" ? <ProfilePage onInbox={() => setGamesOpen(true)} /> : section === "openings" ? <OpeningsPage /> : section === "puzzles" ? <PuzzlesPage /> : <GamePage onOpen={openGame} />}

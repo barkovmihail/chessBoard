@@ -32,6 +32,7 @@ export function Appearance() {
   const [settings, setSettings] = useState(readSettings);
   useEffect(() => {
     for (const key of keys) document.documentElement.dataset[key] = settings[key];
+    document.documentElement.classList.toggle("dark", settings.theme === "dark");
     try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch { /* Session-only settings. */ }
   }, [settings]);
   return <details className="appearance"><summary>{t("Оформление", "Appearance")}</summary>

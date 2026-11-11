@@ -1,3 +1,8 @@
+import { Button, Theme } from "@radix-ui/themes";
+import "@radix-ui/themes/tokens/base.css";
+import "@radix-ui/themes/tokens/colors/sand.css";
+import "@radix-ui/themes/tokens/colors/bronze.css";
+import "@radix-ui/themes/components.css";
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
 import type { Game } from "../../features/play";
@@ -12,7 +17,8 @@ const presets: [Category, number, number][] = [
   ["Рапид", 15, 10], ["Классика", 30, 0], ["Классика", 30, 20],
 ];
 
-export function TimeSetup({ create, busy }: {
+export function TimeSetup({ create, busy, board }: {
+  board: React.ReactNode;
   create: (online: boolean, control: { minutes: number; increment: number }, level?: Game["engine_level"], engine?: Game["engine_name"], visible?: boolean, chess960?: number) => void; busy: boolean;
 }) {
   const { language, t } = useLanguage();
@@ -32,11 +38,9 @@ export function TimeSetup({ create, busy }: {
   const validMinutes = /^\d+$/.test(minutes) && Number(minutes) >= 1 && Number(minutes) <= 1440;
   const validIncrement = /^\d+$/.test(increment) && Number(increment) <= 3600;
   const valid = !custom || (validMinutes && validIncrement);
-  return <fieldset lang={language} disabled={busy}><legend>{t("Контроль времени", "Time control")}</legend>
-    {!searching && <fieldset><legend>{t("Соперник", "Opponent")}</legend>
-      <label><input type="radio" name="opponent" checked={!computer} onChange={() => setComputer(false)} /> {t("Человек", "Human")}</label>
-      <label><input type="radio" name="opponent" checked={computer} onChange={() => setComputer(true)} /> {t("Компьютер", "Computer")}</label>
-    </fieldset>}
+  return <Theme style={{ minHeight: 0 }} hasBackground={false} accentColor="bronze" grayColor="sand" radius="medium"><fieldset className={styles.lobby} lang={language} disabled={busy}>
+    <div className={styles.preview}><h2>{t("Начальная позиция", "Starting position")}</h2>{board}</div>
+    <section className={styles.start}><h1>{t("Быстрый старт", "Quick start")}</h1>
     {!searching && <label>{t("Категория времени", "Time category")} <select value={category} onChange={event => {
       const value = event.target.value;
       setCategory(value);
@@ -58,10 +62,16 @@ export function TimeSetup({ create, busy }: {
         value={increment} onChange={e => setIncrement(e.target.value)} /></label>
       {!validIncrement && <small id="increment-error">{t("Введите целое число от 0 до 3600.", "Enter a whole number from 0 to 3600.")}</small>}
       {valid && <p>{minutes}+{increment}</p>}</div>}
+    </section>
+    <section className={styles.settings}><h2>{t("Новая партия", "New game")}</h2>
+    {!searching && <fieldset><legend>{t("Соперник", "Opponent")}</legend>
+      <label><input type="radio" name="opponent" checked={!computer} onChange={() => setComputer(false)} /> {t("Человек", "Human")}</label>
+      <label><input type="radio" name="opponent" checked={computer} onChange={() => setComputer(true)} /> {t("Компьютер", "Computer")}</label>
+    </fieldset>}
     <div hidden={computer && !searching}><QuickGame control={control} valid={valid} onSearching={setSearching} /></div>
     {!searching && <label><input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} /> {t("Разрешить просмотр по ссылке", "Allow spectators with the link")}</label>}
-    {!computer && <button disabled={!valid || searching} onClick={() => create(false, control, undefined, undefined, visible)}>{t("Начать партию", "Start game")}</button>}
-    {!computer && <button disabled={!valid || searching} onClick={() => create(true, control, undefined, undefined, visible)}>{t("Пригласить друга", "Invite a friend")}</button>}
+    {!computer && <div className={styles.gameActions}><Button size="3" variant="soft" disabled={!valid || searching} onClick={() => create(false, control, undefined, undefined, visible)}>{t("Начать партию", "Start game")}</Button>
+    <Button size="3" highContrast variant="solid" disabled={!valid || searching} onClick={() => create(true, control, undefined, undefined, visible)}>{t("Пригласить друга", "Invite a friend")}</Button></div>}
     {!computer && !searching && <details><summary>Chess960</summary>
       <label>{t("Номер расстановки", "Starting position number")} <input type="number" min="0" max="959" value={index} onChange={e => setIndex(e.target.value)} /></label>
       <button onClick={() => setIndex(String(Math.floor(Math.random() * 960)))}>{t("Случайная расстановка", "Random position")}</button>
@@ -73,9 +83,10 @@ export function TimeSetup({ create, busy }: {
         <option value="lc0">Leela Chess Zero</option><option value="stockfish">Stockfish</option></select></label>
       <label>{t("Уровень", "Level")} <select value={level} onChange={e => setLevel(e.target.value === "normal" ? "normal" : "easy")}>
         <option value="easy">{t("Начальный", "Beginner")}</option><option value="normal">{t("Обычный", "Normal")}</option></select></label>
-      <button disabled={!valid} onClick={() => create(false, control, level, engine, visible)}>{t("Играть с компьютером", "Play against the computer")}</button>
+      <Button size="3" highContrast variant="solid" disabled={!valid} onClick={() => create(false, control, level, engine, visible)}>{t("Играть с компьютером", "Play against the computer")}</Button>
     </fieldset>}
-  </fieldset>;
+    </section>
+  </fieldset></Theme>;
 }
 
 export function ClockPanel({ game, children }: { game: Game; children: React.ReactNode }) {
