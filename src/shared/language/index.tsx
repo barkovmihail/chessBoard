@@ -12,6 +12,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     catch { return "ru"; }
   });
   useEffect(() => {
+    document.documentElement.lang = language;
     try { localStorage.setItem(key, language); } catch { /* Keep the selection for this session. */ }
   }, [language]);
   return <LanguageContext.Provider value={{ language, select }}>{children}</LanguageContext.Provider>;
