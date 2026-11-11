@@ -12,13 +12,14 @@ interface Props {
   side: "w" | "b";
   puzzle?: boolean;
   themeLabel?: string;
+  lineName?: string;
   onAttempt?: (wrong: boolean, solved: boolean) => void;
   onRestart?: () => void;
   context: React.ReactNode;
   next?: React.ReactNode;
 }
 
-export function Trainer({ fen, steps, side, puzzle, themeLabel, context, next, onAttempt, onRestart }: Props) {
+export function Trainer({ fen, steps, side, puzzle, themeLabel, lineName, context, next, onAttempt, onRestart }: Props) {
   const { language, t } = useLanguage();
   const [ply, advance] = useState(0);
   const [selected, select] = useState<Square>();
@@ -79,7 +80,7 @@ export function Trainer({ fen, steps, side, puzzle, themeLabel, context, next, o
     const message = feedback.kind === "different"
       ? t("Допустимый ход, но в этой линии нужен другой.", "Legal move, but this line calls for another move.", "La jugada es legal, pero esta variante requiere otra.")
       : t("Так пойти нельзя.", "That move is illegal.", "Esa jugada es ilegal.");
-    return message + " " + (puzzle ? t("Попробуйте ещё раз.", "Try again.", "Inténtalo de nuevo.") : explanation);
+    return message + " " + t("Попробуйте ещё раз.", "Try again.", "Inténtalo de nuevo.");
   }
   return <BoardLayout lang={language} context={context} board={<Board position={boardPosition(state)} flipped={side === "b"} lastMove={lastMove} selected={selected}
       targets={hint && target && !complete ? [target.from, target.to] : []}
@@ -87,18 +88,19 @@ export function Trainer({ fen, steps, side, puzzle, themeLabel, context, next, o
       onMove={automatic || complete ? undefined : (from, to) => attempt(to, undefined, from)}
       onSquare={automatic || complete ? undefined : click} />}
     status={<>
+      {lineName && <p className={styles.lineHeading}>{lineName} · {ply}/{steps.length}</p>}
       <h2>{complete ? (puzzle ? t("Задача решена", "Puzzle solved", "Problema resuelto") : t("Линия пройдена", "Line completed", "Variante completada")) : automatic ? t("Ответ соперника", "Opponent’s reply", "Respuesta del rival") : t("Ваш ход", "Your turn", "Tu turno")}</h2>
       <p>{side === "w" ? t("Вы играете белыми", "You play White", "Juegas con blancas") : t("Вы играете чёрными", "You play Black", "Juegas con negras")}{themeLabel && <> · {themeLabel}</>}</p>
       {puzzle && <p className={styles.feedback} aria-live="polite">{feedbackText()}</p>}
     </>} actions={<>
-      {!puzzle && <p aria-live="polite">{feedbackText()}</p>}
+      {!puzzle && (feedback?.kind !== "correct" || lastMove?.color === side) && <p aria-live="polite">{feedbackText()}</p>}
       {puzzle && complete && <div className={styles.primary}>{next}</div>}
-      {!puzzle && lastMove && lastMove.color !== side && <p>{t("Ответ", "Reply", "Respuesta")} {lastMove.san}. {steps[ply - 1][1]}</p>}
+      {!puzzle && lastMove && lastMove.color !== side && <p aria-live="polite">{t("Ответ", "Reply", "Respuesta")} {lastMove.san}. {steps[ply - 1][1]}</p>}
       {!complete && !automatic && <button onClick={() => showHint(true)}>{t("Показать ход", "Show move", "Mostrar jugada")}</button>}
       {hint && target && !complete && <p>{target.san} · {target.from} → {target.to}. {expected[1]}</p>}
       {promotion && <div>{(["q","r","b","n"] as const).map((p,i) =>
         <button key={p} onClick={() => attempt(promotion, p)}>{[t("Ферзь", "Queen", "Dama"), t("Ладья", "Rook", "Torre"), t("Слон", "Bishop", "Alfil"), t("Конь", "Knight", "Caballo")][i]}</button>)}</div>}
-      {history.length > 0 && <p aria-label={t("Сыгранные ходы", "Moves played", "Jugadas realizadas")}>{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
+      {history.length > 0 && <p className={styles.lineMoves} aria-label={t("Сыгранные ходы", "Moves played", "Jugadas realizadas")}>{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
       <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(undefined); promote(undefined); setOtherMate(""); }}>{t("Начать заново", "Restart", "Volver a empezar")}</button>
       {!puzzle && <ArchiveMoves prefix={history.map(move => move.lan).join(",")} />}
       {(!puzzle || !complete) && next}

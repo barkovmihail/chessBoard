@@ -73,11 +73,13 @@ export function Study({ id }: { id: string }) {
     return () => abort.abort();
   }, [id]);
   if (!chapter) return <main lang={language}><p role="status">{error === "missing" ? t("Глава не найдена", "Chapter not found") : error === "load" ? t("Не удалось загрузить главу", "Could not load the chapter") : t("Загружаем главу…", "Loading chapter…")}</p><a href="?section=openings">{t("К дебютам", "Back to openings")}</a></main>;
-  return <Trainer key={index} steps={chapter.lines[index]} side={chapter.side} context={<>
+  return <Trainer lineName={chapter.name + (chapter.lines.length > 1 ? " · " + (index + 1) : "")} key={index} steps={chapter.lines[index]} side={chapter.side} context={<>
     <h1>{chapter.name}</h1>
-    {chapter.lines.length > 1 && <label>{t("Учебный вариант", "Training line")} <select value={index} onChange={e => setIndex(Number(e.target.value))}>
+    {chapter.lines.length > 1 && <details open={typeof window !== "undefined" && window.matchMedia("(min-width: 681px)").matches}>
+      <summary>{t("Выбрать вариант", "Choose line", "Elegir variante")}</summary>
+      <label>{t("Учебный вариант", "Training line")} <select value={index} onChange={e => setIndex(Number(e.target.value))}>
       {chapter.lines.map((line, i) => <option value={i} key={i}>{i + 1}. {line.slice(0, 8).map(step => step[0]).join(" ")}</option>)}
-    </select></label>}
+    </select></label></details>}
     <a href={"?section=openings&chapter=" + id}>{t("Ссылка на главу", "Chapter link")}</a>
   </>} />;
 }

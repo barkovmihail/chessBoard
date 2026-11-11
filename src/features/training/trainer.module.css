@@ -7,3 +7,6 @@
   color: var(--paper);
   font-weight: 700;
 }
+
+.lineHeading { font-weight: 700; }
+.lineMoves { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

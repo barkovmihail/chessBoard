@@ -50,6 +50,9 @@ class TrainingTest(unittest.TestCase):
                 finally:
                     session.detach()
 
+            page.emulate_media(reduced_motion="reduce")
+            expect(page.get_by_label("Дебют", exact=True)).to_be_hidden()
+            expect(page.get_by_text("Итальянская партия · 0/7")).to_be_visible()
             touch_drag("e2", "e5")
             expect(page.get_by_text("Так пойти нельзя.", exact=False)).to_be_visible()
             move("d2d4")
@@ -61,9 +64,22 @@ class TrainingTest(unittest.TestCase):
                 "e2e4 g1f3 f1c4 c2c3", "e2e4 g1f3 f1b5 b5a4", "d2d4 c2c4 b1c3 c1g5",
                 "c7c5 d7d6 c5d4 g8f6", "e7e6 d7d5 c7c5 b8c6",
             ]):
-                page.get_by_label("Дебют", exact=True).select_option(index=index)
+                chooser = page.get_by_label("Дебют", exact=True)
+                if not chooser.is_visible():
+                    page.get_by_text("Выбрать дебют", exact=True).tap()
+                chooser.select_option(index=index)
                 for uci in sequence.split():
-                    if uci == "e2e4":
+                    if index == 0 and uci == "e2e4":
+                        square = page.locator('[data-square="e4"]')
+                        top = square.evaluate("el => el.getBoundingClientRect().top + window.scrollY")
+                        touch_drag("e2", "e4")
+                        expect(page.locator('[data-square="e5"] [role="img"]')).to_be_visible()
+                        self.assertAlmostEqual(top, square.evaluate("el => el.getBoundingClientRect().top + window.scrollY"), delta=1)
+                        expect(page.get_by_text("Ответ e5.", exact=False)).to_be_visible()
+                        page.get_by_role("button", name="Показать ход").tap()
+                        expect(page.locator('[data-square="e5"]')).to_have_attribute("data-last-move", "true")
+                        expect(page.locator('[data-square="f3"]')).to_have_attribute("data-target", "true")
+                    elif uci == "e2e4":
                         touch_drag("e2", "e4")
                     else:
                         move(uci)
@@ -98,8 +114,10 @@ class TrainingTest(unittest.TestCase):
             reader.get_by_label("Line 2", exact=True).fill("d4 | Контролируем e5")
             reader.get_by_role("button", name="Save chapter").click()
             expect(reader.get_by_role("heading", name="Центральные пешки")).to_be_visible()
-            student = browser.new_page()
+            student = browser.new_page(viewport={"width": 390, "height": 844})
             student.goto(reader.url)
+            expect(student.get_by_label("Учебный вариант")).to_be_hidden()
+            student.get_by_text("Выбрать вариант", exact=True).click()
             student.get_by_label("Учебный вариант").select_option("1")
             student.locator('[data-square="d2"]').click()
             student.locator('[data-square="d4"]').click()
