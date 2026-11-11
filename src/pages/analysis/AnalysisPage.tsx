@@ -1,3 +1,4 @@
+import { useLanguage } from "../../shared/language";
 import React, { useEffect, useMemo, useState } from "react";
 import { Chess } from "chess.js";
 import { boardPosition } from "../../entities/board";
@@ -10,6 +11,7 @@ interface Line {
 }
 
 export function AnalysisPage() {
+  const { language, t } = useLanguage();
   const query = new URLSearchParams(location.search);
   const id = query.get("game");
   const requestedPly = Number(query.get("ply") ?? Infinity);
@@ -17,7 +19,7 @@ export function AnalysisPage() {
   const [ply, setPly] = useState(0);
   const [variation, setVariation] = useState<string[]>([]);
   const [input, setInput] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<"game" | "file" | "PGN" | "FEN" | null>(null);
   const [loading, setLoading] = useState(!!id);
   const [side, setSide] = useState<"white" | "black" | "both">("white");
 
@@ -30,7 +32,7 @@ export function AnalysisPage() {
       setLine({ moves: game.moves, result: game.result });
       setPly(Number.isInteger(requestedPly) ? Math.max(0, Math.min(requestedPly, game.moves.length)) : game.moves.length);
       setSide(game.side);
-    }).catch(() => { if (active) setError("Не удалось открыть запись завершённой партии."); })
+    }).catch(() => { if (active) setError("game"); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [id, requestedPly]);
@@ -54,40 +56,42 @@ export function AnalysisPage() {
       setPly(moves.length);
       setVariation([]);
       setSide("white");
-      setError("");
-    } catch { setError("Не удалось прочитать " + format + ". Проверьте запись."); }
+      setError(null);
+    } catch { setError(format); }
   }
   function navigate(next: number) {
     setPly(next);
     setVariation([]);
   }
-  return <main><h1>Анализ</h1>
-    {id && <a href={"?game=" + encodeURIComponent(id)}>Вернуться к партии</a>}
-    {loading ? <p>Загрузка позиции…</p> : <>
+  return <main lang={language}><h1>{t("Анализ", "Analysis")}</h1>
+    {id && <a href={"?game=" + encodeURIComponent(id)}>{t("Вернуться к партии", "Return to game")}</a>}
+    {loading ? <p>{t("Загрузка позиции…", "Loading position…")}</p> : <>
       <PlayBoard key={board.fen()} enabled game={{ position: boardPosition(board), side,
         turn: board.turn() === "w" ? "white" : "black", legal: legal.map(move => move.lan) }}
         onMove={uci => { const move = legal.find(choice => choice.lan === uci);
           if (move) setVariation([...variation, move.san]); }} />
-      <nav aria-label="Ходы записи">
-        <button disabled={!ply} onClick={() => navigate(0)}>В начало</button>
-        <button disabled={!ply} onClick={() => navigate(ply - 1)}>Назад</button>
-        <button disabled={ply === line.moves.length} onClick={() => navigate(ply + 1)}>Вперёд</button>
-        <button disabled={ply === line.moves.length} onClick={() => navigate(line.moves.length)}>В конец</button>
+      <nav aria-label={t("Ходы записи", "Game moves")}>
+        <button disabled={!ply} onClick={() => navigate(0)}>{t("В начало", "Go to start")}</button>
+        <button disabled={!ply} onClick={() => navigate(ply - 1)}>{t("Назад", "Previous move")}</button>
+        <button disabled={ply === line.moves.length} onClick={() => navigate(ply + 1)}>{t("Вперёд", "Next move")}</button>
+        <button disabled={ply === line.moves.length} onClick={() => navigate(line.moves.length)}>{t("В конец", "Go to end")}</button>
       </nav>
-      <p>Запись · {line.moves.join(" ")} {line.result}</p>
-      {variation.length > 0 && <><p aria-live="polite">Вариант · {variation.join(" ")}</p>
-        <button onClick={() => setVariation(variation.slice(0, -1))}>Отменить ход варианта</button>
-        <button onClick={() => setVariation([])}>Вернуться к исходной позиции</button></>}
-      <fieldset><legend>Импорт позиции или партии</legend>
-        <label>PGN или FEN <textarea value={input} onChange={event => setInput(event.target.value)} /></label>
-        <button onClick={() => open(input, "PGN")}>Открыть PGN</button>
-        <button onClick={() => open(input, "FEN")}>Открыть FEN</button>
-        <label>Файл PGN <input type="file" accept=".pgn" onChange={async event => {
+      <p>{t("Запись", "Game score")} · {line.moves.join(" ")} {line.result}</p>
+      {variation.length > 0 && <><p aria-live="polite">{t("Вариант", "Variation")} · {variation.join(" ")}</p>
+        <button onClick={() => setVariation(variation.slice(0, -1))}>{t("Отменить ход варианта", "Undo variation move")}</button>
+        <button onClick={() => setVariation([])}>{t("Вернуться к исходной позиции", "Return to original position")}</button></>}
+      <fieldset><legend>{t("Импорт позиции или партии", "Import a position or game")}</legend>
+        <label>{t("PGN или FEN", "PGN or FEN")} <textarea value={input} onChange={event => setInput(event.target.value)} /></label>
+        <button onClick={() => open(input, "PGN")}>{t("Открыть PGN", "Open PGN")}</button>
+        <button onClick={() => open(input, "FEN")}>{t("Открыть FEN", "Open FEN")}</button>
+        <label>{t("Файл PGN", "PGN file")} <input type="file" accept=".pgn" onChange={async event => {
           const file = event.target.files?.[0];
-          if (file) { try { open(await file.text(), "PGN"); } catch { setError("Не удалось прочитать файл."); } }
+          if (file) { try { open(await file.text(), "PGN"); } catch { setError("file"); } }
         }} /></label>
       </fieldset>
     </>}
-    {error && <p role="alert">{error}</p>}
+    {error && <p role="alert">{error === "game" ? t("Не удалось открыть запись завершённой партии.", "Could not open the finished game.") :
+      error === "file" ? t("Не удалось прочитать файл.", "Could not read the file.") :
+      t(`Не удалось прочитать ${error}. Проверьте запись.`, `Could not read ${error}. Check the notation.`)}</p>}
   </main>;
 }
