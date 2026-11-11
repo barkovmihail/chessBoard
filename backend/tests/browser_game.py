@@ -571,6 +571,21 @@ class BrowserGameTest(TestCase):
                     white.reload()
                     expect(white.locator('[data-square="g1"] [role=img]')).to_have_attribute("aria-label", "white king g1")
                     expect(white.locator('[data-square="f1"] [role=img]')).to_have_attribute("aria-label", "white rook f1")
+                    for player in (white, black):
+                        player.goto(base)
+                        player.get_by_label("Режим быстрого поиска").select_option("chess960")
+                        player.get_by_role("button", name="Найти соперника").click()
+                        if player == white:
+                            expect(white.get_by_text("Ищем соперника · 5+3 · Chess960")).to_be_visible()
+                            white.reload()
+                            expect(white.get_by_text("Ищем соперника · 5+3 · Chess960")).to_be_visible()
+                    position = white.get_by_text(re.compile(r"Chess960 · Расстановка №"))
+                    expect(position).to_be_visible()
+                    expect(black.get_by_text(position.inner_text(), exact=True)).to_be_visible()
+                    self.assertEqual(white.url, black.url)
+                    white.locator('[data-square="e2"]').click()
+                    white.locator('[data-square="e4"]').click()
+                    expect(black.get_by_label("Запись ходов")).to_contain_text("e4")
                     browser.close()
             finally:
                 server.should_exit = True

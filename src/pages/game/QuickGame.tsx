@@ -7,6 +7,7 @@ interface Ticket {
   minutes?: number;
   increment?: number;
   rated?: boolean;
+  chess960?: boolean;
 }
 
 async function queue(action = "", data?: object): Promise<Ticket> {
@@ -17,6 +18,7 @@ async function queue(action = "", data?: object): Promise<Ticket> {
   if (response.status === 403 && ticket.detail === "account_required") throw Error("account_required");
   if (!response.ok || !Number.isSafeInteger(ticket.version) || typeof ticket.waiting !== "boolean" ||
       !(ticket.game_id === null || typeof ticket.game_id === "string" && /^[a-f0-9]{32}$/.test(ticket.game_id)) ||
+      (ticket.waiting && typeof ticket.chess960 !== "boolean") ||
       (ticket.waiting && ![ticket.minutes, ticket.increment].every(Number.isInteger))) throw Error();
   return ticket;
 }
@@ -24,7 +26,7 @@ async function queue(action = "", data?: object): Promise<Ticket> {
 export function QuickGame({ control, valid, onSearching }: {
   control: { minutes: number; increment: number }; valid: boolean; onSearching: (value: boolean) => void;
 }) {
-  const [rated, setRated] = useState(false);
+  const [mode, setMode] = useState("casual");
   const [ticket, setTicket] = useState<Ticket>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -62,7 +64,7 @@ export function QuickGame({ control, valid, onSearching }: {
     setError("");
     try {
       if (!ticket.waiting) await queue("/session", {});
-      const next = await queue(ticket.waiting ? "/cancel" : "/start", { version: ticket.version, control, rated });
+      const next = await queue(ticket.waiting ? "/cancel" : "/start", { version: ticket.version, control, rated: mode === "rated", chess960: mode === "chess960" });
       setTicket(next);
       if (next.game_id) location.assign("?game=" + next.game_id);
     } catch (failure) {
@@ -76,11 +78,12 @@ export function QuickGame({ control, valid, onSearching }: {
   }
 
   return <div>
-    {!ticket?.waiting && <label>Режим быстрого поиска <select disabled={busy} value={rated ? "rated" : "casual"}
-      onChange={event => setRated(event.target.value === "rated")}>
+    {!ticket?.waiting && <label>Режим быстрого поиска <select disabled={busy} value={mode}
+      onChange={event => setMode(event.target.value)}>
       <option value="casual">Нерейтинговая игра</option><option value="rated">Рейтинговая игра</option>
+      <option value="chess960">Chess960 · Нерейтинговая игра</option>
     </select></label>}
-    {ticket?.waiting && <p role="status">Ищем соперника · {ticket.minutes}+{ticket.increment}{ticket.rated && " · Рейтинговая игра"}</p>}
+    {ticket?.waiting && <p role="status">Ищем соперника · {ticket.minutes}+{ticket.increment}{ticket.chess960 && " · Chess960"}{ticket.rated && " · Рейтинговая игра"}</p>}
     <button disabled={!ticket || busy || (!ticket.waiting && !valid)} onClick={change}>
       {ticket?.waiting ? "Отменить поиск" : "Найти соперника"}
     </button>

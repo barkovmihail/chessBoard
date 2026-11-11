@@ -100,6 +100,7 @@ rating_history = Table("rating_history", metadata,
     Index("ix_rating_player_pool_seq", "player", "pool", "seq"),
 )
 queue = Table("match_queue", metadata,
+    Column("chess960", Boolean, nullable=False, server_default="0"),
     Column("rated", Boolean, nullable=False, server_default="0"),
     Column("player", String, primary_key=True), Column("version", Integer, nullable=False),
     Column("minutes", Integer, nullable=False), Column("increment", Integer, nullable=False),

@@ -73,6 +73,7 @@ class Challenge(BaseModel):
 
 
 class Search(QueueVersion):
+    chess960: bool = False
     rated: bool = False
     control: TimeControl
 
@@ -364,7 +365,7 @@ def create_app(path: Path):
         player = current(request)[0]
         if not player:
             raise GameError("session_required", 401)
-        return app.state.queue.change(player, command.version, "start", (command.control.minutes, command.control.increment), command.rated)
+        return app.state.queue.change(player, command.version, "start", (command.control.minutes, command.control.increment), command.rated, command.chess960)
 
     @app.post("/api/queue/{action}")
     def update_search(action: Literal["cancel", "renew"], command: QueueVersion, request: Request):
