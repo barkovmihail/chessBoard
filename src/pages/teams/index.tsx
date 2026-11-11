@@ -58,33 +58,33 @@ export function TeamsPage() {
     finally { setBusy(false); }
   }
 
-  return <main lang={language} className="study-page"><h1>{t("Команды", "Teams")}</h1>
-    {guest ? <a href="?section=profile">{t("Войти для участия", "Sign in to participate")}</a> : teams && <>
+  return <main lang={language} className="study-page"><h1>{t("Команды", "Teams", "Equipos")}</h1>
+    {guest ? <a href="?section=profile">{t("Войти для участия", "Sign in to participate", "Inicia sesión para participar")}</a> : teams && <>
       <form onSubmit={async e => {
         e.preventDefault();
         const form = e.currentTarget;
         if (!nextId.current) nextId.current = commandId();
         if (await send("", { id: nextId.current, name: new FormData(form).get("name") })) { nextId.current = ""; form.reset(); }
-      }}><label>{t("Название команды", "Team name")} <input name="name" required maxLength={80} /></label><button disabled={busy}>{t("Создать команду", "Create team")}</button></form>
-      {!teams.length && <p>{t("У вас пока нет команд и приглашений.", "You have no teams or invitations yet.")}</p>}
+      }}><label>{t("Название команды", "Team name", "Nombre del equipo")} <input name="name" required maxLength={80} /></label><button disabled={busy}>{t("Создать команду", "Create team", "Crear equipo")}</button></form>
+      {!teams.length && <p>{t("У вас пока нет команд и приглашений.", "You have no teams or invitations yet.", "Todavía no tienes equipos ni invitaciones.")}</p>}
       {teams.map(team => <section key={team.id}><h2>{team.name}</h2>
-        {team.joined ? <><ul>{team.members.map(m => <li key={m.name}>{m.name}{!m.joined && t(" · Приглашение отправлено", " · Invited")}</li>)}</ul>
+        {team.joined ? <><ul>{team.members.map(m => <li key={m.name}>{m.name}{!m.joined && t(" · Приглашение отправлено", " · Invited", " · Invitación enviada")}</li>)}</ul>
           {team.owner && <form onSubmit={async e => {
             e.preventDefault(); const form = e.currentTarget;
             if (await send("/" + team.id + "/invite", { name: new FormData(form).get("player") })) form.reset();
-          }}><label>{t("Имя игрока", "Player name")} <input required name="player" maxLength={32} /></label><button disabled={busy}>{t("Пригласить в команду", "Invite to team")}</button></form>}
-        </> : <><p>{t("Приглашает", "Invited by")} {team.sender}.</p><button disabled={busy} onClick={() => send("/" + team.id + "/accept")}>{t("Принять приглашение", "Accept invitation")}</button>
-          <button disabled={busy} onClick={() => send("/" + team.id + "/decline")}>{t("Отклонить приглашение", "Decline invitation")}</button>
-          <button disabled={busy} onClick={() => send("/blocks/block", { name: team.sender })}>{t("Отключить приглашения от", "Block invitations from")} {team.sender}</button></>}
+          }}><label>{t("Имя игрока", "Player name", "Nombre del jugador")} <input required name="player" maxLength={32} /></label><button disabled={busy}>{t("Пригласить в команду", "Invite to team", "Invitar al equipo")}</button></form>}
+        </> : <><p>{t("Приглашает", "Invited by", "Invitación de")} {team.sender}.</p><button disabled={busy} onClick={() => send("/" + team.id + "/accept")}>{t("Принять приглашение", "Accept invitation", "Aceptar invitación")}</button>
+          <button disabled={busy} onClick={() => send("/" + team.id + "/decline")}>{t("Отклонить приглашение", "Decline invitation", "Rechazar invitación")}</button>
+          <button disabled={busy} onClick={() => send("/blocks/block", { name: team.sender })}>{t("Отключить приглашения от", "Block invitations from", "Bloquear invitaciones de")} {team.sender}</button></>}
       </section>)}
-      {blocked.length > 0 && <section><h2>{t("Приглашения отключены", "Blocked invitations")}</h2><ul>{blocked.map(name =>
-        <li key={name}>{name} <button disabled={busy} onClick={() => send("/blocks/unblock", { name })}>{t("Разрешить приглашения от", "Allow invitations from")} {name}</button></li>
+      {blocked.length > 0 && <section><h2>{t("Приглашения отключены", "Blocked invitations", "Invitaciones bloqueadas")}</h2><ul>{blocked.map(name =>
+        <li key={name}>{name} <button disabled={busy} onClick={() => send("/blocks/unblock", { name })}>{t("Разрешить приглашения от", "Allow invitations from", "Permitir invitaciones de")} {name}</button></li>
       )}</ul></section>}
     </>}
-    {loadError && <p role="alert">{t("Не удалось загрузить команды.", "Could not load teams.")} <button onClick={() => refresh(n => n + 1)}>{t("Повторить", "Retry")}</button></p>}
-    {error && <p role="alert">{error === "invite" ? t("Приглашение этому игроку недоступно.", "This player cannot be invited.") :
-      error === "player" ? t("Игрок с таким именем не найден.", "Player not found.") :
-      error === "save" ? t("Изменение не сохранено. Проверьте данные и повторите попытку.", "Could not save changes. Check the details and try again.") :
-      t("Ошибка соединения.", "Connection error.")}</p>}
+    {loadError && <p role="alert">{t("Не удалось загрузить команды.", "Could not load teams.", "No se pudieron cargar los equipos.")} <button onClick={() => refresh(n => n + 1)}>{t("Повторить", "Retry", "Reintentar")}</button></p>}
+    {error && <p role="alert">{error === "invite" ? t("Приглашение этому игроку недоступно.", "This player cannot be invited.", "No se puede invitar a este jugador.") :
+      error === "player" ? t("Игрок с таким именем не найден.", "Player not found.", "No se encontró al jugador.") :
+      error === "save" ? t("Изменение не сохранено. Проверьте данные и повторите попытку.", "Could not save changes. Check the details and try again.", "No se pudieron guardar los cambios. Revisa los datos y vuelve a intentarlo.") :
+      t("Ошибка соединения.", "Connection error.", "Error de conexión.")}</p>}
   </main>;
 }
