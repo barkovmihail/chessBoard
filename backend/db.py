@@ -31,6 +31,10 @@ teams = Table("teams", metadata,
     Column("id", String, primary_key=True), Column("name", String, nullable=False),
     Column("owner", ForeignKey("accounts.player"), nullable=False),
 )
+team_invite_blocks = Table("team_invite_blocks", metadata,
+    Column("player", ForeignKey("accounts.player"), primary_key=True),
+    Column("sender", ForeignKey("accounts.player"), primary_key=True),
+)
 team_seats = Table("team_seats", metadata,
     Column("team", ForeignKey("teams.id"), primary_key=True),
     Column("player", ForeignKey("accounts.player"), primary_key=True), Column("joined", Boolean, nullable=False),

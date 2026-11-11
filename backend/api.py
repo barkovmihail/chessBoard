@@ -237,6 +237,16 @@ def create_app(path: Path):
         app.state.teams.create(member(request), command.id.hex, command.name)
         return {"ok": True}
 
+    @app.get("/api/teams/blocks")
+    def team_blocks(request: Request, response: Response):
+        response.headers["Cache-Control"] = "private, no-store"
+        return app.state.teams.blocked(member(request))
+
+    @app.post("/api/teams/blocks/{action}")
+    def change_team_block(action: Literal["block", "unblock"], command: InvitePlayer, request: Request):
+        app.state.teams.block(member(request), command.name, action == "block")
+        return {"ok": True}
+
     @app.post("/api/teams/{key}/invite")
     def invite_teammate(key: UUID, command: InvitePlayer, request: Request):
         app.state.teams.invite(member(request), key.hex, command.name)

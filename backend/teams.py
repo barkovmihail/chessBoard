@@ -1,7 +1,7 @@
 from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.sqlite import insert
 
-from .db import accounts, team_seats, teams
+from .db import accounts, team_seats, team_invite_blocks, teams
 from .domain import GameError
 
 
@@ -23,16 +23,16 @@ class Teams:
     def overview(self, player):
         with self.engine.connect() as db:
             db.exec_driver_sql("BEGIN")
-            mine = db.execute(select(teams.c.id, teams.c.name, teams.c.owner, team_seats.c.joined)
-                .join(team_seats).where(team_seats.c.player == player).order_by(teams.c.name, teams.c.id)).all()
+            mine = db.execute(select(teams.c.id, teams.c.name, teams.c.owner, team_seats.c.joined, accounts.c.name)
+                .join(team_seats, teams.c.id == team_seats.c.team).join(accounts, accounts.c.player == teams.c.owner).where(team_seats.c.player == player).order_by(teams.c.name, teams.c.id)).all()
             result = []
-            for key, name, owner, joined in mine:
+            for key, name, owner, joined, sender in mine:
                 members = []
                 if joined:
                     members = db.execute(select(accounts.c.name, team_seats.c.joined).join(team_seats)
                         .where(team_seats.c.team == key, team_seats.c.joined | (owner == player))
                         .order_by(accounts.c.name)).mappings().all()
-                result.append(dict(id=key, name=name, owner=owner == player, joined=joined,
+                result.append(dict(id=key, name=name, sender=sender, owner=owner == player, joined=joined,
                                    members=[dict(row) for row in members]))
             return result
 
@@ -44,6 +44,9 @@ class Teams:
             target = db.scalar(select(accounts.c.player).where(accounts.c.name == name.strip()))
             if not target:
                 raise GameError("unknown_player", 404)
+            if db.scalar(select(team_invite_blocks.c.sender).where(team_invite_blocks.c.player == target,
+                                                                  team_invite_blocks.c.sender == player)):
+                raise GameError("invite_unavailable", 409)
             db.execute(insert(team_seats).values(team=key, player=target, joined=False).on_conflict_do_nothing())
 
     def respond(self, player, key, accept):
@@ -54,3 +57,22 @@ class Teams:
                     raise GameError("invitation_missing", 404)
             else:
                 db.execute(delete(team_seats).where(seat, team_seats.c.joined.is_(False)))
+
+    def blocked(self, player):
+        with self.engine.connect() as db:
+            return db.scalars(select(accounts.c.name).join(team_invite_blocks, team_invite_blocks.c.sender == accounts.c.player)
+                .where(team_invite_blocks.c.player == player).order_by(accounts.c.name)).all()
+
+    def block(self, player, sender_name, enabled):
+        with self.engine.begin() as db:
+            db.exec_driver_sql("BEGIN IMMEDIATE")
+            sender = db.scalar(select(accounts.c.player).where(accounts.c.name == sender_name.strip()))
+            if not sender or sender == player:
+                raise GameError("unknown_player", 422)
+            if enabled:
+                db.execute(insert(team_invite_blocks).values(player=player, sender=sender).on_conflict_do_nothing())
+                db.execute(delete(team_seats).where(team_seats.c.player == player, team_seats.c.joined.is_(False),
+                    team_seats.c.team.in_(select(teams.c.id).where(teams.c.owner == sender))))
+            else:
+                db.execute(delete(team_invite_blocks).where(team_invite_blocks.c.player == player,
+                                                           team_invite_blocks.c.sender == sender))
