@@ -8,6 +8,8 @@ export interface Game {
   moves: string[];
   legal: string[];
   result: string | null;
+  side: "white" | "black" | "both";
+  waiting: boolean;
 }
 
 export class RequestError extends Error {}
@@ -18,7 +20,8 @@ export async function requestGame(path: string, body?: object): Promise<Game> {
   });
   const data = await response.json();
   if (!response.ok) throw new RequestError(String(data.detail));
-  if (typeof data.id !== "string" || !Number.isInteger(data.version) ||
+  if (!["white", "black", "both"].includes(data.side) || typeof data.waiting !== "boolean" ||
+      typeof data.id !== "string" || !Number.isInteger(data.version) ||
       !["white", "black"].includes(data.turn) || !Array.isArray(data.position) ||
       !data.position.every((p: BoardPiece) => p && /^[a-h][1-8]$/.test(p.square) &&
         ["white", "black"].includes(p.color) && ["king","queen","rook","bishop","knight","pawn"].includes(p.type)) ||

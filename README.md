@@ -22,3 +22,5 @@ The classic version of the chessboard was chosen. If desired, you can add styles
 Нажмите «Начать партию», затем e2 и e4. Эта партия предназначена для двух сторон за одним устройством. Адрес страницы и cookie этого браузера позволяют вернуться к позиции. По умолчанию база хранится в `chessboard.sqlite3`; переменная `CHESSBOARD_DB` задаёт другой путь.
 
 Для серверных проверок установите `backend/requirements-test.txt` в то же окружение и выполните `.venv/bin/python -m unittest discover -s backend/tests`. Для браузерной проверки после сборки установите Chromium командой `.venv/bin/playwright install chromium` и выполните `.venv/bin/python -m backend.tests.browser_game`. Для установленного Chrome задайте `BROWSER_CHANNEL=chrome`.
+
+Для игры вдвоём выберите «Пригласить друга» и передайте ссылку второму игроку. Он открывает её в своём браузере и нажимает «Играть за чёрных». Обоим игрокам нужен доступ к адресу сервера. После входа позиция сверяется с сервером каждую секунду.

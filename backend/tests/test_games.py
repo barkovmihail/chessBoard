@@ -37,3 +37,27 @@ class SavedGameTest(TestCase):
                 with ThreadPoolExecutor(2) as pool:
                     self.assertEqual(sorted(pool.map(reply, ["e7e5", "c7c5"])), [200, 409])
                 self.assertEqual(client.get(url).json()["version"], 2)
+
+    def test_invitation_seats_and_turns(self):
+        with TemporaryDirectory() as directory, TestClient(create_app(Path(directory) / "games.db")) as api:
+            game = api.post("/api/games", json={"online": True}).json()
+            url = "/api/games/" + game["id"]
+            command = {"uci": "e2e4", "version": 0, "command_id": str(uuid4())}
+            self.assertEqual(api.post(url + "/moves", json=command).status_code, 403)
+            host = api.cookies["player"]
+            api.cookies.clear()
+
+            def join(player):
+                return api.post(url + "/join", headers={"Cookie": f"player={player}"}).status_code
+
+            with ThreadPoolExecutor(2) as pool:
+                statuses = list(pool.map(join, ["first", "second"]))
+            self.assertEqual(sorted(statuses), [200, 409])
+            guest = ["first", "second"][statuses.index(200)]
+            self.assertEqual(join(guest), 200)
+            self.assertEqual(api.post(url + "/moves", json=command,
+                             headers={"Cookie": f"player={guest}"}).status_code, 403)
+            self.assertEqual(api.post(url + "/moves", json=command,
+                             headers={"Cookie": f"player={host}"}).status_code, 200)
+            self.assertEqual(api.post(url + "/moves", json=command,
+                             headers={"Cookie": "player=stranger"}).status_code, 404)

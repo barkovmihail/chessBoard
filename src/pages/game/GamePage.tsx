@@ -4,14 +4,22 @@ import styles from "./game.module.css";
 
 interface Command { uci: string; version: number; command_id: string }
 
+function commandId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
 export function GamePage() {
   const [game, setGame] = useState<Game>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [invite, setInvite] = useState<string>();
   const [pending, setPending] = useState<Command>();
 
   useEffect(() => {
-    const id = new URLSearchParams(location.search).get("game");
+    const query = new URLSearchParams(location.search);
+    setInvite(query.get("invite") ?? undefined);
+    const id = query.get("game");
     if (!id) return;
     let active = true;
     setBusy(true);
@@ -22,14 +30,36 @@ export function GamePage() {
     return () => { active = false; };
   }, []);
 
-  async function create() {
+  const onlineId = game && game.side !== "both" && !game.result ? game.id : undefined;
+  useEffect(() => {
+    if (!onlineId || busy || pending) return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    async function refresh() {
+      try {
+        const result = await requestGame("/" + onlineId);
+        if (active) {
+          setGame(previous => previous && previous.version > result.version ? previous : result);
+          setError("");
+        }
+      } catch { if (active) setError("Восстанавливаем связь с партией…"); }
+      if (active) timer = setTimeout(refresh, 1000);
+    }
+    timer = setTimeout(refresh, 1000);
+    return () => { active = false; clearTimeout(timer); };
+  }, [onlineId, busy, pending]);
+
+  async function create(online: boolean) {
     setBusy(true);
     setError("");
     try {
-      const result = await requestGame("", {});
+      const result = invite ? await requestGame("/" + encodeURIComponent(invite) + "/join", {})
+        : await requestGame("", { online });
+      setInvite(undefined);
       history.replaceState(null, "", "?game=" + result.id);
       setGame(result);
-    } catch { setError("Не удалось создать партию. Попробуйте ещё раз."); }
+    } catch (failure) { setError(failure instanceof RequestError && failure.message === "seat_taken"
+      ? "Оба места уже заняты." : "Не удалось открыть партию. Попробуйте ещё раз."); }
     finally { setBusy(false); }
   }
 
@@ -54,11 +84,16 @@ export function GamePage() {
   }
 
   return <main className={styles.app}>
-    <PlayBoard key={game?.version} game={game} enabled={!!game && !busy && !pending && !game.result}
-      onMove={uci => game && submit({ uci, version: game.version, command_id: crypto.randomUUID() })} />
-    {!game && <button disabled={busy} onClick={create}>Начать партию</button>}
+    <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending && !game.result}
+      onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />
+    {!game && (invite
+      ? <button disabled={busy} onClick={() => create(true)}>Играть за чёрных</button>
+      : <><button disabled={busy} onClick={() => create(false)}>Начать партию</button>
+        <button disabled={busy} onClick={() => create(true)}>Пригласить друга</button></>)}
+    {game?.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
+      onFocus={event => event.target.select()} /></label>}
     {game && <section aria-live="polite">
-      <p>{game.result ?? (game.turn === "white" ? "Ход белых" : "Ход чёрных")}</p>
+      <p>{game.waiting ? "Ожидание соперника" : game.result ?? (game.turn === "white" ? "Ход белых" : "Ход чёрных")}</p>
       <p>{game.moves.join(" ")}</p>
     </section>}
     {error && <p role="alert">{error}</p>}

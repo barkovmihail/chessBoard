@@ -16,6 +16,10 @@ from .domain import GameError
 from .service import Games
 
 
+class CreateGame(BaseModel):
+    online: bool = False
+
+
 class Move(BaseModel):
     uci: str = Field(pattern=r"^[a-h][1-8][a-h][1-8][qrbn]?$")
     version: int = Field(ge=0)
@@ -49,12 +53,19 @@ def create_app(path: Path):
     async def game_error(_, exc):
         return JSONResponse({"detail": exc.code}, status_code=exc.status)
 
-    @app.post("/api/games", status_code=201)
-    def create(request: Request, response: Response):
+    def player_session(request, response):
         token = request.cookies.get("player") or secrets.token_urlsafe(32)
         response.set_cookie("player", token, httponly=True, samesite="lax",
                             secure=request.url.scheme == "https", max_age=31536000)
-        return app.state.games.create(identity(token))
+        return identity(token)
+
+    @app.post("/api/games", status_code=201)
+    def create(request: Request, response: Response, options: CreateGame | None = None):
+        return app.state.games.create(player_session(request, response), bool(options and options.online))
+
+    @app.post("/api/games/{game_id}/join")
+    def join(game_id: str, request: Request, response: Response):
+        return app.state.games.join(game_id, player_session(request, response))
 
     @app.get("/api/games/{game_id}")
     def get(game_id: str, request: Request):

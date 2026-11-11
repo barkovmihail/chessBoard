@@ -24,7 +24,7 @@ export function PlayBoard({ game, enabled, onMove }: Props) {
   }
   const names: Record<string, string> = { q: "Ферзь", r: "Ладья", b: "Слон", n: "Конь" };
   return <>
-    <Board position={game?.position ?? initialPosition} selected={selected}
+    <Board flipped={game?.side === "black"} position={game?.position ?? initialPosition} selected={selected}
       targets={choices.map(move => move.slice(2, 4))} onSquare={enabled ? choose : undefined} />
     {enabled && promotions.map(move => <button key={move} onClick={() => {
       setPromotions([]); select(undefined); onMove(move);

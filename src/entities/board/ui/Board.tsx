@@ -7,16 +7,19 @@ import pieces from "./pieces.module.css";
 interface BoardProps {
   position: readonly BoardPiece[];
   selected?: Square;
+  flipped?: boolean;
   targets?: readonly string[];
   onSquare?: (square: Square) => void;
 }
 
-export function Board({ position, selected, targets, onSquare }: BoardProps) {
+export function Board({ position, selected, targets, onSquare, flipped }: BoardProps) {
   const occupied = new Map(position.map(piece => [piece.square, piece]));
+  const visibleFiles = flipped ? [...files].reverse() : files;
+  const visibleRanks = flipped ? [...ranks].reverse() : ranks;
   return (
     <div className={styles.board}>
       <div className={styles.cells}>
-        {ranks.map((rank, row) => files.map((file, column) => {
+        {visibleRanks.map((rank, row) => visibleFiles.map((file, column) => {
           const square: Square = `${file}${rank}`;
           const piece = occupied.get(square);
           return (
@@ -30,8 +33,8 @@ export function Board({ position, selected, targets, onSquare }: BoardProps) {
           );
         }))}
       </div>
-      <div className={styles.ranks}>{ranks.map(rank => <span key={rank}>{rank}</span>)}</div>
-      <div className={styles.files}>{files.map(file => <span key={file}>{file.toUpperCase()}</span>)}</div>
+      <div className={styles.ranks}>{visibleRanks.map(rank => <span key={rank}>{rank}</span>)}</div>
+      <div className={styles.files}>{visibleFiles.map(file => <span key={file}>{file.toUpperCase()}</span>)}</div>
     </div>
   );
 }

@@ -2,13 +2,15 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import Column, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, create_engine, event
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, create_engine, event
 from sqlalchemy.engine import URL
 
 metadata = MetaData()
 games = Table("games", metadata,
     Column("id", String, primary_key=True),
     Column("owner", String, nullable=False),
+    Column("online", Boolean, nullable=False, server_default="0"),
+    Column("guest", String),
     Column("version", Integer, nullable=False),
 )
 moves = Table("moves", metadata,
