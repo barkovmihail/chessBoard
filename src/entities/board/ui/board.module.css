@@ -36,3 +36,7 @@
 .cells button:not(:disabled) { cursor: pointer; }
 .cells button[aria-pressed=true], .cells button:focus-visible { outline: 3px solid #345a33; outline-offset: -3px; }
 .cells button[data-target=true] { box-shadow: inset 0 0 0 3px #759957; }
+
+.arriving { position: relative; z-index: 1; animation: arrive 220ms ease-out; }
+@keyframes arrive { from { transform: translate(var(--from-x), var(--from-y)); } }
+@media (prefers-reduced-motion: reduce) { .arriving { animation: none; } }

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from .db import open_database
 from .domain import GameError
+from .puzzles import random_puzzle
 from .service import Games
 from .events import GameEvents
 
@@ -92,6 +93,12 @@ def create_app(path: Path):
             return
         await app.state.events.stream(socket, app.state.games, game_id,
                                       identity(socket.cookies.get("player")))
+
+    catalogue = Path(os.environ.get("CHESSBOARD_PUZZLES_DB", path.with_name("puzzles.sqlite3")))
+
+    @app.get("/api/puzzles/random")
+    def puzzle():
+        return random_puzzle(catalogue)
 
     build = Path(__file__).resolve().parents[1] / "build"
     if build.is_dir():

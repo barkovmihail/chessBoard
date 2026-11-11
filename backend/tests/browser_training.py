@@ -1,0 +1,53 @@
+"""Run against the web app with a loaded puzzle catalogue on CHESSBOARD_TEST_URL."""
+import os
+import unittest
+
+import chess
+from playwright.sync_api import expect, sync_playwright
+
+
+class TrainingTest(unittest.TestCase):
+    def test_openings_and_puzzle(self):
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(channel=os.getenv("BROWSER_CHANNEL") or None)
+            page = browser.new_page(viewport={"width": 390, "height": 844}, has_touch=True)
+            page.goto(os.getenv("CHESSBOARD_TEST_URL", "http://127.0.0.1:8011"))
+            page.get_by_role("link", name="Тренажёр дебютов").click()
+
+            def move(uci):
+                for square in [uci[:2], uci[2:4]]:
+                    page.locator(f'[data-square="{square}"]').tap()
+                if len(uci) == 5:
+                    names = {"q": "Ферзь", "r": "Ладья", "b": "Слон", "n": "Конь"}
+                    page.get_by_role("button", name=names[uci[4]]).click()
+
+            move("e2e5")
+            expect(page.get_by_text("Так пойти нельзя.", exact=False)).to_be_visible()
+            move("d2d4")
+            expect(page.get_by_text("Допустимый ход", exact=False)).to_be_visible()
+            page.get_by_role("button", name="Показать ход").click()
+            expect(page.locator('[data-square="e4"]')).to_have_attribute("data-target", "true")
+
+            for index, sequence in enumerate([
+                "e2e4 g1f3 f1c4 c2c3", "e2e4 g1f3 f1b5 b5a4", "d2d4 c2c4 b1c3 c1g5",
+                "c7c5 d7d6 c5d4 g8f6", "e7e6 d7d5 c7c5 b8c6",
+            ]):
+                page.get_by_label("Дебют", exact=True).select_option(str(index))
+                for uci in sequence.split():
+                    move(uci)
+                expect(page.get_by_role("heading", name="Линия пройдена")).to_be_visible()
+
+            with page.expect_response(lambda res: "/api/puzzles/random" in res.url) as fetched:
+                page.get_by_role("link", name="Шахматные задачи").click()
+            puzzle = fetched.value.json()
+            board = chess.Board(puzzle["fen"])
+            for ply, uci in enumerate(puzzle["moves"]):
+                board.push_uci(uci)
+                if ply % 2:
+                    move(uci)
+            expect(page.get_by_role("heading", name="Задача решена")).to_be_visible()
+            browser.close()
+
+
+if __name__ == "__main__":
+    unittest.main()

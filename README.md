@@ -24,3 +24,5 @@ The classic version of the chessboard was chosen. If desired, you can add styles
 Для серверных проверок установите `backend/requirements-test.txt` в то же окружение и выполните `.venv/bin/python -m unittest discover -s backend/tests`. Для браузерной проверки после сборки установите Chromium командой `.venv/bin/playwright install chromium` и выполните `.venv/bin/python -m backend.tests.browser_game`. Для установленного Chrome задайте `BROWSER_CHANNEL=chrome`.
 
 Для игры вдвоём выберите «Пригласить друга» и передайте ссылку второму игроку. Он открывает её в своём браузере и нажимает «Играть за чёрных». Обоим игрокам нужен доступ к адресу сервера. После входа сервер передаёт позицию по WebSocket при изменениях и сразу после переподключения.
+
+В веб-приложении доступны «Тренажёр дебютов» и «Шахматные задачи». Для задач нужен локальный каталог. [Загрузка данных](docs/features/puzzles.md) · [Описание функций](docs/features/README.md)
