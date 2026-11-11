@@ -23,12 +23,14 @@ body {
 :root[data-board=green] { --square-light: #eeeed2; --square-dark: #769656; }
 :root[data-board=blue] { --square-light: #dee3e6; --square-dark: #8ca2ad; }
 body { background: var(--paper); color: var(--ink); }
-.appearance { position: relative; }
-.appearance summary { cursor: pointer; }
-.appearance-options { position: absolute; right: 0; top: 100%; z-index: 5; min-width: 200px; padding: 12px;
+.profile-menu summary { cursor: pointer; }
+.profile-panel { position: absolute; z-index: 8; right: max(8px, calc((100% - 980px) / 2)); top: 100%;
+  width: min(280px, calc(100% - 16px)); max-height: 65vh; overflow: auto; padding: 12px;
   border: 1px solid var(--edge); border-radius: 6px; background: var(--panel); }
-.appearance-options label { display: flex; align-items: center; justify-content: space-between; gap: 1em; padding: 4px; }
-@media (max-width: 520px) { .appearance-options { position: static; } }
+.profile-panel > a, .profile-panel > button, .profile-panel summary { display: block; width: 100%; padding: 8px;
+  text-align: left; color: var(--link); font: inherit; background: transparent; border: 0; cursor: pointer; }
+.profile-panel summary { display: list-item; }
+.appearance-options label { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px; }
 
 .study-nav { position: relative; }
 .current-games summary { cursor: pointer; }
@@ -40,3 +42,11 @@ body { background: var(--paper); color: var(--ink); }
 .current-games fieldset { min-width: 0; }
 .current-games label { display: block; }
 .current-games input { max-width: 100%; }
+
+.appearance-options fieldset { margin: 6px 0; border: 1px solid var(--edge); }
+.appearance-options fieldset label { justify-content: flex-start; cursor: pointer; }
+.palette { display: inline-block; width: 32px; height: 32px; background:
+  conic-gradient(var(--a) 25%, var(--b) 0 50%, var(--a) 0 75%, var(--b) 0) center / 16px 16px; }
+.palette.brown { --a: #f0d9b5; --b: #b58863; }
+.palette.green { --a: #eeeed2; --b: #769656; }
+.palette.blue { --a: #dee3e6; --b: #8ca2ad; }

@@ -29,7 +29,7 @@ export function NotificationSettings() {
     catch { setValues(previous); setError(true); }
     finally { setBusy(false); }
   }
-  return <details><summary>Настройки уведомлений</summary>
+  return <details id="notification-settings" open={new URLSearchParams(location.search).get("settings") === "1" || undefined}><summary>Настройки уведомлений</summary>
     {values && <fieldset disabled={busy}><legend>События</legend>{(Object.keys(labels) as Setting[]).map(k =>
       <label key={k}><input type="checkbox" checked={values[k]} onChange={e => change(k, e.target.checked)} />{labels[k]}</label>)}</fieldset>}
     {error && <p role="alert">Не удалось загрузить настройки. Обновите страницу.</p>}

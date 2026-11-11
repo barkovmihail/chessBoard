@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 
+import { KnightPreview } from "../entities/board";
+
 const options = {
   board: { brown: "Классическая", green: "Зелёная", blue: "Голубая" },
   pieces: { cburnett: "Cburnett", merida: "Merida", alpha: "Alpha" },
@@ -30,11 +32,16 @@ export function Appearance() {
     try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch { /* Session-only settings. */ }
   }, [settings]);
   return <details className="appearance"><summary>Оформление</summary>
-    <div className="appearance-options">{keys.map(key => <label key={key}>{labels[key]}
-      <select value={settings[key]} aria-label={labels[key]} onChange={event =>
-        setSettings({ ...settings, [key]: event.target.value })}>
-        {Object.entries(options[key]).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-      </select>
-    </label>)}</div>
+    <div className="appearance-options">
+      {keys.map(key => <fieldset key={key}><legend>{labels[key]}</legend>
+        {Object.entries(options[key]).map(([value, label]) => <label key={value}>
+          <input type="radio" name={key} checked={settings[key] === value}
+            onChange={() => setSettings({ ...settings, [key]: value })} />
+          {key === "pieces" && <KnightPreview set={value} />}
+          {key === "board" && <span aria-hidden="true" className={"palette " + value} />}
+          {label}
+        </label>)}
+      </fieldset>)}
+    </div>
   </details>;
 }

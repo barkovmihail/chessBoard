@@ -40,7 +40,7 @@ export function Account() {
     finally { setBusy(false); }
   }
 
-  return <section aria-label="Аккаунт">
+  return <section id="account" aria-label="Аккаунт">
     {account ? <><h2>{account}</h2><NotificationSettings /><h3>Рейтинг</h3>
       {ratings && <ul>{(Object.keys(pools) as (keyof typeof pools)[]).map(key =>
         <li key={key}>{pools[key]} · {ratings[key]}</li>)}</ul>}<button disabled={busy} onClick={() => submit()}>Выйти</button></> :
