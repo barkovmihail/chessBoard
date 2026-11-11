@@ -6,7 +6,7 @@ import { lessonsByLanguage } from "./lessons";
 
 export function OpeningsPage() {
   const { language, t } = useLanguage();
-  const lessons = lessonsByLanguage[language];
+  const lessons = lessonsByLanguage[language === "es" ? "en" : language];
   const params = new URLSearchParams(location.search);
   const chapter = params.get("chapter");
   if (chapter === "new") return <ChapterEditor />;

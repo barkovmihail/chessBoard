@@ -1,3 +1,5 @@
+import type { Language } from "../../shared/language";
+
 export const reasons: Record<string, string> = {
   threefold_repetition: "Троекратное повторение", fifty_moves: "Правило 50 ходов",
   timeout: "Время истекло", resignation: "Сдача", agreement: "Ничья по соглашению", checkmate: "Мат", stalemate: "Пат",
@@ -12,6 +14,6 @@ const englishReasons: Record<string, string> = {
   fivefold_repetition: "Fivefold repetition", seventyfive_moves: "Seventy-five-move rule",
 };
 
-export function resultReason(key: string, language: "ru" | "en") {
+export function resultReason(key: string, language: Language) {
   return (language === "ru" ? reasons : englishReasons)[key] ?? key;
 }

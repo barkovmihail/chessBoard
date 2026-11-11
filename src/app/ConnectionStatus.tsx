@@ -56,9 +56,9 @@ export function useConnectionSample(open: boolean) {
 export function ConnectionStatus({ sample }: { sample: ConnectionSample }) {
 
   const { t } = useLanguage();
-  return <div role="group" aria-label={t("Качество связи", "Connection quality")} className="connection-status">
-    {sample === "offline" ? t("Нет связи", "Disconnected") : sample === null ? t("Проверка связи…", "Checking connection…") : <>
-      <span>{sample.ping < 150 ? t("Хорошая связь", "Good connection") : sample.ping < 400 ? t("Средняя задержка", "Moderate latency") : t("Высокая задержка", "High latency")}</span>
+  return <div role="group" aria-label={t("Качество связи", "Connection quality", "Calidad de la conexión")} className="connection-status">
+    {sample === "offline" ? t("Нет связи", "Disconnected", "Sin conexión") : sample === null ? t("Проверка связи…", "Checking connection…", "Comprobando la conexión…") : <>
+      <span>{sample.ping < 150 ? t("Хорошая связь", "Good connection", "Buena conexión") : sample.ping < 400 ? t("Средняя задержка", "Moderate latency", "Latencia moderada") : t("Высокая задержка", "High latency", "Latencia alta")}</span>
       <span>PING {sample.ping} {t("мс", "ms")}</span><span>SERVER {sample.server} {t("мс", "ms")}</span>
     </>}
   </div>;

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Language = "ru" | "en";
+export type Language = "ru" | "en" | "es";
 const key = "chessboard.language";
 const LanguageContext = createContext<{ language: Language; select: (value: Language) => void }>({
   language: "ru", select: () => {},
@@ -8,7 +8,10 @@ const LanguageContext = createContext<{ language: Language; select: (value: Lang
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, select] = useState<Language>(() => {
-    try { return localStorage.getItem(key) === "en" ? "en" : "ru"; }
+    try {
+      const saved = localStorage.getItem(key);
+      return saved === "en" || saved === "es" ? saved : "ru";
+    }
     catch { return "ru"; }
   });
   useEffect(() => {
@@ -20,5 +23,5 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
 export function useLanguage() {
   const { language, select } = useContext(LanguageContext);
-  return { language, select, t: (ru: string, en: string) => language === "ru" ? ru : en };
+  return { language, select, t: (ru: string, en: string, es = en) => ({ ru, en, es })[language] };
 }

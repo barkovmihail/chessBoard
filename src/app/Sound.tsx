@@ -18,14 +18,14 @@ export function Sound() {
     setSettings(next);
     if (next.enabled) unlockSound();
   }
-  return <details className="appearance"><summary>{t("Звук", "Sound")}</summary>
+  return <details className="appearance"><summary>{t("Звук", "Sound", "Sonido")}</summary>
     <div className="appearance-options">
       <label><input type="checkbox" checked={settings.enabled}
-        onChange={e => change({ ...settings, enabled: e.target.checked })} />{t("Звуки игры", "Game sounds")}</label>
-      <label>{t("Громкость", "Volume")} <input type="range" min="0" max="100" value={settings.volume}
+        onChange={e => change({ ...settings, enabled: e.target.checked })} />{t("Звуки игры", "Game sounds", "Sonidos de la partida")}</label>
+      <label>{t("Громкость", "Volume", "Volumen")} <input type="range" min="0" max="100" value={settings.volume}
         onChange={e => change({ ...settings, volume: Number(e.target.value) })} />{settings.volume}%</label>
-      <span>{t("Ход фигуры · Алебастр", "Piece move · Alabaster")}</span>
-      <button disabled={!settings.enabled || !settings.volume} onClick={() => playSound("move")}>{t("Прослушать", "Preview")}</button>
+      <span>{t("Ход фигуры · Алебастр", "Piece move · Alabaster", "Movimiento de pieza · Alabaster")}</span>
+      <button disabled={!settings.enabled || !settings.volume} onClick={() => playSound("move")}>{t("Прослушать", "Preview", "Escuchar")}</button>
     </div>
   </details>;
 }

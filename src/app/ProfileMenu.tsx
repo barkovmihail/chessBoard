@@ -50,24 +50,24 @@ export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current
       trigger.current?.focus();
     }
   }}>
-    <summary className="nav-trigger" title={name ?? t("Профиль", "Profile")} ref={trigger} aria-label={t("Меню профиля", "Profile menu")}><NavIcon name="account" /></summary>
+    <summary className="nav-trigger" title={name ?? t("Профиль", "Profile", "Perfil")} ref={trigger} aria-label={t("Меню профиля", "Profile menu", "Menú de perfil")}><NavIcon name="account" /></summary>
     <div className="profile-panel">{name && <strong>{name}</strong>}
-      <a href="?section=profile" aria-current={current ? "page" : undefined}>{t("Профиль", "Profile")}</a>
+      <a href="?section=profile" aria-current={current ? "page" : undefined}>{t("Профиль", "Profile", "Perfil")}</a>
       {name && <span role="status" className="profile-presence" data-online={!!sample && sample !== "offline"}>
-        {sample === null ? t("Проверяем связь…", "Checking connection…") : sample === "offline" ? t("Не в сети", "Offline") : t("В сети", "Online")}
+        {sample === null ? t("Проверяем связь…", "Checking connection…", "Comprobando la conexión…") : sample === "offline" ? t("Не в сети", "Offline", "Sin conexión") : t("В сети", "Online", "En línea")}
       </span>}
-      {name === null && <a href="?section=profile#account">{t("Войти", "Sign in")}</a>}
+      {name === null && <a href="?section=profile#account">{t("Войти", "Sign in", "Iniciar sesión")}</a>}
       {name && <>
-        <button onClick={() => { if (menu.current) menu.current.open = false; onInbox(); }}>{t("Входящие", "Inbox")}</button>
-        <a href="?section=profile&settings=1#notification-settings">{t("Настройки", "Settings")}</a>
-        <button disabled={busy} onClick={logout}>{t("Выйти", "Sign out")}</button>
+        <button onClick={() => { if (menu.current) menu.current.open = false; onInbox(); }}>{t("Входящие", "Inbox", "Bandeja de entrada")}</button>
+        <a href="?section=profile&settings=1#notification-settings">{t("Настройки", "Settings", "Ajustes")}</a>
+        <button disabled={busy} onClick={logout}>{t("Выйти", "Sign out", "Cerrar sesión")}</button>
       </>}
-      {error && <p role="alert">{error === "account" ? t("Не удалось загрузить аккаунт.", "Could not load your account.") : t("Не удалось выйти. Повторите попытку.", "Could not sign out. Try again.")}</p>}
-      <details className="appearance"><summary>{t("Язык (Language)", "Language")}</summary>
-        <fieldset><legend>{t("Язык интерфейса", "Interface language")}</legend>
-          {(["ru", "en"] as const).map(code => <label key={code} lang={code}>
+      {error && <p role="alert">{error === "account" ? t("Не удалось загрузить аккаунт.", "Could not load your account.", "No se pudo cargar tu cuenta.") : t("Не удалось выйти. Повторите попытку.", "Could not sign out. Try again.", "No se pudo cerrar la sesión. Inténtalo de nuevo.")}</p>}
+      <details className="appearance"><summary>{t("Язык (Language)", "Language", "Idioma")}</summary>
+        <fieldset><legend>{t("Язык интерфейса", "Interface language", "Idioma de la interfaz")}</legend>
+          {(["ru", "en", "es"] as const).map(code => <label key={code} lang={code}>
             <input type="radio" name="language" checked={language === code} onChange={() => select(code)} />
-            {code === "ru" ? "Русский" : "English"}
+            {{ ru: "Русский", en: "English", es: "Español" }[code]}
           </label>)}
         </fieldset>
       </details>
