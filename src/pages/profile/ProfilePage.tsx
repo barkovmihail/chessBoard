@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { Account } from "./Account";
 import { reasons } from "../../features/play";
 
 interface Entry {
   id: string;
+  opponent: string | null;
   side: "white" | "black" | "both";
   result: string;
   reason: string;
@@ -12,7 +14,7 @@ interface Entry {
 }
 
 function validEntry(row: Entry) {
-  return row && typeof row.id === "string" && ["white", "black", "both"].includes(row.side) &&
+  return row && typeof row.id === "string" && (row.opponent === null || typeof row.opponent === "string") && ["white", "black", "both"].includes(row.side) &&
     typeof row.result === "string" && typeof row.reason === "string" &&
     [row.finished_ms, row.base_minutes, row.increment_seconds].every(n => n === null || Number.isSafeInteger(n));
 }
@@ -35,13 +37,13 @@ export function ProfilePage() {
     }).catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [offset, retry]);
-  return <main><h1>История игр</h1>
+  return <main><h1>Профиль</h1><Account /><h2>История игр</h2>
     {error ? <p role="alert">Не удалось загрузить партии. <button onClick={() => setRetry(retry + 1)}>Повторить</button></p> :
       !page ? <p>Загрузка…</p> : <>
         {!page.items.length && <p>Завершённых партий пока нет</p>}
         <ul>{page.items.map(game => <li key={game.id}><a href={"?game=" + encodeURIComponent(game.id)}>
           {game.finished_ms === null ? "Дата неизвестна" : new Date(game.finished_ms).toLocaleString("ru-RU")} · {
-          game.side === "both" ? "На одном устройстве" : "Гость · " + (game.side === "white" ? "Вы играли белыми" : "Вы играли чёрными")} · {
+          game.side === "both" ? "На одном устройстве" : (game.opponent ?? "Гость") + " · " + (game.side === "white" ? "Вы играли белыми" : "Вы играли чёрными")} · {
           game.base_minutes === null ? "Без часов" : game.base_minutes + "+" + game.increment_seconds} · {
           game.result} · {reasons[game.reason] ?? game.reason}</a></li>)}</ul>
         {offset > 0 && <button onClick={() => setOffset(Math.max(0, offset - 20))}>Предыдущая страница</button>}

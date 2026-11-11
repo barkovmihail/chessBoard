@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import os
 import secrets
 from contextlib import asynccontextmanager, suppress
@@ -13,6 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .accounts import Accounts, SESSION_SECONDS, digest
 from .db import open_database
 from .domain import GameError
 from .puzzles import random_puzzle
@@ -42,14 +42,16 @@ class Action(BaseModel):
     command_id: UUID
 
 
-def identity(token):
-    return hashlib.sha256(token.encode()).hexdigest() if token else None
+class Credentials(BaseModel):
+    name: str = Field(pattern=r"^[a-zA-Z0-9_]{3,32}$")
+    password: str = Field(min_length=8, max_length=128)
 
 
 def create_app(path: Path):
     @asynccontextmanager
     async def lifespan(app):
         engine = open_database(path)
+        app.state.accounts = Accounts(engine)
         app.state.games = Games(engine)
         app.state.events = GameEvents()
         async def monitor():
@@ -80,15 +82,51 @@ def create_app(path: Path):
     async def game_error(_, exc):
         return JSONResponse({"detail": exc.code}, status_code=exc.status)
 
-    def player_session(request, response):
-        token = request.cookies.get("player") or secrets.token_urlsafe(32)
+    def current(request):
+        return app.state.accounts.resolve(request.cookies.get("player"))
+
+    def set_cookie(request, response, token, duration):
         response.set_cookie("player", token, httponly=True, samesite="lax",
-                            secure=request.url.scheme == "https", max_age=31536000)
-        return identity(token)
+                            secure=request.url.scheme == "https", max_age=duration)
+
+    def player_session(request, response):
+        player, _ = current(request)
+        if player:
+            return player
+        token = secrets.token_urlsafe(32)
+        set_cookie(request, response, token, 31536000)
+        return digest(token)
+
+    @app.get("/api/account")
+    def account(request: Request):
+        return {"name": current(request)[1]}
+
+    @app.post("/api/account/register", status_code=201)
+    def register(credentials: Credentials, request: Request, response: Response):
+        player, name = current(request)
+        if name:
+            raise GameError("already_signed_in", 409)
+        token = app.state.accounts.register(credentials.name, credentials.password, player)
+        set_cookie(request, response, token, SESSION_SECONDS)
+        return {"ok": True}
+
+    @app.post("/api/account/login")
+    def login(credentials: Credentials, request: Request, response: Response):
+        if current(request)[1]:
+            raise GameError("already_signed_in", 409)
+        token = app.state.accounts.login(credentials.name, credentials.password)
+        set_cookie(request, response, token, SESSION_SECONDS)
+        return {"ok": True}
+
+    @app.post("/api/account/logout")
+    def logout(request: Request, response: Response):
+        app.state.accounts.logout(request.cookies.get("player"))
+        response.delete_cookie("player")
+        return {"ok": True}
 
     @app.get("/api/profile/games")
     def archive(request: Request, offset: int = Query(0, ge=0)):
-        player = identity(request.cookies.get("player"))
+        player = current(request)[0]
         if not player:
             return {"items": [], "next_offset": None}
         return app.state.games.archive(player, offset, 20)
@@ -111,11 +149,11 @@ def create_app(path: Path):
 
     @app.get("/api/games/{game_id}")
     def get(game_id: str, request: Request):
-        return app.state.games.get(game_id, identity(request.cookies.get("player")))
+        return app.state.games.get(game_id, current(request)[0])
 
     @app.post("/api/games/{game_id}/moves")
     def move(game_id: str, command: Move, request: Request):
-        result = app.state.games.apply(game_id, identity(request.cookies.get("player")),
+        result = app.state.games.apply(game_id, current(request)[0],
                                     command.uci, command.version, str(command.command_id))
 
         from_thread.run_sync(app.state.events.publish, game_id)
@@ -123,7 +161,7 @@ def create_app(path: Path):
 
     @app.post("/api/games/{game_id}/actions")
     def action(game_id: str, command: Action, request: Request):
-        result = app.state.games.apply(game_id, identity(request.cookies.get("player")),
+        result = app.state.games.apply(game_id, current(request)[0],
                                       command.action, command.version, str(command.command_id))
         from_thread.run_sync(app.state.events.publish, game_id)
         return result
@@ -134,8 +172,7 @@ def create_app(path: Path):
         if socket.headers.get("origin") != f"{scheme}://{socket.headers.get('host')}":
             await socket.close(code=1008)
             return
-        await app.state.events.stream(socket, app.state.games, game_id,
-                                      identity(socket.cookies.get("player")))
+        await app.state.events.stream(socket, game_id, lambda: app.state.games.get(game_id, current(socket)[0]))
 
     catalogue = Path(os.environ.get("CHESSBOARD_PUZZLES_DB", path.with_name("puzzles.sqlite3")))
 

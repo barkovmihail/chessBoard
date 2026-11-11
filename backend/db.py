@@ -2,10 +2,21 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import JSON, Boolean, Column, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, create_engine, event
+from sqlalchemy import JSON, Boolean, Column, ForeignKey, Integer, LargeBinary, MetaData, String, Table, UniqueConstraint, create_engine, event
 from sqlalchemy.engine import URL
 
 metadata = MetaData()
+accounts = Table("accounts", metadata,
+    Column("player", String, primary_key=True),
+    Column("name", String(collation="NOCASE"), nullable=False, unique=True),
+    Column("salt", LargeBinary, nullable=False),
+    Column("password_hash", LargeBinary, nullable=False),
+)
+sessions = Table("account_sessions", metadata,
+    Column("digest", String, primary_key=True),
+    Column("player", ForeignKey("accounts.player"), nullable=False),
+    Column("expires", Integer, nullable=False),
+)
 games = Table("games", metadata,
     Column("id", String, primary_key=True),
     Column("owner", String, nullable=False),

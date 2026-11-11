@@ -30,10 +30,10 @@ class GameEvents:
         for changed in self.listeners.get(game_id, ()):
             changed.set()
 
-    async def stream(self, socket: WebSocket, games, game_id: str, player):
+    async def stream(self, socket: WebSocket, game_id: str, read_snapshot):
         with self.subscribe(game_id) as changed:
             try:
-                initial = await run_in_threadpool(games.get, game_id, player)
+                initial = await run_in_threadpool(read_snapshot)
             except GameError:
                 await socket.close(code=1008)
                 return
@@ -45,7 +45,7 @@ class GameEvents:
                     await socket.send_json({"type": "snapshot", "game": snapshot})
                     await changed.wait()
                     changed.clear()
-                    snapshot = await run_in_threadpool(games.get, game_id, player)
+                    snapshot = await run_in_threadpool(read_snapshot)
 
             async def receive_disconnect():
                 while (await socket.receive())["type"] != "websocket.disconnect":
@@ -56,6 +56,8 @@ class GameEvents:
                     try:
                         with suppress(WebSocketDisconnect, OSError):
                             await send_updates()
+                    except GameError:
+                        await socket.close(code=1008)
                     finally:
                         group.cancel_scope.cancel()
 

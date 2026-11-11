@@ -1,9 +1,9 @@
 from time import time_ns
 from uuid import uuid4
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import case, insert, select, update
 
-from .db import games, moves, receipts
+from .db import accounts, games, moves, receipts
 from .domain import GameError, replay, snapshot
 
 
@@ -32,7 +32,8 @@ class Games:
     def archive(self, player, offset, limit):
         with self.engine.connect() as db:
             rows = db.execute(select(games.c.id, games.c.owner, games.c.online, games.c.finished_ms,
-                games.c.base_minutes, games.c.increment_seconds, games.c.result, games.c.reason)
+                games.c.base_minutes, games.c.increment_seconds, games.c.result, games.c.reason, accounts.c.name.label("opponent"))
+                .outerjoin(accounts, accounts.c.player == case((games.c.owner == player, games.c.guest), else_=games.c.owner))
                 .where(games.c.result.is_not(None), (games.c.owner == player) | (games.c.guest == player))
                 .order_by(games.c.finished_ms.desc(), games.c.id.desc()).offset(offset).limit(limit + 1)).mappings().all()
             items = []
