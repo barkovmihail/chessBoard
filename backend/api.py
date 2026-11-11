@@ -6,7 +6,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from fastapi import FastAPI, Request, Response
+from anyio import from_thread
+from fastapi import FastAPI, Request, Response, WebSocket
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -14,6 +15,7 @@ from pydantic import BaseModel, Field
 from .db import open_database
 from .domain import GameError
 from .service import Games
+from .events import GameEvents
 
 
 class CreateGame(BaseModel):
@@ -35,6 +37,7 @@ def create_app(path: Path):
     async def lifespan(app):
         engine = open_database(path)
         app.state.games = Games(engine)
+        app.state.events = GameEvents()
         try:
             yield
         finally:
@@ -65,7 +68,9 @@ def create_app(path: Path):
 
     @app.post("/api/games/{game_id}/join")
     def join(game_id: str, request: Request, response: Response):
-        return app.state.games.join(game_id, player_session(request, response))
+        result = app.state.games.join(game_id, player_session(request, response))
+        from_thread.run_sync(app.state.events.publish, game_id)
+        return result
 
     @app.get("/api/games/{game_id}")
     def get(game_id: str, request: Request):
@@ -73,8 +78,20 @@ def create_app(path: Path):
 
     @app.post("/api/games/{game_id}/moves")
     def move(game_id: str, command: Move, request: Request):
-        return app.state.games.move(game_id, identity(request.cookies.get("player")),
+        result = app.state.games.move(game_id, identity(request.cookies.get("player")),
                                     command.uci, command.version, str(command.command_id))
+
+        from_thread.run_sync(app.state.events.publish, game_id)
+        return result
+
+    @app.websocket("/api/games/{game_id}/events")
+    async def events(socket: WebSocket, game_id: str):
+        scheme = "https" if socket.url.scheme == "wss" else "http"
+        if socket.headers.get("origin") != f"{scheme}://{socket.headers.get('host')}":
+            await socket.close(code=1008)
+            return
+        await app.state.events.stream(socket, app.state.games, game_id,
+                                      identity(socket.cookies.get("player")))
 
     build = Path(__file__).resolve().parents[1] / "build"
     if build.is_dir():

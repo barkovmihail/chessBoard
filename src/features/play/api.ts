@@ -20,7 +20,11 @@ export async function requestGame(path: string, body?: object): Promise<Game> {
   });
   const data = await response.json();
   if (!response.ok) throw new RequestError(String(data.detail));
-  if (!["white", "black", "both"].includes(data.side) || typeof data.waiting !== "boolean" ||
+  return parseGame(data);
+}
+
+function parseGame(data: any): Game {
+  if (!data || !["white", "black", "both"].includes(data.side) || typeof data.waiting !== "boolean" ||
       typeof data.id !== "string" || !Number.isInteger(data.version) ||
       !["white", "black"].includes(data.turn) || !Array.isArray(data.position) ||
       !data.position.every((p: BoardPiece) => p && /^[a-h][1-8]$/.test(p.square) &&
@@ -28,4 +32,37 @@ export async function requestGame(path: string, body?: object): Promise<Game> {
       ![data.legal, data.moves].every(list => Array.isArray(list) && list.every(value => typeof value === "string")) ||
       !(data.result === null || typeof data.result === "string")) throw new Error("invalid_snapshot");
   return data;
+}
+
+export function subscribeGame(id: string, update: (game: Game) => void, connection: (lost: boolean) => void) {
+  const address = new URL("/api/games/" + encodeURIComponent(id) + "/events", location.href);
+  address.protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  let active = true;
+  let socket: WebSocket;
+  let retry: ReturnType<typeof setTimeout>;
+  function connect() {
+    socket = new WebSocket(address);
+    socket.onmessage = event => {
+      if (!active) return;
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type !== "snapshot") throw new Error("invalid_event");
+        const game = parseGame(message.game);
+        if (game.id !== id) throw new Error("invalid_game");
+        connection(false);
+        update(game);
+      } catch { socket.close(); }
+    };
+    socket.onclose = () => {
+      if (!active) return;
+      connection(true);
+      retry = setTimeout(connect, 1000);
+    };
+  }
+  connect();
+  return () => {
+    active = false;
+    clearTimeout(retry);
+    socket.close();
+  };
 }

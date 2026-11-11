@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Game, PlayBoard, RequestError, requestGame } from "../../features/play";
+import { Game, PlayBoard, RequestError, requestGame, subscribeGame } from "../../features/play";
 import styles from "./game.module.css";
 
 interface Command { uci: string; version: number; command_id: string }
@@ -13,6 +13,7 @@ export function GamePage() {
   const [game, setGame] = useState<Game>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [disconnected, setDisconnected] = useState(false);
   const [invite, setInvite] = useState<string>();
   const [pending, setPending] = useState<Command>();
 
@@ -32,22 +33,11 @@ export function GamePage() {
 
   const onlineId = game && game.side !== "both" && !game.result ? game.id : undefined;
   useEffect(() => {
-    if (!onlineId || busy || pending) return;
-    let active = true;
-    let timer: ReturnType<typeof setTimeout>;
-    async function refresh() {
-      try {
-        const result = await requestGame("/" + onlineId);
-        if (active) {
-          setGame(previous => previous && previous.version > result.version ? previous : result);
-          setError("");
-        }
-      } catch { if (active) setError("Восстанавливаем связь с партией…"); }
-      if (active) timer = setTimeout(refresh, 1000);
-    }
-    timer = setTimeout(refresh, 1000);
-    return () => { active = false; clearTimeout(timer); };
-  }, [onlineId, busy, pending]);
+    if (!onlineId) return;
+    return subscribeGame(onlineId, result => {
+      setGame(previous => previous && previous.version > result.version ? previous : result);
+    }, setDisconnected);
+  }, [onlineId]);
 
   async function create(online: boolean) {
     setBusy(true);
@@ -70,7 +60,7 @@ export function GamePage() {
     setError("");
     try {
       const result = await requestGame("/" + game.id + "/moves", command);
-      setGame(result);
+      setGame(previous => previous && previous.version > result.version ? previous : result);
       setPending(undefined);
     } catch (failure) {
       if (failure instanceof RequestError) {
@@ -96,6 +86,7 @@ export function GamePage() {
       <p>{game.waiting ? "Ожидание соперника" : game.result ?? (game.turn === "white" ? "Ход белых" : "Ход чёрных")}</p>
       <p>{game.moves.join(" ")}</p>
     </section>}
+    {disconnected && onlineId && <p role="status">Восстанавливаем связь с партией…</p>}
     {error && <p role="alert">{error}</p>}
     {pending && !busy && <button onClick={() => submit(pending)}>Повторить отправку</button>}
   </main>;
