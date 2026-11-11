@@ -28,9 +28,12 @@ export function OpeningTrainer({ chapterId, line, context, ...trainer }: Props) 
     });
   }
 
+  const reviewUrl = new URLSearchParams(location.search);
+  reviewUrl.set("review", "today");
   return <Trainer {...trainer} onMistake={(ply, fen, expected) => {
     save({ chapter: chapterId, line, ply, fen, expected, side: trainer.side });
   }} context={<>{context}
+    <a href={"?" + reviewUrl}>{t("Повторить сегодня", "Review today", "Repasar hoy")}</a>
     {savedPly !== undefined && <p role="status">{t("Для повторения сохранена позиция перед полуходом", "Saved for review: position before half-move", "Posición guardada para repasar antes de la media jugada")} {savedPly + 1}.</p>}
     {failed.length > 0 && <p role="alert">{t("Не удалось сохранить позицию.", "Could not save the position.", "No se pudo guardar la posición.")} <button onClick={() => failed.forEach(save)}>{t("Повторить сохранение", "Retry saving", "Volver a guardar")}</button></p>}
   </>} />;

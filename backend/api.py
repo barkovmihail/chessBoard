@@ -28,7 +28,7 @@ from .db import open_database
 from .domain import GameError
 from .matchmaking import Matchmaking
 from .puzzle_attempts import PuzzleAttempts
-from .opening_positions import save_position
+from .opening_positions import review_position, save_position
 from .opening_frequency import continuations
 from .puzzles import puzzle_by_id, random_puzzle
 from .service import Games
@@ -519,6 +519,11 @@ def create_app(path: Path):
     @app.get("/api/studies/{chapter_id}")
     def get_chapter(chapter_id: UUID):
         return app.state.studies.get(chapter_id.hex)
+
+    @app.get("/api/openings/positions")
+    def get_opening_review(request: Request, response: Response, offset: int = Query(0, ge=0, le=2147483647)):
+        response.headers["Cache-Control"] = "private, no-store"
+        return review_position(app.state.games.engine, current(request)[0], offset)
 
     @app.post("/api/openings/positions")
     def record_opening_position(command: OpeningPosition, request: Request, response: Response):

@@ -1,5 +1,6 @@
 import { useLanguage } from "../../shared/language";
 import React from "react";
+import { OpeningReview } from "./OpeningReview";
 import { OpeningTrainer } from "./OpeningTrainer";
 import { ChapterEditor, Study } from "./Study";
 import { lessonsByLanguage } from "./lessons";
@@ -8,6 +9,7 @@ export function OpeningsPage() {
   const { language, t } = useLanguage();
   const lessons = lessonsByLanguage[language];
   const params = new URLSearchParams(location.search);
+  if (params.get("review") === "today") return <OpeningReview />;
   const chapter = params.get("chapter");
   if (chapter === "new") return <ChapterEditor />;
   if (chapter && /^[0-9a-f]{32}$/.test(chapter)) return <Study id={chapter} />;

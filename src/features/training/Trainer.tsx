@@ -104,7 +104,7 @@ export function Trainer({ fen, steps, side, puzzle, themeLabel, lineName, contex
         <button key={p} onClick={() => attempt(promotion, p)}>{[t("Ферзь", "Queen", "Dama"), t("Ладья", "Rook", "Torre"), t("Слон", "Bishop", "Alfil"), t("Конь", "Knight", "Caballo")][i]}</button>)}</div>}
       {history.length > 0 && <p className={styles.lineMoves} aria-label={t("Сыгранные ходы", "Moves played", "Jugadas realizadas")}>{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
       <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(undefined); promote(undefined); setOtherMate(""); }}>{t("Начать заново", "Restart", "Volver a empezar")}</button>
-      {!puzzle && <ArchiveMoves prefix={history.map(move => move.lan).join(",")} />}
+      {!puzzle && !fen && <ArchiveMoves prefix={history.map(move => move.lan).join(",")} />}
       {(!puzzle || !complete) && next}
     </>} />;
 }
