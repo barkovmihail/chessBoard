@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { ConnectionStatus } from "./ConnectionStatus";
 import { Appearance } from "./Appearance";
 import { Sound } from "./Sound";
 
@@ -56,6 +57,7 @@ export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current
       </>}
       {error && <p role="alert">{error}</p>}
       <Sound /><Appearance />
+      {open && <ConnectionStatus />}
     </div>
   </details>;
 }

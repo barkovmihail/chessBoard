@@ -3,6 +3,7 @@ import os
 import secrets
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
+from time import perf_counter_ns
 from urllib.parse import urlsplit
 from uuid import UUID
 from typing import Literal
@@ -103,7 +104,16 @@ def create_app(path: Path):
         origin = request.headers.get("origin")
         if request.method == "POST" and origin and urlsplit(origin).netloc != request.headers.get("host"):
             return JSONResponse({"detail": "invalid_origin"}, status_code=403)
+        if request.url.path == "/api/connection":
+            start = perf_counter_ns()
+            response = await call_next(request)
+            response.headers["X-Server-Time-Ms"] = f"{(perf_counter_ns() - start) / 1_000_000:.3f}"
+            return response
         return await call_next(request)
+
+    @app.get("/api/connection", status_code=204)
+    async def connection():
+        return Response(status_code=204, headers={"Cache-Control": "no-store"})
 
     @app.exception_handler(GameError)
     async def game_error(_, exc):

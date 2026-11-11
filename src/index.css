@@ -50,3 +50,5 @@ body { background: var(--paper); color: var(--ink); }
 .palette.brown { --a: #f0d9b5; --b: #b58863; }
 .palette.green { --a: #eeeed2; --b: #769656; }
 .palette.blue { --a: #dee3e6; --b: #8ca2ad; }
+
+.connection-status { display: grid; gap: .15rem; padding: .55rem; border-top: 1px solid currentColor; font-size: .85rem; font-variant-numeric: tabular-nums; }

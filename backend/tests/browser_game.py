@@ -1,5 +1,6 @@
 """Run after npm run build. Uses temporary SQLite and a local Chromium browser."""
 import os
+import re
 from pathlib import Path
 from random import Random
 from socket import socket
@@ -42,6 +43,13 @@ class BrowserGameTest(TestCase):
                     page.add_init_script(track_audio)
                     page.goto(f"http://127.0.0.1:{port}")
                     page.get_by_label("Меню профиля").click()
+                    status = page.get_by_label("Качество связи")
+                    expect(status).to_contain_text(re.compile(r"PING \d+ мс"))
+                    expect(status).to_contain_text(re.compile(r"SERVER \d+(?:\.\d+)? мс"))
+                    page.context.set_offline(True)
+                    expect(status).to_have_text("Нет связи")
+                    page.context.set_offline(False)
+                    expect(status).to_contain_text("PING")
                     page.get_by_text("Оформление", exact=True).tap()
                     for label in ["Зелёная", "Merida", "Тёмная"]:
                         page.get_by_role("radio", name=label).check()
