@@ -24,6 +24,7 @@ def snapshot(game_id, history):
         "id": game_id, "version": len(history), "moves": notation,
         "turn": "white" if board.turn else "black",
         "result": outcome.result() if outcome else None,
+        "reason": outcome.termination.name.lower() if outcome else None,
         "legal": [] if outcome else [move.uci() for move in board.legal_moves],
         "position": [
             {"square": chess.square_name(square), "type": chess.piece_name(piece.piece_type),

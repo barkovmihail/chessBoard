@@ -2,7 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Game, PlayBoard, RequestError, requestGame, subscribeGame } from "../../features/play";
 import styles from "./game.module.css";
 
-interface Command { uci: string; version: number; command_id: string }
+type Action = "offer" | "accept" | "decline" | "resign";
+type Command = { version: number; command_id: string } & ({ uci: string } | { action: Action });
+
+const reasons: Record<string, string> = {
+  resignation: "Сдача", agreement: "Ничья по соглашению", checkmate: "Мат", stalemate: "Пат",
+  insufficient_material: "Недостаточно материала", fivefold_repetition: "Пятикратное повторение",
+  seventyfive_moves: "Правило 75 ходов",
+};
 
 function commandId() {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -59,7 +66,7 @@ export function GamePage() {
     setPending(command);
     setError("");
     try {
-      const result = await requestGame("/" + game.id + "/moves", command);
+      const result = await requestGame("/" + game.id + ("action" in command ? "/actions" : "/moves"), command);
       setGame(previous => previous && previous.version > result.version ? previous : result);
       setPending(undefined);
     } catch (failure) {
@@ -73,6 +80,10 @@ export function GamePage() {
     } finally { setBusy(false); }
   }
 
+  function act(action: Action) {
+    if (game) submit({ action, version: game.version, command_id: commandId() });
+  }
+
   return <main className={styles.app}>
     <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending && !game.result}
       onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />
@@ -84,6 +95,14 @@ export function GamePage() {
       onFocus={event => event.target.select()} /></label>}
     {game && <section aria-live="polite">
       <p>{game.waiting ? "Ожидание соперника" : game.result ?? (game.turn === "white" ? "Ход белых" : "Ход чёрных")}</p>
+      {game.reason && <p>{reasons[game.reason] ?? game.reason}</p>}
+      {game.side !== "both" && !game.result && !game.waiting && <fieldset disabled={busy || !!pending}>
+        {game.draw_offer === null ? <button onClick={() => act("offer")}>Предложить ничью</button>
+          : game.draw_offer === game.side ? <span>Ничья предложена</span>
+          : <><button onClick={() => act("accept")}>Принять ничью</button>
+            <button onClick={() => act("decline")}>Отклонить ничью</button></>}
+        <button onClick={() => act("resign")}>Сдаться</button>
+      </fieldset>}
       <p>{game.moves.join(" ")}</p>
     </section>}
     {disconnected && onlineId && <p role="status">Восстанавливаем связь с партией…</p>}

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, create_engine, event
+from sqlalchemy import JSON, Boolean, Column, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint, create_engine, event
 from sqlalchemy.engine import URL
 
 metadata = MetaData()
@@ -11,6 +11,9 @@ games = Table("games", metadata,
     Column("owner", String, nullable=False),
     Column("online", Boolean, nullable=False, server_default="0"),
     Column("guest", String),
+    Column("draw_offer", String),
+    Column("result", String),
+    Column("reason", String),
     Column("version", Integer, nullable=False),
 )
 moves = Table("moves", metadata,
@@ -19,6 +22,15 @@ moves = Table("moves", metadata,
     Column("uci", String, nullable=False),
     Column("command_id", String, nullable=False),
     UniqueConstraint("game_id", "command_id"),
+)
+
+receipts = Table("receipts", metadata,
+    Column("game_id", ForeignKey("games.id"), primary_key=True),
+    Column("command_id", String, primary_key=True),
+    Column("player", String, nullable=False),
+    Column("command", String, nullable=False),
+    Column("version", Integer, nullable=False),
+    Column("response", JSON, nullable=False),
 )
 
 

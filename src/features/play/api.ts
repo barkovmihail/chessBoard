@@ -8,6 +8,8 @@ export interface Game {
   moves: string[];
   legal: string[];
   result: string | null;
+  reason: string | null;
+  draw_offer: "white" | "black" | null;
   side: "white" | "black" | "both";
   waiting: boolean;
 }
@@ -24,7 +26,8 @@ export async function requestGame(path: string, body?: object): Promise<Game> {
 }
 
 function parseGame(data: any): Game {
-  if (!data || !["white", "black", "both"].includes(data.side) || typeof data.waiting !== "boolean" ||
+  if (!data || ![null, "white", "black"].includes(data.draw_offer) ||
+      !(data.reason === null || typeof data.reason === "string") || !["white", "black", "both"].includes(data.side) || typeof data.waiting !== "boolean" ||
       typeof data.id !== "string" || !Number.isInteger(data.version) ||
       !["white", "black"].includes(data.turn) || !Array.isArray(data.position) ||
       !data.position.every((p: BoardPiece) => p && /^[a-h][1-8]$/.test(p.square) &&

@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import UUID
+from typing import Literal
 
 from anyio import from_thread
 from fastapi import FastAPI, Request, Response, WebSocket
@@ -25,6 +26,12 @@ class CreateGame(BaseModel):
 
 class Move(BaseModel):
     uci: str = Field(pattern=r"^[a-h][1-8][a-h][1-8][qrbn]?$")
+    version: int = Field(ge=0)
+    command_id: UUID
+
+
+class Action(BaseModel):
+    action: Literal["resign", "offer", "accept", "decline"]
     version: int = Field(ge=0)
     command_id: UUID
 
@@ -79,9 +86,16 @@ def create_app(path: Path):
 
     @app.post("/api/games/{game_id}/moves")
     def move(game_id: str, command: Move, request: Request):
-        result = app.state.games.move(game_id, identity(request.cookies.get("player")),
+        result = app.state.games.apply(game_id, identity(request.cookies.get("player")),
                                     command.uci, command.version, str(command.command_id))
 
+        from_thread.run_sync(app.state.events.publish, game_id)
+        return result
+
+    @app.post("/api/games/{game_id}/actions")
+    def action(game_id: str, command: Action, request: Request):
+        result = app.state.games.apply(game_id, identity(request.cookies.get("player")),
+                                      command.action, command.version, str(command.command_id))
         from_thread.run_sync(app.state.events.publish, game_id)
         return result
 

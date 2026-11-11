@@ -61,3 +61,21 @@ class SavedGameTest(TestCase):
                              headers={"Cookie": f"player={host}"}).status_code, 200)
             self.assertEqual(api.post(url + "/moves", json=command,
                              headers={"Cookie": "player=stranger"}).status_code, 404)
+
+    def test_draw_action_retries_and_late_commands(self):
+        with TemporaryDirectory() as directory, TestClient(create_app(Path(directory) / "game.db")) as api:
+            game = api.post("/api/games", json={"online": True}).json()
+            url = "/api/games/" + game["id"]
+            host = {"Cookie": "player=" + api.cookies["player"]}
+            guest = {"Cookie": "player=second"}
+            api.post(url + "/join", headers=guest).raise_for_status()
+            offer = {"action": "offer", "version": 0, "command_id": str(uuid4())}
+            accept = {"action": "accept", "version": 1, "command_id": str(uuid4())}
+            self.assertEqual(api.post(url + "/actions", json=offer, headers=host).json()["draw_offer"], "white")
+            self.assertEqual(api.post(url + "/actions", json=accept, headers=host).status_code, 409)
+            response = api.post(url + "/actions", json=accept, headers=guest).json()
+            self.assertEqual(response["result"], "1/2-1/2")
+            self.assertEqual(api.post(url + "/actions", json=accept, headers=guest).json(), response)
+            late = {"version": 2, "command_id": str(uuid4()), "uci": "e2e4"}
+            self.assertEqual(api.post(url + "/moves", json=late, headers=host).status_code, 409)
+            self.assertEqual(api.get(url, headers=guest).json()["moves"], [])

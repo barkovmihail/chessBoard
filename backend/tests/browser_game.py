@@ -62,6 +62,18 @@ class BrowserGameTest(TestCase):
                     white.context.set_offline(False)
                     expect(white.get_by_text("0-1", exact=True)).to_be_visible()
                     expect(white.get_by_text("f3 e5 g4 Qh4#", exact=True)).to_be_visible()
+                    for action, reason in [("Сдаться", "Сдача"), ("Принять ничью", "Ничья по соглашению")]:
+                        white.goto(f"http://127.0.0.1:{port}")
+                        white.get_by_role("button", name="Пригласить друга").click()
+                        black.goto(white.get_by_label("Ссылка для соперника").input_value())
+                        black.get_by_role("button", name="Играть за чёрных").click()
+                        white.get_by_role("button", name="Предложить ничью").click()
+                        if action == "Сдаться":
+                            black.get_by_role("button", name="Отклонить ничью").click()
+                        black.get_by_role("button", name=action).click()
+                        expect(white.get_by_text(reason, exact=True)).to_be_visible()
+                        black.reload()
+                        expect(black.get_by_text(reason, exact=True)).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True
