@@ -7,7 +7,7 @@ from threading import Event
 from time import perf_counter_ns
 from urllib.parse import urlsplit
 from uuid import UUID
-from typing import Literal
+from typing import Annotated, Literal
 
 from anyio import from_thread
 from fastapi import FastAPI, Query, Request, Response, WebSocket
@@ -26,7 +26,19 @@ from .matchmaking import Matchmaking
 from .puzzle_attempts import PuzzleAttempts
 from .puzzles import random_puzzle
 from .service import Games
+from .studies import Studies
 from .events import GameEvents
+
+
+StudyStep = tuple[Annotated[str, Field(min_length=1, max_length=12)], Annotated[str, Field(max_length=500)]]
+StudyLine = Annotated[list[StudyStep], Field(min_length=1, max_length=100)]
+
+
+class Chapter(BaseModel):
+    id: UUID
+    name: str = Field(min_length=1, max_length=100)
+    side: Literal["w", "b"]
+    lines: list[StudyLine] = Field(min_length=1, max_length=12)
 
 
 class PuzzleProgress(BaseModel):
@@ -89,6 +101,7 @@ def create_app(path: Path):
     @asynccontextmanager
     async def lifespan(app):
         engine = open_database(path)
+        app.state.studies = Studies(engine)
         app.state.attempts = PuzzleAttempts(engine)
         app.state.notifications = Notifications(engine)
         app.state.accounts = Accounts(engine)
@@ -312,6 +325,14 @@ def create_app(path: Path):
         await app.state.events.stream(socket, game_id, lambda: app.state.games.get(game_id, current(socket)[0]))
 
     catalogue = Path(os.environ.get("CHESSBOARD_PUZZLES_DB", path.with_name("puzzles.sqlite3")))
+
+    @app.post("/api/studies", status_code=201)
+    def create_chapter(chapter: Chapter):
+        return app.state.studies.create(chapter.id.hex, chapter.name, chapter.side, chapter.lines)
+
+    @app.get("/api/studies/{chapter_id}")
+    def get_chapter(chapter_id: UUID):
+        return app.state.studies.get(chapter_id.hex)
 
     @app.get("/api/puzzles/attempts")
     def attempts(request: Request, offset: int = Query(0, ge=0)):

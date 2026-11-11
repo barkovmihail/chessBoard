@@ -6,6 +6,10 @@ from sqlalchemy import JSON, Boolean, Column, Index, ForeignKey, Integer, LargeB
 from sqlalchemy.engine import URL
 
 metadata = MetaData()
+study_chapters = Table("study_chapters", metadata,
+    Column("id", String, primary_key=True), Column("name", String, nullable=False),
+    Column("side", String, nullable=False), Column("lines", JSON, nullable=False),
+)
 puzzle_attempts = Table("puzzle_attempts", metadata,
     Column("player", String, primary_key=True), Column("id", String, primary_key=True),
     Column("puzzle", String, nullable=False), Column("started", Integer, nullable=False),

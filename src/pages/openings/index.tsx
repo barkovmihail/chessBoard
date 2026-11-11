@@ -1,10 +1,13 @@
 import React from "react";
 import { Trainer } from "../../features/training";
+import { ChapterEditor, Study } from "./Study";
 import { lessons } from "./lessons";
 
 export function OpeningsPage() {
   const params = new URLSearchParams(location.search);
   const chapter = params.get("chapter");
+  if (chapter === "new") return <ChapterEditor />;
+  if (chapter && /^[0-9a-f]{32}$/.test(chapter)) return <Study id={chapter} />;
   const lesson = chapter === null ? lessons[0] : lessons.find(item => item.id === chapter);
   if (!lesson) {
     params.delete("chapter");
@@ -17,6 +20,7 @@ export function OpeningsPage() {
     }}>
       {lessons.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
     </select>
+    <a href={"?" + new URLSearchParams({ ...Object.fromEntries(params), chapter: "new" })}>Создать главу</a>
     <p>{lesson.idea}</p>
     <a href={"?section=openings&chapter=" + lesson.id}>Ссылка на главу</a>
   </>} />;
