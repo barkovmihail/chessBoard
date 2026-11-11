@@ -94,6 +94,21 @@ class BrowserGameTest(TestCase):
                     black.reload()
                     expect(review.get_by_text("2… Qh4#")).to_be_visible()
                     expect(black.locator('[data-square="h4"] [role=img]')).to_have_attribute("aria-label", "black queen h4")
+                    original_url = white.url
+                    white.get_by_role("button", name="Предложить реванш").click()
+                    black.get_by_role("button", name="Принять реванш").click()
+                    for player, first_square in [(white, "h1"), (black, "a8")]:
+                        expect(player.get_by_role("link", name="Предыдущая партия")).to_be_visible()
+                        expect(player.locator("[data-square]").first).to_have_attribute("data-square", first_square)
+                        expect(player.get_by_label("Шахматные часы")).to_contain_text("3+0")
+                    self.assertEqual(white.url, black.url)
+                    black.locator('[data-square="e2"]').click()
+                    black.locator('[data-square="e4"]').click()
+                    expect(white.get_by_text("Ход чёрных")).to_be_visible()
+                    white.get_by_role("link", name="Предыдущая партия").click()
+                    expect(white).to_have_url(original_url)
+                    expect(white.get_by_text("f3 e5 g4 Qh4#", exact=True)).to_be_visible()
+                    expect(white.get_by_role("link", name="Открыть реванш")).to_be_visible()
                     for action, reason in [("Сдаться", "Сдача"), ("Принять ничью", "Ничья по соглашению")]:
                         white.goto(f"http://127.0.0.1:{port}")
                         white.get_by_role("button", name="Пригласить друга").click()

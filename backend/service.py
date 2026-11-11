@@ -13,16 +13,21 @@ class Games:
         self.now_ms = now_ms or (lambda: time_ns() // 1_000_000)
 
     def create(self, owner, online=False, control=None):
-        game_id = uuid4().hex
         with self.engine.begin() as db:
-            clock = {}
-            if control:
-                minutes, increment = control
-                base_ms = minutes * 60000
-                clock = dict(base_minutes=minutes, increment_seconds=increment, white_ms=base_ms,
-                             black_ms=base_ms, deadline_ms=None if online else self.now_ms() + base_ms)
-            db.execute(insert(games).values(id=game_id, owner=owner, version=0, online=online, **clock))
+            game_id = self._create(db, owner, online, control)
         return self.get(game_id, owner)
+
+    def _create(self, db, owner, online, control, guest=None, previous_game=None):
+        game_id = uuid4().hex
+        clock = {}
+        if control:
+            minutes, increment = control
+            base_ms = minutes * 60000
+            clock = dict(base_minutes=minutes, increment_seconds=increment, white_ms=base_ms,
+                         black_ms=base_ms, deadline_ms=None if online and not guest else self.now_ms() + base_ms)
+        db.execute(insert(games).values(id=game_id, owner=owner, version=0, online=online, guest=guest,
+                                        previous_game=previous_game, **clock))
+        return game_id
 
     def invitation(self, game_id):
         with self.engine.connect() as db:
@@ -50,6 +55,8 @@ class Games:
         view["side"] = ("white" if game["owner"] == player else "black") if game["online"] else "both"
         view["waiting"] = bool(game["online"] and not game["guest"])
         view.update(version=game["version"], draw_offer=game["draw_offer"])
+        for key in ("previous_game", "next_game", "rematch_offer"):
+            view[key] = game[key]
         if game["result"]:
             view.update(result=game["result"], reason=game["reason"], legal=[], claims={})
         if game["base_minutes"]:
@@ -127,13 +134,22 @@ class Games:
             if game["version"] != version:
                 raise GameError("stale_version", 409)
             view = self._view(game, history, owner)
-            if view["result"]:
+            if view["result"] and command != "rematch":
                 raise GameError("game_finished", 409)
             if view["waiting"]:
                 raise GameError("not_your_turn", 403)
             side = view["side"]
             changes = {"version": version + 1}
-            if command in ("resign", "offer", "accept", "decline"):
+            if command == "rematch":
+                if not view["result"] or side == "both" or game["next_game"] or game["rematch_offer"] == side:
+                    raise GameError("rematch_unavailable", 409)
+                if game["rematch_offer"]:
+                    control = (game["base_minutes"], game["increment_seconds"]) if game["base_minutes"] else None
+                    changes["next_game"] = self._create(db, game["guest"], True, control, game["owner"], game_id)
+                    changes["rematch_offer"] = None
+                else:
+                    changes["rematch_offer"] = side
+            elif command in ("resign", "offer", "accept", "decline"):
                 if side == "both":
                     raise GameError("online_only", 409)
                 changes.update(self._action(command, side, view["draw_offer"]))

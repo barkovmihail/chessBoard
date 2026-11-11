@@ -10,6 +10,9 @@ export interface Game {
   result: string | null;
   reason: string | null;
   claims?: Record<string, string>;
+  previous_game?: string | null;
+  next_game?: string | null;
+  rematch_offer?: "white" | "black" | null;
   draw_offer: "white" | "black" | null;
   side: "white" | "black" | "both";
   waiting: boolean;
@@ -37,6 +40,8 @@ function parseGame(data: any): Game {
         ["white", "black"].includes(p.color) && ["king","queen","rook","bishop","knight","pawn"].includes(p.type)) ||
       ![data.legal, data.moves].every(list => Array.isArray(list) && list.every(value => typeof value === "string")) ||
       !(data.result === null || typeof data.result === "string")) throw new Error("invalid_snapshot");
+  if (![data.previous_game, data.next_game].every(id => id == null || (typeof id === "string" && /^[a-f0-9]{32}$/.test(id))) ||
+      ![undefined, null, "white", "black"].includes(data.rematch_offer)) throw new Error("invalid_rematch");
   if (data.claims !== undefined && (!data.claims || typeof data.claims !== "object" || Array.isArray(data.claims) ||
       !Object.entries(data.claims).every(([key, value]) => /^claim(:[a-h][1-8][a-h][1-8][qrbn]?)?$/.test(key) &&
         (value === "threefold_repetition" || value === "fifty_moves")))) throw new Error("invalid_claims");

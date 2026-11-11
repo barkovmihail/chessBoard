@@ -4,7 +4,7 @@ import { ClockPanel, TimeSetup } from "./TimeControl";
 import { GameReview } from "./GameReview";
 import styles from "./game.module.css";
 
-type Action = "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
+type Action = "rematch" | "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
 type Command = { version: number; command_id: string } & ({ uci: string } | { action: Action });
 
 const reasons: Record<string, string> = {
@@ -53,11 +53,12 @@ export function GamePage() {
     return () => abort.abort();
   }, [invite]);
 
-  const onlineId = game && (game.side !== "both" || game.clock) && !game.result ? game.id : undefined;
+  const onlineId = game && !game.next_game && (game.side !== "both" || (game.clock && !game.result)) ? game.id : undefined;
   useEffect(() => {
     if (!onlineId) return;
     return subscribeGame(onlineId, result => {
-      setGame(previous => previous && previous.version > result.version ? previous : result);
+      if (result.next_game) location.assign("?game=" + result.next_game);
+      else setGame(previous => previous && previous.version > result.version ? previous : result);
     }, setDisconnected);
   }, [onlineId]);
 
@@ -83,6 +84,7 @@ export function GamePage() {
     try {
       const result = await requestGame("/" + game.id + ("action" in command ? "/actions" : "/moves"), command);
       setGame(previous => previous && previous.version > result.version ? previous : result);
+      if (result.next_game && "action" in command && command.action === "rematch") location.assign("?game=" + result.next_game);
       setPending(undefined);
     } catch (failure) {
       if (failure instanceof RequestError) {
@@ -110,6 +112,12 @@ export function GamePage() {
       onFocus={event => event.target.select()} /></label>}
     {game && <section aria-live="polite">
       <p>{game.waiting ? "Ожидание соперника" : game.result ?? (game.turn === "white" ? "Ход белых" : "Ход чёрных")}</p>
+      {game.previous_game && <a href={"?game=" + game.previous_game}>Предыдущая партия</a>}
+      {game.next_game ? <a href={"?game=" + game.next_game}>Открыть реванш</a> :
+        game.result && game.side !== "both" && (game.rematch_offer === game.side ? <p>Реванш предложен</p> :
+          <button disabled={busy || !!pending} onClick={() => act("rematch")}>
+            {game.rematch_offer ? "Принять реванш" : "Предложить реванш"}
+          </button>)}
       {game.reason && <p>{reasons[game.reason] ?? game.reason}</p>}
       {!game.result && (game.side === "both" || game.side === game.turn) && Object.entries(game.claims ?? {}).map(([key, reason]) =>
         <button key={key} disabled={busy || !!pending} onClick={() => act(key === "claim" ? "claim" : `claim:${key.slice(6)}`)}>

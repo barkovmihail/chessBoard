@@ -37,7 +37,7 @@ class Move(BaseModel):
 
 
 class Action(BaseModel):
-    action: str = Field(pattern=r"^(resign|offer|accept|decline|claim(:[a-h][1-8][a-h][1-8][qrbn]?)?)$")
+    action: str = Field(pattern=r"^(rematch|resign|offer|accept|decline|claim(:[a-h][1-8][a-h][1-8][qrbn]?)?)$")
     version: int = Field(ge=0)
     command_id: UUID
 
