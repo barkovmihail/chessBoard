@@ -394,6 +394,8 @@ class BrowserGameTest(TestCase):
                         expect(notation.get_by_role("button", name="Qh4#")).to_have_attribute("aria-current", "step")
                         moment = report.get_by_role("button").first
                         moment.click()
+                        expect(notation.locator('[aria-current="step"] [data-quality="mistake"]')).to_be_visible()
+                        expect(notation.get_by_role("button", name=re.compile("Qh4#")).locator("small")).to_contain_text("движка")
                         recommended = black.locator('[data-arrow="recommended"]')
                         expect(recommended).to_be_visible()
                         expect(black.locator('[data-arrow="mistake"]')).to_be_visible()

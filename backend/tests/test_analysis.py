@@ -11,7 +11,7 @@ class AnalysisTest(IsolatedAsyncioTestCase):
         running = asyncio.Event()
         stopped = asyncio.Event()
 
-        async def evaluate(board, name):
+        async def evaluate(board, name, compare):
             running.set()
             try:
                 await asyncio.Future()

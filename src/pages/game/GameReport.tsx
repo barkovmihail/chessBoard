@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../../shared/language";
+import { classifyMove, moveLoss } from "./moveQuality";
 import type { Game } from "../../features/play";
 
-export interface PositionScore { value: number; label: string; best?: string; bestUci?: string }
+export interface PositionScore { value: number; label: string; best?: string; bestUci?: string; legalCount?: number; alternativeGap?: number }
 
-function positionScore(data: { cp?: number; mate?: number; outcome?: string; line?: string[]; best_uci?: string }): PositionScore {
+function positionScore(data: { cp?: number; mate?: number; outcome?: string; line?: string[]; best_uci?: string; legal_count?: number; alternative_gap?: number | null }): PositionScore {
   if (data.outcome === "1-0") return { value: 100000, label: "1–0" };
   if (data.outcome === "0-1") return { value: -100000, label: "0–1" };
   if (data.outcome === "1/2-1/2") return { value: 0, label: "½–½" };
-  if (typeof data.mate === "number") return { value: Math.sign(data.mate) * (100000 - Math.abs(data.mate)), label: "#" + data.mate, best: data.line?.[0], bestUci: data.best_uci };
+  if (typeof data.mate === "number") return { value: Math.sign(data.mate) * (100000 - Math.abs(data.mate)), label: "#" + data.mate, best: data.line?.[0], bestUci: data.best_uci, legalCount: data.legal_count, alternativeGap: data.alternative_gap ?? undefined };
   if (typeof data.cp !== "number" || !Number.isFinite(data.cp)) throw Error();
-  return { value: data.cp, label: (data.cp > 0 ? "+" : "") + (data.cp / 100).toFixed(2), best: data.line?.[0], bestUci: data.best_uci };
+  return { value: data.cp, label: (data.cp > 0 ? "+" : "") + (data.cp / 100).toFixed(2), best: data.line?.[0], bestUci: data.best_uci, legalCount: data.legal_count, alternativeGap: data.alternative_gap ?? undefined };
 }
 
 export function GameReport({ game, ply, select, scores, setScores }: { game: Game; ply: number; select: (ply: number) => void; scores: PositionScore[]; setScores: React.Dispatch<React.SetStateAction<PositionScore[]>> }) {
@@ -26,7 +27,7 @@ export function GameReport({ game, ply, select, scores, setScores }: { game: Gam
     setState("running");
     try {
       for (let i = scores.length; i <= game.moves.length; i++) {
-        const response = await fetch("/api/games/" + encodeURIComponent(game.id) + "/analysis?engine=" + (game.engine_name ?? "lc0") + "&ply=" + i, { signal: abort.signal });
+        const response = await fetch("/api/games/" + encodeURIComponent(game.id) + "/analysis?compare=true&engine=" + (game.engine_name ?? "lc0") + "&ply=" + i, { signal: abort.signal });
         if (!response.ok) throw Error();
         const score = positionScore(await response.json());
         if (abort.signal.aborted) return;
@@ -37,8 +38,9 @@ export function GameReport({ game, ply, select, scores, setScores }: { game: Gam
     finally { if (request.current === abort) request.current = undefined; }
   }
   const moments = scores.slice(1).map((after, i) => ({
-    ply: i + 1, loss: (scores[i].value - after.value) * (i % 2 ? -1 : 1),
-  })).filter(moment => moment.loss >= 100).sort((a, b) => b.loss - a.loss).slice(0, 3);
+    ply: i + 1, loss: moveLoss(scores[i], after, i + 1),
+    quality: classifyMove(scores[i], after, i + 1, game.moves[i]),
+  })).filter(moment => moment.quality === "mistake").sort((a, b) => b.loss - a.loss).slice(0, 3);
   const before = scores[ply - 1], after = scores[ply];
   return <section aria-label={t("Подробный разбор", "Game review", "Revisión de la partida")}><h3>{t("Разбор всей партии", "Full game review", "Análisis completo de la partida")}</h3>
     {!done && <button onClick={state === "running" ? () => { request.current?.abort(); request.current = undefined; setState("idle"); } : analyse}>

@@ -458,9 +458,9 @@ def create_app(path: Path):
         return app.state.games.move_times(game_id, current(request)[0])
 
     @app.get("/api/games/{game_id}/analysis")
-    async def analysis(game_id: str, request: Request, engine: Literal["lc0", "stockfish"], ply: int = Query(ge=0)):
+    async def analysis(game_id: str, request: Request, engine: Literal["lc0", "stockfish"], ply: int = Query(ge=0), compare: bool = False):
         game = await asyncio.to_thread(lambda: app.state.games.get(game_id, current(request)[0]))
-        return await analyse(game, ply, engine, request, app.state.analysis_slots)
+        return await analyse(game, ply, engine, request, app.state.analysis_slots, compare)
 
     @app.post("/api/games/{game_id}/moves")
     def move(game_id: str, command: Move, request: Request):

@@ -1,3 +1,4 @@
+import { classifyMove, qualityLabels } from "./moveQuality";
 import { ReplayButtons } from "../../shared/replay";
 import { useLanguage } from "../../shared/language";
 import React, { useMemo, useState } from "react";
@@ -37,8 +38,7 @@ export function GameReview({ game, render }: {
     return board.pgn();
   }, [game]);
   const played = game.review960?.uci?.[ply - 1] ?? lastMove?.lan;
-  const loss = before && after ? (before.value - after.value) * (ply % 2 ? 1 : -1) : 0;
-  const mistake = !!played && played !== best && loss >= 100;
+  const mistake = !!played && classifyMove(before, after, ply, game.moves[ply - 1]) === "mistake";
   const arrows = comparing ? [...(mistake ? [{ uci: played!, mistake: true }] : []), { uci: best, mistake: false }] : [];
   return render(<Board arrows={arrows} position={position} flipped={game.side === "black"} lastMove={comparing ? undefined : lastMove} highlight={comparing ? undefined : game.review960?.uci?.[ply - 1]} />, <>
     <nav lang={language} aria-label={t("Просмотр партии", "Game replay", "Reproducción de la partida")}>
@@ -58,9 +58,13 @@ export function GameReview({ game, render }: {
         {mistake && <> · {t("Пунктир — сыгранная ошибка", "Dashed arrow — played mistake", "Flecha discontinua — error jugado")} · {game.moves[ply - 1]}</>}</p>}
     </nav>
     <ol className="review-score" aria-label={t("Запись ходов", "Move list", "Lista de jugadas")}>{game.moves.map((_, i) => i % 2 === 0 &&
-      <li key={i}>{game.moves.slice(i, i + 2).map((move, offset) =>
-        <React.Fragment key={offset}>{offset > 0 && " "}<button aria-current={ply === i + offset + 1 ? "step" : undefined}
-          onClick={() => setPly(i + offset + 1)}>{move}</button></React.Fragment>)}</li>)}</ol>
+      <li key={i}>{game.moves.slice(i, i + 2).map((move, offset) => {
+        const index = i + offset;
+        const quality = classifyMove(scores[index], scores[index + 1], index + 1, move);
+        const label = quality && qualityLabels[quality];
+        return <React.Fragment key={offset}>{offset > 0 && " "}<button aria-current={ply === i + offset + 1 ? "step" : undefined}
+          onClick={() => setPly(i + offset + 1)}>{move}{label && <small className="move-quality" data-quality={quality}>{t(label[0], label[1], label[2])}</small>}</button></React.Fragment>;
+      })}</li>)}</ol>
     <div hidden={timeView}><GameReport scores={scores} setScores={setScores} game={game} ply={ply} select={setPly} />
     <EngineAnalysis id={game.id} ply={ply} initial={game.engine_name ?? "lc0"} /></div>
     <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}

@@ -8,25 +8,36 @@ from .computer import engine_command
 from .domain import GameError, start_board
 
 
-async def evaluate(board, engine_name):
+async def evaluate(board, engine_name, compare=False):
     outcome = board.outcome()
     if outcome:
         return {"outcome": outcome.result(), "line": []}
     transport, engine = await chess.engine.popen_uci(engine_command(engine_name))
     try:
-        info = await engine.analyse(board, chess.engine.Limit(time=1))
+        legal_count = board.legal_moves.count()
+        limit = chess.engine.Limit(time=1)
+        gap = None
+        if compare and legal_count > 1 and "MultiPV" in engine.options:
+            lines = await engine.analyse(board, limit, multipv=2)
+            info = lines[0]
+            if len(lines) == 2 and all("score" in line and line.get("pv") for line in lines):
+                first, second = (line["score"].pov(board.turn).score(mate_score=100000) for line in lines)
+                gap = first - second
+        else:
+            info = await engine.analyse(board, limit)
         score = info["score"].white()
         line = []
         best_uci = info["pv"][0].uci() if info["pv"] else None
         for move in info["pv"][:8]:
             line.append(board.san(move))
             board.push(move)
-        return {"cp": score.score(), "mate": score.mate(), "line": line, "best_uci": best_uci}
+        return {"cp": score.score(), "mate": score.mate(), "line": line, "best_uci": best_uci,
+                "legal_count": legal_count, "alternative_gap": gap}
     finally:
         transport.close()
 
 
-async def analyse(game, ply, name, request, slots):
+async def analyse(game, ply, name, request, slots, compare=False):
     if not game["result"]:
         raise GameError("unfinished_game", 409)
     if ply > len(game["moves"]):
@@ -37,7 +48,7 @@ async def analyse(game, ply, name, request, slots):
 
     async def run():
         async with slots:
-            return await evaluate(board, name)
+            return await evaluate(board, name, compare)
 
     task = asyncio.create_task(run())
     try:

@@ -87,3 +87,5 @@ button, input, select, textarea { font-family: inherit; }
 .review-score li { margin: 3px 0; }
 .review-score button { min-width: 4.2em; }
 .review-score [aria-current=step], .analysis-page .notation-move[aria-current=step], .game-actions [aria-pressed=true] { outline: 2px solid var(--link); outline-offset: -2px; font-weight: 700; }
+
+.review-score .move-quality { display: block; font-size: .75rem; line-height: 1.25; }
