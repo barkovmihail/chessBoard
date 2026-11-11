@@ -65,6 +65,16 @@ class BrowserGameTest(TestCase):
                         bot.get_by_role("link", name=re.compile(label)).click()
                         expect(bot.get_by_text(f"Чёрные · {label} · Обычный")).to_be_visible()
                         expect(bot.get_by_label("Запись ходов")).to_contain_text("e4")
+                        bot.get_by_role("button", name="Оценить позицию").click()
+                        bot.get_by_role("button", name="В начало").click()
+                        score = bot.get_by_text(re.compile(r"^Оценка за белых"))
+                        expect(score).to_be_visible(timeout=15000)
+                        line = score.inner_text().split(" · ")[1]
+                        board = chess.Board()
+                        for san in line.split():
+                            board.push_san(san)
+                        bot.get_by_role("button", name="Остановить анализ").click()
+                        expect(score).to_have_count(0)
                     bot.close()
                     track_audio = """window.played = [];
                         const start = AudioBufferSourceNode.prototype.start;

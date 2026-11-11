@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .analysis import analyse
 from .computer import executable, play_pending
 from .accounts import Accounts, SESSION_SECONDS, digest
 from .notifications import Notifications
@@ -92,6 +93,7 @@ def create_app(path: Path):
                     app.state.events.publish(game_id)
                 await asyncio.sleep(0.25)
 
+        app.state.analysis_slots = asyncio.Semaphore(2)
         stopped = Event()
 
         async def computer_turns():
@@ -271,6 +273,11 @@ def create_app(path: Path):
     @app.get("/api/games/{game_id}")
     def get(game_id: str, request: Request):
         return app.state.games.get(game_id, current(request)[0])
+
+    @app.get("/api/games/{game_id}/analysis")
+    async def analysis(game_id: str, request: Request, engine: Literal["lc0", "stockfish"], ply: int = Query(ge=0)):
+        game = await asyncio.to_thread(lambda: app.state.games.get(game_id, current(request)[0]))
+        return await analyse(game, ply, engine, request, app.state.analysis_slots)
 
     @app.post("/api/games/{game_id}/moves")
     def move(game_id: str, command: Move, request: Request):

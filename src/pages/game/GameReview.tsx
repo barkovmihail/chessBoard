@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { EngineAnalysis } from "./EngineAnalysis";
 import { Chess } from "chess.js";
 import { Board, boardPosition } from "../../entities/board";
 import type { Game } from "../../features/play";
@@ -28,6 +29,7 @@ export function GameReview({ game, render }: {
       <button disabled={ply === game.moves.length} onClick={() => setPly(ply + 1)}>Вперёд</button>
       <button disabled={ply === game.moves.length} onClick={() => setPly(game.moves.length)}>В конец</button>
     </nav>
+    <EngineAnalysis id={game.id} ply={ply} initial={game.engine_name ?? "lc0"} />
     <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}
       download={game.id + ".pgn"}>Скачать PGN</a>
     <a href={"?section=analysis&game=" + game.id + "&ply=" + ply}>Разобрать позицию</a>

@@ -21,6 +21,15 @@ def executable(name):
     return shutil.which(os.getenv("CHESS_" + name.upper(), name))
 
 
+def engine_command(name):
+    args = [executable(name) or name]
+    if name == "lc0":
+        args.append("--backend=eigen")
+        if weights := os.getenv("CHESS_LC0_WEIGHTS"):
+            args.append("--weights=" + weights)
+    return args
+
+
 def play_pending(service, stopped: Event):
     ply = select(func.max(moves.c.ply)).where(moves.c.game_id == games.c.id).scalar_subquery()
     with service.engine.connect() as db:
@@ -40,12 +49,7 @@ def play_pending(service, stopped: Event):
             continue
         try:
             name = seat.split(":")[1]
-            args = [executable(name) or name]
-            if name == "lc0":
-                args.append("--backend=eigen")
-                if weights := os.getenv("CHESS_LC0_WEIGHTS"):
-                    args.append("--weights=" + weights)
-            with chess.engine.SimpleEngine.popen_uci(args, timeout=5) as engine:
+            with chess.engine.SimpleEngine.popen_uci(engine_command(name), timeout=5) as engine:
                 if name == "stockfish":
                     engine.configure({"Skill Level": 0 if level == "easy" else 8})
                 limit = chess.engine.Limit(time=0.8, nodes=LEVELS[level] if name == "lc0" else None)
