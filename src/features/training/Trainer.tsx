@@ -70,14 +70,14 @@ export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, on
     if (selected) attempt(square);
   }
   function feedbackText() {
-    if (otherMate) return t("Мат. Решение верно.", "Checkmate. Correct solution.");
+    if (otherMate) return t("Мат. Решение верно.", "Checkmate. Correct solution.", "Jaque mate. Solución correcta.");
     if (!feedback) return "";
     const explanation = steps[feedback.ply][1];
-    if (feedback.kind === "correct") return t("Верно, ", "Correct, ") + feedback.san + ". " + explanation;
+    if (feedback.kind === "correct") return t("Верно, ", "Correct, ", "Correcto, ") + feedback.san + ". " + explanation;
     const message = feedback.kind === "different"
-      ? t("Допустимый ход, но в этой линии нужен другой.", "Legal move, but this line calls for another move.")
-      : t("Так пойти нельзя.", "That move is illegal.");
-    return message + " " + (puzzle ? t("Попробуйте ещё раз.", "Try again.") : explanation);
+      ? t("Допустимый ход, но в этой линии нужен другой.", "Legal move, but this line calls for another move.", "La jugada es legal, pero esta variante requiere otra.")
+      : t("Так пойти нельзя.", "That move is illegal.", "Esa jugada es ilegal.");
+    return message + " " + (puzzle ? t("Попробуйте ещё раз.", "Try again.", "Inténtalo de nuevo.") : explanation);
   }
   return <BoardLayout lang={language} context={context} board={<Board position={boardPosition(state)} flipped={side === "b"} lastMove={lastMove} selected={selected}
       targets={hint && target && !complete ? [target.from, target.to] : []}
@@ -85,17 +85,17 @@ export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, on
       onMove={automatic || complete ? undefined : (from, to) => attempt(to, undefined, from)}
       onSquare={automatic || complete ? undefined : click} />}
     status={<>
-      <h2>{complete ? (puzzle ? t("Задача решена", "Puzzle solved") : t("Линия пройдена", "Line completed")) : automatic ? t("Ответ соперника", "Opponent’s reply") : t("Ваш ход", "Your turn")}</h2>
-      <p>{side === "w" ? t("Вы играете белыми", "You play White") : t("Вы играете чёрными", "You play Black")}</p>
+      <h2>{complete ? (puzzle ? t("Задача решена", "Puzzle solved", "Problema resuelto") : t("Линия пройдена", "Line completed", "Variante completada")) : automatic ? t("Ответ соперника", "Opponent’s reply", "Respuesta del rival") : t("Ваш ход", "Your turn", "Tu turno")}</h2>
+      <p>{side === "w" ? t("Вы играете белыми", "You play White", "Juegas con blancas") : t("Вы играете чёрными", "You play Black", "Juegas con negras")}</p>
     </>} actions={<>
       <p aria-live="polite">{feedbackText()}</p>
-      {!puzzle && lastMove && lastMove.color !== side && <p>{t("Ответ", "Reply")} {lastMove.san}. {steps[ply - 1][1]}</p>}
-      {!complete && !automatic && <button onClick={() => showHint(true)}>{t("Показать ход", "Show move")}</button>}
+      {!puzzle && lastMove && lastMove.color !== side && <p>{t("Ответ", "Reply", "Respuesta")} {lastMove.san}. {steps[ply - 1][1]}</p>}
+      {!complete && !automatic && <button onClick={() => showHint(true)}>{t("Показать ход", "Show move", "Mostrar jugada")}</button>}
       {hint && target && !complete && <p>{target.san} · {target.from} → {target.to}. {expected[1]}</p>}
       {promotion && <div>{(["q","r","b","n"] as const).map((p,i) =>
-        <button key={p} onClick={() => attempt(promotion, p)}>{[t("Ферзь", "Queen"), t("Ладья", "Rook"), t("Слон", "Bishop"), t("Конь", "Knight")][i]}</button>)}</div>}
-      {history.length > 0 && <p aria-label={t("Сыгранные ходы", "Moves played")}>{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
-      <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(undefined); promote(undefined); setOtherMate(""); }}>{t("Начать заново", "Restart")}</button>
+        <button key={p} onClick={() => attempt(promotion, p)}>{[t("Ферзь", "Queen", "Dama"), t("Ладья", "Rook", "Torre"), t("Слон", "Bishop", "Alfil"), t("Конь", "Knight", "Caballo")][i]}</button>)}</div>}
+      {history.length > 0 && <p aria-label={t("Сыгранные ходы", "Moves played", "Jugadas realizadas")}>{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
+      <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(undefined); promote(undefined); setOtherMate(""); }}>{t("Начать заново", "Restart", "Volver a empezar")}</button>
       {!puzzle && <ArchiveMoves prefix={history.map(move => move.lan).join(",")} />}
       {next}
     </>} />;

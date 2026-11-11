@@ -26,13 +26,13 @@ export function AttemptHistory({ revision }: { revision: number }) {
       }).catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [open, offset, revision, retry]);
-  return <details onToggle={event => setOpen(event.currentTarget.open)}><summary>{t("История попыток", "Attempt history")}</summary>
-    {open && (error ? <button onClick={() => setRetry(retry + 1)}>{t("Повторить загрузку истории", "Retry loading history")}</button> : !page ?
-      <p>{t("Загружаем историю…", "Loading history…")}</p> : <>
-        {!page.items.length && <p>{t("Пока нет попыток.", "No attempts yet.")}</p>}
-        <ol>{page.items.map(row => <li key={row.id}>{t("Задача", "Puzzle")} {row.puzzle} · {row.solved ? t("Решена", "Solved") : t("Не завершена", "Unfinished")} · {t("Ошибок", "Mistakes")} {row.mistakes} · {new Date(row.started).toLocaleString(language)}</li>)}</ol>
-        {offset > 0 && <button onClick={() => setOffset(offset - 20)}>{t("Предыдущие попытки", "Previous attempts")}</button>}
-        {page.more && <button onClick={() => setOffset(offset + 20)}>{t("Следующие попытки", "Next attempts")}</button>}
+  return <details onToggle={event => setOpen(event.currentTarget.open)}><summary>{t("История попыток", "Attempt history", "Historial de intentos")}</summary>
+    {open && (error ? <button onClick={() => setRetry(retry + 1)}>{t("Повторить загрузку истории", "Retry loading history", "Volver a cargar el historial")}</button> : !page ?
+      <p>{t("Загружаем историю…", "Loading history…", "Cargando el historial…")}</p> : <>
+        {!page.items.length && <p>{t("Пока нет попыток.", "No attempts yet.", "Todavía no hay intentos.")}</p>}
+        <ol>{page.items.map(row => <li key={row.id}>{t("Задача", "Puzzle", "Problema")} {row.puzzle} · {row.solved ? t("Решена", "Solved", "Resuelto") : t("Не завершена", "Unfinished", "Sin terminar")} · {t("Ошибок", "Mistakes", "Errores")} {row.mistakes} · {new Date(row.started).toLocaleString(language)}</li>)}</ol>
+        {offset > 0 && <button onClick={() => setOffset(offset - 20)}>{t("Предыдущие попытки", "Previous attempts", "Intentos anteriores")}</button>}
+        {page.more && <button onClick={() => setOffset(offset + 20)}>{t("Следующие попытки", "Next attempts", "Intentos siguientes")}</button>}
       </>)}
   </details>;
 }
