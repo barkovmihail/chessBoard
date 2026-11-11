@@ -493,6 +493,16 @@ class BrowserGameTest(TestCase):
                     third.locator("summary").filter(has_text="Уведомления").click()
                     third.get_by_role("button", name="Прочитать все").click()
                     expect(feed.get_by_role("button", name="Прочитать все")).to_have_count(0, timeout=10000)
+                    white.get_by_role("link", name="Турниры").click()
+                    white.get_by_label("Название арены").fill("Утренняя арена")
+                    white.get_by_role("button", name="Создать арену").click()
+                    expect(white.get_by_role("heading", name="Участники (1)")).to_be_visible()
+                    black.goto(white.url)
+                    black.get_by_role("button", name="Зарегистрироваться на арену").click()
+                    expect(white.get_by_role("heading", name="Участники (2)")).to_be_visible()
+                    black.reload()
+                    expect(black.get_by_role("button", name="Отменить регистрацию")).to_be_visible()
+                    expect(black.get_by_role("listitem", name="").filter(has_text="WhiteKnight").last).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True

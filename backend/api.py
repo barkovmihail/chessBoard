@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .arenas import Arenas
 from .analysis import analyse
 from .computer import executable, play_pending
 from .accounts import Accounts, SESSION_SECONDS, digest
@@ -74,6 +75,11 @@ class Search(QueueVersion):
     control: TimeControl
 
 
+class CreateArena(BaseModel):
+    id: UUID
+    name: str = Field(min_length=1, max_length=80)
+
+
 class Visibility(BaseModel):
     public: bool
     version: int = Field(ge=0)
@@ -113,6 +119,7 @@ def create_app(path: Path):
         app.state.notifications = Notifications(engine)
         app.state.accounts = Accounts(engine)
         app.state.games = Games(engine)
+        app.state.arenas = Arenas(app.state.games)
         app.state.challenges = Challenges(app.state.games)
         app.state.queue = Matchmaking(app.state.games)
         app.state.events = GameEvents()
@@ -213,6 +220,23 @@ def create_app(path: Path):
         if not name:
             raise GameError("account_required", 403)
         return player
+
+    @app.post("/api/arenas", status_code=201)
+    def create_arena(command: CreateArena, request: Request):
+        return app.state.arenas.create(member(request), command.id.hex, command.name)
+
+    @app.get("/api/arenas")
+    def arena_list(offset: int = Query(0, ge=0)):
+        return app.state.arenas.listing(offset)
+
+    @app.get("/api/arenas/{arena_id}")
+    def arena_view(arena_id: UUID, request: Request):
+        player, name = current(request)
+        return app.state.arenas.view(arena_id.hex, player if name else None)
+
+    @app.post("/api/arenas/{arena_id}/{action}")
+    def arena_action(arena_id: UUID, action: Literal["join", "leave"], request: Request):
+        return app.state.arenas.register(arena_id.hex, member(request), action == "join")
 
     @app.get("/api/notifications")
     def notification_feed(request: Request, before: int | None = Query(None, gt=0)):
