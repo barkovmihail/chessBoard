@@ -17,6 +17,7 @@ export function TimeSetup({ create, busy }: {
 }) {
   const { language, t } = useLanguage();
   const [index, setIndex] = useState(() => String(Math.floor(Math.random() * 960)));
+  const [computer, setComputer] = useState(false);
   const [visible, setVisible] = useState(false);
   const [engine, setEngine] = useState<"lc0" | "stockfish">("lc0");
   const [level, setLevel] = useState<"easy" | "normal">("easy");
@@ -28,9 +29,14 @@ export function TimeSetup({ create, busy }: {
   const custom = selected === presets.length;
   const control = custom ? { minutes: Number(minutes), increment: Number(increment) } :
     { minutes: presets[selected][1], increment: presets[selected][2] };
-  const valid = !custom || (/^\d+$/.test(minutes) && /^\d+$/.test(increment) &&
-    control.minutes >= 1 && control.minutes <= 1440 && control.increment <= 3600);
+  const validMinutes = /^\d+$/.test(minutes) && Number(minutes) >= 1 && Number(minutes) <= 1440;
+  const validIncrement = /^\d+$/.test(increment) && Number(increment) <= 3600;
+  const valid = !custom || (validMinutes && validIncrement);
   return <fieldset lang={language} disabled={busy}><legend>{t("Контроль времени", "Time control")}</legend>
+    {!searching && <fieldset><legend>{t("Соперник", "Opponent")}</legend>
+      <label><input type="radio" name="opponent" checked={!computer} onChange={() => setComputer(false)} /> {t("Человек", "Human")}</label>
+      <label><input type="radio" name="opponent" checked={computer} onChange={() => setComputer(true)} /> {t("Компьютер", "Computer")}</label>
+    </fieldset>}
     {!searching && <label>{t("Категория времени", "Time category")} <select value={category} onChange={event => {
       const value = event.target.value;
       setCategory(value);
@@ -43,22 +49,26 @@ export function TimeSetup({ create, busy }: {
       <button key={index} aria-pressed={index === selected} onClick={() => select(index)}>
         <strong>{min}+{inc}</strong><small>{t(label, categories[label])}</small></button>)}
       <button aria-pressed={custom} onClick={() => { setCategory(""); select(presets.length); }}>{t("Своя игра", "Custom game")}</button></div>}
-    {custom && !searching && <div><label>{t("Минут на игрока", "Minutes per player")} <input type="number" min="1" max="1440"
+    {custom && !searching && <div className={styles.customClock}><label>{t("Минут на игрока", "Minutes per player")} <input type="number" min="1" max="1440"
+      aria-invalid={!validMinutes} aria-describedby={validMinutes ? undefined : "minutes-error"}
       value={minutes} onChange={e => setMinutes(e.target.value)} /></label>
+      {!validMinutes && <small id="minutes-error">{t("Введите целое число от 1 до 1440.", "Enter a whole number from 1 to 1440.")}</small>}
       <label>{t("Добавка за ход, секунд", "Increment per move, seconds")} <input type="number" min="0" max="3600"
+        aria-invalid={!validIncrement} aria-describedby={validIncrement ? undefined : "increment-error"}
         value={increment} onChange={e => setIncrement(e.target.value)} /></label>
-      <p>{valid ? minutes + "+" + increment : t("Введите 1–1440 минут и 0–3600 секунд целыми числами.", "Enter whole numbers from 1 to 1440 for minutes and 0 to 3600 for seconds.")}</p></div>}
-    <QuickGame control={control} valid={valid} onSearching={setSearching} />
+      {!validIncrement && <small id="increment-error">{t("Введите целое число от 0 до 3600.", "Enter a whole number from 0 to 3600.")}</small>}
+      {valid && <p>{minutes}+{increment}</p>}</div>}
+    <div hidden={computer && !searching}><QuickGame control={control} valid={valid} onSearching={setSearching} /></div>
     {!searching && <label><input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} /> {t("Разрешить просмотр по ссылке", "Allow spectators with the link")}</label>}
-    <button disabled={!valid || searching} onClick={() => create(false, control, undefined, undefined, visible)}>{t("Начать партию", "Start game")}</button>
-    <button disabled={!valid || searching} onClick={() => create(true, control, undefined, undefined, visible)}>{t("Пригласить друга", "Invite a friend")}</button>
-    {!searching && <details><summary>Chess960</summary>
+    {!computer && <button disabled={!valid || searching} onClick={() => create(false, control, undefined, undefined, visible)}>{t("Начать партию", "Start game")}</button>}
+    {!computer && <button disabled={!valid || searching} onClick={() => create(true, control, undefined, undefined, visible)}>{t("Пригласить друга", "Invite a friend")}</button>}
+    {!computer && !searching && <details><summary>Chess960</summary>
       <label>{t("Номер расстановки", "Starting position number")} <input type="number" min="0" max="959" value={index} onChange={e => setIndex(e.target.value)} /></label>
       <button onClick={() => setIndex(String(Math.floor(Math.random() * 960)))}>{t("Случайная расстановка", "Random position")}</button>
       <button disabled={!valid || !/^\d{1,3}$/.test(index) || Number(index) > 959}
         onClick={() => create(false, control, undefined, undefined, visible, Number(index))}>{t("Начать Chess960 на одном устройстве", "Play Chess960 on one device")}</button>
     </details>}
-    {!searching && <fieldset><legend>{t("Компьютер", "Computer")}</legend>
+    {computer && !searching && <fieldset><legend>{t("Настройки движка", "Engine settings")}</legend>
       <label>{t("Движок", "Engine")} <select value={engine} onChange={e => setEngine(e.target.value === "stockfish" ? "stockfish" : "lc0")}>
         <option value="lc0">Leela Chess Zero</option><option value="stockfish">Stockfish</option></select></label>
       <label>{t("Уровень", "Level")} <select value={level} onChange={e => setLevel(e.target.value === "normal" ? "normal" : "easy")}>
