@@ -7,11 +7,29 @@ from pathlib import Path
 from fastapi import HTTPException
 
 
-def random_puzzle(path: Path, theme: str | None = None):
+def open_catalogue(path: Path):
     if not path.is_file():
         raise HTTPException(503, "puzzles_unavailable")
-    with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)) as db:
-        db.row_factory = sqlite3.Row
+    db = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)
+    db.row_factory = sqlite3.Row
+    return closing(db)
+
+
+def puzzle_data(row):
+    return {**dict(row), "moves": row["moves"].split(), "themes": row["themes"].split()}
+
+
+def puzzle_by_id(path: Path, puzzle_id: str):
+    with open_catalogue(path) as db:
+        row = db.execute("SELECT puzzle_id, fen, moves, rating, themes FROM puzzles WHERE puzzle_id = ?",
+                         (puzzle_id,)).fetchone()
+        if row is None:
+            raise HTTPException(404, "puzzle_missing")
+        return puzzle_data(row)
+
+
+def random_puzzle(path: Path, theme: str | None = None):
+    with open_catalogue(path) as db:
         count = db.execute("SELECT max(rowid) FROM puzzles").fetchone()[0]
         if not count:
             raise HTTPException(404, "no_matching_puzzles")
@@ -27,4 +45,4 @@ def random_puzzle(path: Path, theme: str | None = None):
                              (start, *params)).fetchone()
         if row is None:
             raise HTTPException(404, "no_matching_puzzles")
-        return {**dict(row), "moves": row["moves"].split(), "themes": row["themes"].split()}
+        return puzzle_data(row)

@@ -29,7 +29,7 @@ from .domain import GameError
 from .matchmaking import Matchmaking
 from .puzzle_attempts import PuzzleAttempts
 from .opening_frequency import continuations
-from .puzzles import random_puzzle
+from .puzzles import puzzle_by_id, random_puzzle
 from .service import Games
 from .studies import Studies
 from .events import GameEvents
@@ -526,6 +526,11 @@ def create_app(path: Path):
         player_session(request, response)
         response.headers["Cache-Control"] = "private, no-store"
         return puzzle
+
+    @app.get("/api/puzzles/by-id/{puzzle_id}")
+    def get_puzzle(puzzle_id: str, response: Response):
+        response.headers["Cache-Control"] = "no-store"
+        return puzzle_by_id(catalogue, puzzle_id)
 
     build = Path(__file__).resolve().parents[1] / "build"
     if build.is_dir():

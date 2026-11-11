@@ -42,17 +42,19 @@ export function PuzzlesPage() {
     void save(entry);
   }
   const [theme, setTheme] = useState("");
+  const [replayId, setReplayId] = useState<string>();
   const [sequence, next] = useState(0);
   const [puzzle, setPuzzle] = useState<Puzzle>();
-  const [error, setError] = useState<"empty" | "load" | null>(null);
+  const [error, setError] = useState<"empty" | "missing" | "load" | null>(null);
   useEffect(() => {
     const abort = new AbortController();
     attempt.current = null;
     setPuzzle(undefined);
     setError(null);
     async function load() {
-      const response = await fetch("/api/puzzles/random" + (theme ? "?theme=" + theme : ""), { signal: abort.signal, cache: "no-store" });
-      if (response.status === 404) throw new Error("empty-theme");
+      const url = replayId ? "/api/puzzles/by-id/" + encodeURIComponent(replayId) : "/api/puzzles/random" + (theme ? "?theme=" + theme : "");
+      const response = await fetch(url, { signal: abort.signal, cache: "no-store" });
+      if (response.status === 404) throw new Error(replayId ? "missing" : "empty-theme");
       if (!response.ok) throw new Error("unavailable");
       const data = await response.json();
       const board = new Chess(data.fen);
@@ -64,10 +66,10 @@ export function PuzzlesPage() {
       if (!abort.signal.aborted) setPuzzle({ id: data.puzzle_id, rating: data.rating, fen, side, steps });
     }
     load().catch(reason => {
-      if (!abort.signal.aborted) setError(reason.message === "empty-theme" ? "empty" : "load");
+      if (!abort.signal.aborted) setError(reason.message === "empty-theme" ? "empty" : reason.message === "missing" ? "missing" : "load");
     });
     return () => abort.abort();
-  }, [sequence, theme]);
+  }, [sequence, theme, replayId]);
   const themes: Record<string, string> = {
     "": t("Все темы", "All themes", "Todos los temas"), mateIn1: t("Мат в один ход", "Mate in one", "Mate en una"),
     mateIn2: t("Мат в два хода", "Mate in two", "Mate en dos"), fork: t("Вилка", "Fork", "Ataque doble"),
@@ -75,20 +77,20 @@ export function PuzzlesPage() {
   };
   const title = <><h1>{t("Шахматные задачи", "Puzzles", "Problemas de ajedrez")}</h1>
     <details><summary>{t("Выбор темы", "Choose theme", "Elegir tema")} · {themes[theme]}</summary>
-      <label>{t("Тема задачи", "Puzzle theme", "Tema del problema")} <select value={theme} onChange={e => setTheme(e.target.value)}>
+      <label>{t("Тема задачи", "Puzzle theme", "Tema del problema")} <select value={theme} onChange={e => { setReplayId(undefined); setTheme(e.target.value); }}>
         {Object.entries(themes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select></label>
     </details>
-    <AttemptHistory revision={revision} />
+    <AttemptHistory revision={revision} onReplay={id => { setReplayId(id); next(n => n + 1); }} />
     {failed.length > 0 ? <p role="alert">{t("История не сохранена.", "History could not be saved.", "No se pudo guardar el historial.")} <button onClick={() => { setFailed([]); failed.forEach(entry => void save(entry)); }}>{t("Повторить сохранение", "Retry saving", "Volver a guardar")}</button></p> :
       pending > 0 && <p role="status">{t("Сохраняем попытку…", "Saving attempt…", "Guardando el intento…")}</p>}
   </>;
-  const button = <button onClick={() => next(sequence + 1)} disabled={!error && !puzzle}>
-    {error ? t("Повторить загрузку", "Retry loading", "Volver a cargar") : t("Следующая задача", "Next puzzle", "Siguiente problema")}
+  const button = <button onClick={() => { if (error !== "load") setReplayId(undefined); next(n => n + 1); }} disabled={!error && !puzzle}>
+    {error && error !== "missing" ? t("Повторить загрузку", "Retry loading", "Volver a cargar") : t("Следующая задача", "Next puzzle", "Siguiente problema")}
   </button>;
   if (!puzzle) return <main lang={language} className="study-page">{title}
-    <p role="status">{error === "empty" ? t("По этой теме нет задач. Выберите другую тему.", "No puzzles for this theme. Choose another theme.", "No hay problemas de este tema. Elige otro.") : error === "load" ? t("Не удалось загрузить задачу из каталога.", "Could not load the puzzle.", "No se pudo cargar el problema.") : t("Загружаем позицию…", "Loading position…", "Cargando la posición…")}</p>{button}
+    <p role="status">{error === "missing" ? t("Этой задачи больше нет в каталоге.", "This puzzle is no longer in the catalogue.", "Este problema ya no está en el catálogo.") : error === "empty" ? t("По этой теме нет задач. Выберите другую тему.", "No puzzles for this theme. Choose another theme.", "No hay problemas de este tema. Elige otro.") : error === "load" ? t("Не удалось загрузить задачу из каталога.", "Could not load the puzzle.", "No se pudo cargar el problema.") : t("Загружаем позицию…", "Loading position…", "Cargando la posición…")}</p>{button}
   </main>;
-  return <Trainer key={puzzle.id + sequence} fen={puzzle.fen} onAttempt={record} onRestart={() => { attempt.current = null; }} steps={puzzle.steps} side={puzzle.side} puzzle themeLabel={themes[theme]}
+  return <Trainer key={puzzle.id + sequence} fen={puzzle.fen} onAttempt={record} onRestart={() => { attempt.current = null; }} steps={puzzle.steps} side={puzzle.side} puzzle themeLabel={replayId ? undefined : themes[theme]}
     context={<>{title}<p>{t("Задача", "Puzzle", "Problema")} {puzzle.id} · {t("Рейтинг", "Rating", "Puntuación")} {puzzle.rating}</p></>} next={button} />;
 }

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 
 interface Entry { id: string; puzzle: string; started: number; mistakes: number; solved: boolean }
 
-export function AttemptHistory({ revision }: { revision: number }) {
+export function AttemptHistory({ revision, onReplay }: { revision: number; onReplay: (id: string) => void }) {
   const { language, t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -30,7 +30,9 @@ export function AttemptHistory({ revision }: { revision: number }) {
     {open && (error ? <button onClick={() => setRetry(retry + 1)}>{t("Повторить загрузку истории", "Retry loading history", "Volver a cargar el historial")}</button> : !page ?
       <p>{t("Загружаем историю…", "Loading history…", "Cargando el historial…")}</p> : <>
         {!page.items.length && <p>{t("Пока нет попыток.", "No attempts yet.", "Todavía no hay intentos.")}</p>}
-        <ol>{page.items.map(row => <li key={row.id}>{t("Задача", "Puzzle", "Problema")} {row.puzzle} · {row.solved ? t("Решена", "Solved", "Resuelto") : t("Не завершена", "Unfinished", "Sin terminar")} · {t("Ошибок", "Mistakes", "Errores")} {row.mistakes} · {new Date(row.started).toLocaleString(language)}</li>)}</ol>
+        <ol>{page.items.map(row => <li key={row.id}>{t("Задача", "Puzzle", "Problema")} {row.puzzle} · {row.solved ? t("Решена", "Solved", "Resuelto") : t("Не завершена", "Unfinished", "Sin terminar")} · {t("Ошибок", "Mistakes", "Errores")} {row.mistakes} · {new Date(row.started).toLocaleString(language)}
+          {row.mistakes > 0 && <> <button onClick={() => onReplay(row.puzzle)}>{t("Решить снова", "Solve again", "Resolver de nuevo")}</button></>}
+        </li>)}</ol>
         {offset > 0 && <button onClick={() => setOffset(offset - 20)}>{t("Предыдущие попытки", "Previous attempts", "Intentos anteriores")}</button>}
         {page.more && <button onClick={() => setOffset(offset + 20)}>{t("Следующие попытки", "Next attempts", "Intentos siguientes")}</button>}
       </>)}

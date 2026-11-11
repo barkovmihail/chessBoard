@@ -136,6 +136,9 @@ class TrainingTest(unittest.TestCase):
                 page.get_by_role("link", name="Шахматные задачи").click()
             check_layout()
             self.assertEqual(fetched.value.status, 200)
+            page.get_by_text("История попыток", exact=True).click()
+            expect(page.get_by_text("Пока нет попыток.")).to_be_visible()
+            page.get_by_text("История попыток", exact=True).click()
             expect(page.get_by_label("Тема задачи")).to_be_hidden()
             page.get_by_text("Выбор темы · Все темы", exact=True).click()
             with page.expect_response(lambda res: "theme=fork" in res.url) as themed:
@@ -196,6 +199,23 @@ class TrainingTest(unittest.TestCase):
             expect(page.get_by_role("button", name="Начать заново")).to_be_visible()
             page.get_by_text("История попыток", exact=True).click()
             expect(result).to_be_visible()
+            retry = result.get_by_role("button", name="Решить снова")
+            with page.expect_response(lambda res: "/api/puzzles/by-id/" in res.url) as replay:
+                retry.click()
+            self.assertEqual(replay.value.json(), puzzle)
+            expect(page.get_by_role("heading", name="Ваш ход")).to_be_visible()
+            expect(page.locator('[data-target="true"]')).to_have_count(0)
+            for uci in puzzle["moves"][1::2]:
+                move(uci)
+            expect(page.get_by_role("heading", name="Задача решена")).to_be_visible()
+            page.get_by_text("История попыток", exact=True).click()
+            expect(result).to_be_visible()
+            expect(page.get_by_role("listitem").filter(has_text=f"Задача {puzzle['puzzle_id']} · Решена · Ошибок 0")).to_be_visible()
+            page.route("**/api/puzzles/by-id/*", lambda route: route.fulfill(status=404, json={"detail": "puzzle_missing"}))
+            retry.click()
+            expect(page.get_by_text("Этой задачи больше нет в каталоге.")).to_be_visible()
+            page.get_by_role("button", name="Следующая задача").click()
+            expect(page.get_by_role("heading", name="Ваш ход")).to_be_visible()
             browser.close()
 
 
