@@ -14,12 +14,13 @@ interface Props {
   themeLabel?: string;
   lineName?: string;
   onAttempt?: (wrong: boolean, solved: boolean) => void;
+  onMistake?: (ply: number, fen: string, expected: string) => void;
   onRestart?: () => void;
   context: React.ReactNode;
   next?: React.ReactNode;
 }
 
-export function Trainer({ fen, steps, side, puzzle, themeLabel, lineName, context, next, onAttempt, onRestart }: Props) {
+export function Trainer({ fen, steps, side, puzzle, themeLabel, lineName, context, next, onAttempt, onMistake, onRestart }: Props) {
   const { language, t } = useLanguage();
   const [ply, advance] = useState(0);
   const [selected, select] = useState<Square>();
@@ -59,6 +60,7 @@ export function Trainer({ fen, steps, side, puzzle, themeLabel, lineName, contex
     }
     if (!move || move.lan !== target?.lan) {
       onAttempt?.(true, false);
+      if (target) onMistake?.(ply, state.fen(), target.lan);
       say({ kind: move ? "different" : "illegal", ply });
       return;
     }

@@ -55,6 +55,7 @@ class TrainingTest(unittest.TestCase):
             expect(page.get_by_text("Итальянская партия · 0/7")).to_be_visible()
             touch_drag("e2", "e5")
             expect(page.get_by_text("Так пойти нельзя.", exact=False)).to_be_visible()
+            expect(page.get_by_text("Для повторения сохранена позиция перед полуходом 1.")).to_be_visible()
             move("d2d4")
             expect(page.get_by_text("Допустимый ход", exact=False)).to_be_visible()
             page.get_by_role("button", name="Показать ход").click()
@@ -126,6 +127,12 @@ class TrainingTest(unittest.TestCase):
             expect(student.get_by_label("Учебный вариант")).to_be_hidden()
             student.get_by_text("Выбрать вариант", exact=True).click()
             student.get_by_label("Учебный вариант").select_option("1")
+            student.locator('[data-square="e2"]').click()
+            with student.expect_response(lambda r: r.url.endswith("/api/openings/positions")) as mistake:
+                student.locator('[data-square="e4"]').click()
+            self.assertTrue(mistake.value.ok)
+            snapshot = mistake.value.request.post_data_json
+            self.assertEqual((snapshot["line"], snapshot["expected"], snapshot["fen"]), (1, "d2d4", chess.STARTING_FEN))
             student.locator('[data-square="d2"]').click()
             student.locator('[data-square="d4"]').click()
             expect(student.get_by_role("heading", name="Линия пройдена")).to_be_visible()

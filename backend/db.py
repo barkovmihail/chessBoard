@@ -10,6 +10,12 @@ study_chapters = Table("study_chapters", metadata,
     Column("id", String, primary_key=True), Column("name", String, nullable=False),
     Column("side", String, nullable=False), Column("lines", JSON, nullable=False),
 )
+opening_positions = Table("opening_positions", metadata,
+    Column("player", String, primary_key=True), Column("chapter", String, primary_key=True),
+    Column("line", Integer, primary_key=True), Column("ply", Integer, primary_key=True),
+    Column("fen", String, primary_key=True), Column("expected", String, primary_key=True),
+    Column("side", String, nullable=False),
+)
 puzzle_attempts = Table("puzzle_attempts", metadata,
     Column("player", String, primary_key=True), Column("id", String, primary_key=True),
     Column("puzzle", String, nullable=False), Column("started", Integer, nullable=False),

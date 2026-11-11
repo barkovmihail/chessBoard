@@ -28,6 +28,7 @@ from .db import open_database
 from .domain import GameError
 from .matchmaking import Matchmaking
 from .puzzle_attempts import PuzzleAttempts
+from .opening_positions import save_position
 from .opening_frequency import continuations
 from .puzzles import puzzle_by_id, random_puzzle
 from .service import Games
@@ -44,6 +45,15 @@ class Chapter(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     side: Literal["w", "b"]
     lines: list[StudyLine] = Field(min_length=1, max_length=12)
+
+
+class OpeningPosition(BaseModel):
+    chapter: str = Field(pattern=r"^[a-z0-9-]{1,64}$")
+    line: int = Field(ge=0, lt=12)
+    ply: int = Field(ge=0, lt=100)
+    fen: str = Field(min_length=1, max_length=128)
+    side: Literal["w", "b"]
+    expected: str = Field(pattern=r"^[a-h][1-8][a-h][1-8][qrbn]?$")
 
 
 class PuzzleProgress(BaseModel):
@@ -509,6 +519,11 @@ def create_app(path: Path):
     @app.get("/api/studies/{chapter_id}")
     def get_chapter(chapter_id: UUID):
         return app.state.studies.get(chapter_id.hex)
+
+    @app.post("/api/openings/positions")
+    def record_opening_position(command: OpeningPosition, request: Request, response: Response):
+        save_position(app.state.games.engine, player_session(request, response), command.model_dump())
+        return {"ok": True}
 
     @app.get("/api/puzzles/attempts")
     def attempts(request: Request, offset: int = Query(0, ge=0)):

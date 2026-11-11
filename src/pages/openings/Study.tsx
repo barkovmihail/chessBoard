@@ -1,6 +1,6 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
-import { Trainer } from "../../features/training";
+import { OpeningTrainer } from "./OpeningTrainer";
 import { commandId } from "../../shared/commandId";
 
 interface Chapter { name: string; side: "w" | "b"; lines: [string, string][][] }
@@ -73,7 +73,7 @@ export function Study({ id }: { id: string }) {
     return () => abort.abort();
   }, [id]);
   if (!chapter) return <main lang={language}><p role="status">{error === "missing" ? t("Глава не найдена", "Chapter not found", "Capítulo no encontrado") : error === "load" ? t("Не удалось загрузить главу", "Could not load the chapter", "No se pudo cargar el capítulo") : t("Загружаем главу…", "Loading chapter…", "Cargando capítulo…")}</p><a href="?section=openings">{t("К дебютам", "Back to openings", "Volver a las aperturas")}</a></main>;
-  return <Trainer lineName={chapter.name + (chapter.lines.length > 1 ? " · " + (index + 1) : "")} key={index} steps={chapter.lines[index]} side={chapter.side} context={<>
+  return <OpeningTrainer chapterId={id} line={index} lineName={chapter.name + (chapter.lines.length > 1 ? " · " + (index + 1) : "")} key={index} steps={chapter.lines[index]} side={chapter.side} context={<>
     <h1>{chapter.name}</h1>
     {chapter.lines.length > 1 && <details open={typeof window !== "undefined" && window.matchMedia("(min-width: 681px)").matches}>
       <summary>{t("Выбрать вариант", "Choose line", "Elegir variante")}</summary>

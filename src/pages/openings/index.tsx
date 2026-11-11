@@ -1,6 +1,6 @@
 import { useLanguage } from "../../shared/language";
 import React from "react";
-import { Trainer } from "../../features/training";
+import { OpeningTrainer } from "./OpeningTrainer";
 import { ChapterEditor, Study } from "./Study";
 import { lessonsByLanguage } from "./lessons";
 
@@ -16,7 +16,7 @@ export function OpeningsPage() {
     params.delete("chapter");
     return <main lang={language}><h1>{t("Глава не найдена", "Chapter not found", "Capítulo no encontrado")}</h1><a href={"?" + params}>{t("К тренажёру дебютов", "Back to opening trainer", "Volver al entrenador de aperturas")}</a></main>;
   }
-  return <Trainer lineName={lesson.name} key={lesson.id} steps={lesson.steps} side={lesson.side} context={<><h1>{t("Тренажёр дебютов", "Opening trainer", "Entrenador de aperturas")}</h1>
+  return <OpeningTrainer chapterId={lesson.id} line={0} lineName={lesson.name} key={lesson.id} steps={lesson.steps} side={lesson.side} context={<><h1>{t("Тренажёр дебютов", "Opening trainer", "Entrenador de aperturas")}</h1>
     <p>{lesson.idea}</p>
     <details open={typeof window !== "undefined" && window.matchMedia("(min-width: 681px)").matches}><summary>{t("Выбрать дебют", "Choose opening", "Elegir apertura")}</summary>
     <label htmlFor="lesson">{t("Дебют", "Opening", "Apertura")} </label><select id="lesson" value={lesson.id} onChange={event => {
