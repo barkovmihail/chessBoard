@@ -121,12 +121,18 @@ class BrowserGameTest(TestCase):
                     page.get_by_role("button", name="Registrarse").click()
                     expect(page.get_by_label("Nombre de jugador")).to_be_visible()
                     expect(page.get_by_role("button", name="Crear cuenta")).to_be_visible()
-                    host = browser.new_page()
+                    host = browser.new_page(viewport={"width": 390, "height": 844}, has_touch=True)
                     host.goto(previous_url)
                     host.get_by_label("Меню профиля").click()
                     host.get_by_text("Язык (Language)", exact=True).click()
                     host.get_by_role("radio", name="Español").check()
                     host.keyboard.press("Escape")
+                    nav_es = host.get_by_role("navigation", name="Secciones")
+                    for label in ("Sala de juego de ChessBoard", "Jugar", "Entrenador de aperturas",
+                                  "Problemas de ajedrez", "Análisis", "Torneos", "Chat"):
+                        expect(nav_es.get_by_role("link", name=label, exact=True)).to_be_in_viewport()
+                    for label in ("Desafíos y partidas en curso", "Notificaciones", "Menú de perfil"):
+                        expect(nav_es.get_by_label(label, exact=True)).to_be_in_viewport()
                     host.get_by_role("button", name="5+3 Blitz").click()
                     host.get_by_role("button", name="Invitar a un amigo").click()
                     expect(host.get_by_text("Esperando al rival")).to_be_visible()
@@ -149,6 +155,12 @@ class BrowserGameTest(TestCase):
                                               (host.url.split("game=")[1],)).fetchone()
                         self.assertGreaterEqual(elapsed, 0)
                         self.assertLess(elapsed, 300000)
+                    active_url = host.url
+                    nav_es.get_by_role("link", name="Entrenador de aperturas").tap()
+                    expect(nav_es.get_by_role("link", name="Entrenador de aperturas")).to_have_attribute("aria-current", "page")
+                    nav_es.get_by_role("link", name="Volver a la partida").tap()
+                    expect(host).to_have_url(active_url)
+                    expect(host.get_by_text("Juegan negras")).to_be_visible()
                     host.get_by_role("button", name="Ofrecer tablas").click()
                     guest.get_by_role("button", name="Rechazar tablas").click()
                     expect(host.get_by_role("button", name="Ofrecer tablas")).to_be_enabled()
