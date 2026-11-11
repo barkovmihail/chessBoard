@@ -23,6 +23,7 @@ sessions = Table("account_sessions", metadata,
     Column("expires", Integer, nullable=False),
 )
 games = Table("games", metadata,
+    Column("engine_level", String),
     Column("rated", Boolean, nullable=False, server_default="0"),
     Column("id", String, primary_key=True),
     Column("owner", String, nullable=False),

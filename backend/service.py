@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy import case, func, insert, select, update
 
+from .computer import COMPUTER
 from .db import accounts, games, moves, receipts
 from .notifications import notify_finish, notify_turn
 from .ratings import POOLS, rating, record_result
@@ -14,12 +15,13 @@ class Games:
         self.engine = engine
         self.now_ms = now_ms or (lambda: time_ns() // 1_000_000)
 
-    def create(self, owner, online=False, control=None):
+    def create(self, owner, online=False, control=None, engine_level=None):
         with self.engine.begin() as db:
-            game_id = self.insert_game(db, owner, online, control)
+            game_id = self.insert_game(db, owner, online or bool(engine_level), control,
+                                       guest=COMPUTER if engine_level else None, engine_level=engine_level)
         return self.get(game_id, owner)
 
-    def insert_game(self, db, owner, online, control, guest=None, previous_game=None, rated=False):
+    def insert_game(self, db, owner, online, control, guest=None, previous_game=None, rated=False, engine_level=None):
         game_id = uuid4().hex
         clock = {}
         if control:
@@ -28,7 +30,7 @@ class Games:
             clock = dict(base_minutes=minutes, increment_seconds=increment, white_ms=base_ms,
                          black_ms=base_ms, deadline_ms=None if online and not guest else self.now_ms() + base_ms)
         db.execute(insert(games).values(id=game_id, owner=owner, version=0, online=online, guest=guest,
-                                        previous_game=previous_game, rated=rated, **clock))
+                                        engine_level=engine_level, previous_game=previous_game, rated=rated, **clock))
         if online and guest:
             notify_turn(db, owner, game_id, 0, self.now_ms())
         return game_id
@@ -40,7 +42,7 @@ class Games:
     def archive(self, player, offset, limit):
         with self.engine.connect() as db:
             rows = db.execute(select(games.c.id, games.c.owner, games.c.online, games.c.finished_ms,
-                games.c.base_minutes, games.c.increment_seconds, games.c.result, games.c.reason, accounts.c.name.label("opponent"))
+                games.c.base_minutes, games.c.increment_seconds, games.c.result, games.c.reason, case((games.c.guest == COMPUTER, "Leela Chess Zero"), else_=accounts.c.name).label("opponent"))
                 .outerjoin(accounts, accounts.c.player == case((games.c.owner == player, games.c.guest), else_=games.c.owner))
                 .where(games.c.result.is_not(None), (games.c.owner == player) | (games.c.guest == player))
                 .order_by(games.c.finished_ms.desc(), games.c.id.desc()).offset(offset).limit(limit + 1)).mappings().all()
@@ -57,7 +59,7 @@ class Games:
         rival = case((games.c.owner == player, games.c.guest), else_=games.c.owner)
         query = (select(games.c.id, games.c.online, games.c.base_minutes, games.c.increment_seconds,
                         (games.c.owner == player).label("white"), games.c.guest.is_(None).label("empty_seat"),
-                        ply.label("ply"), accounts.c.name.label("opponent"))
+                        ply.label("ply"), case((games.c.guest == COMPUTER, "Leela Chess Zero"), else_=accounts.c.name).label("opponent"))
                  .outerjoin(accounts, accounts.c.player == rival)
                  .where(games.c.result.is_(None), (games.c.owner == player) | (games.c.guest == player))
                  .order_by(games.c.id).offset(offset).limit(limit + 1))
@@ -99,6 +101,7 @@ class Games:
         view = snapshot(game["id"], history)
         view["side"] = ("white" if game["owner"] == player else "black") if game["online"] else "both"
         view["waiting"] = bool(game["online"] and not game["guest"])
+        view["engine_level"] = game["engine_level"]
         view.update(rated=game["rated"], version=game["version"], draw_offer=game["draw_offer"])
         for key in ("previous_game", "next_game", "rematch_offer"):
             view[key] = game[key]
@@ -187,6 +190,8 @@ class Games:
                 raise GameError("not_your_turn", 403)
             side = view["side"]
             changes = {"version": version + 1}
+            if game["engine_level"] and command in ("rematch", "offer", "accept", "decline"):
+                raise GameError("action_unavailable", 409)
             if command == "rematch":
                 if not view["result"] or side == "both" or game["next_game"] or game["rematch_offer"] == side:
                     raise GameError("rematch_unavailable", 409)

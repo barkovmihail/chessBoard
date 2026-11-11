@@ -3,6 +3,7 @@ import os
 import secrets
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
+from threading import Event
 from time import perf_counter_ns
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -14,6 +15,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .computer import executable, play_pending
 from .accounts import Accounts, SESSION_SECONDS, digest
 from .notifications import Notifications
 from .challenges import Challenges
@@ -51,6 +53,7 @@ class Search(QueueVersion):
 
 
 class CreateGame(BaseModel):
+    engine_level: Literal["easy", "normal"] | None = None
     control: TimeControl | None = None
     online: bool = False
 
@@ -88,10 +91,21 @@ def create_app(path: Path):
                     app.state.events.publish(game_id)
                 await asyncio.sleep(0.25)
 
+        stopped = Event()
+
+        async def computer_turns():
+            while not stopped.is_set():
+                for game_id in await asyncio.to_thread(lambda: list(play_pending(app.state.games, stopped))):
+                    app.state.events.publish(game_id)
+                await asyncio.sleep(0.5)
+
+        computer = asyncio.create_task(computer_turns())
         timer = asyncio.create_task(monitor())
         try:
             yield
         finally:
+            stopped.set()
+            await computer
             timer.cancel()
             with suppress(asyncio.CancelledError):
                 await timer
@@ -236,8 +250,11 @@ def create_app(path: Path):
     @app.post("/api/games", status_code=201)
     def create(request: Request, response: Response, options: CreateGame | None = None):
         control = options.control if options else None
+        level = options.engine_level if options else None
+        if level and not executable():
+            raise GameError("engine_unavailable", 503)
         return app.state.games.create(player_session(request, response), bool(options and options.online),
-                                      (control.minutes, control.increment) if control else None)
+                                      (control.minutes, control.increment) if control else None, engine_level=level)
 
     @app.get("/api/games/{game_id}/invitation")
     def invitation(game_id: str):

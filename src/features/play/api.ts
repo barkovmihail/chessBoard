@@ -2,6 +2,7 @@ import type { BoardPiece } from "../../entities/board";
 
 export interface Game {
   id: string;
+  engine_level?: "easy" | "normal" | null;
   version: number;
   position: BoardPiece[];
   turn: "white" | "black";
@@ -33,7 +34,7 @@ export async function requestGame(path: string, body?: object): Promise<Game> {
 }
 
 function parseGame(data: any): Game {
-  if (!data || ![null, "white", "black"].includes(data.draw_offer) ||
+  if (!data || ![undefined, null, "easy", "normal"].includes(data.engine_level) || ![null, "white", "black"].includes(data.draw_offer) ||
       !(data.reason === null || typeof data.reason === "string") || !["white", "black", "both"].includes(data.side) || typeof data.waiting !== "boolean" ||
       typeof data.id !== "string" || !Number.isInteger(data.version) ||
       !["white", "black"].includes(data.turn) || !Array.isArray(data.position) ||

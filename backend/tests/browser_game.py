@@ -1,6 +1,7 @@
 """Run after npm run build. Uses temporary SQLite and a local Chromium browser."""
 import os
 import re
+import shutil
 from pathlib import Path
 from random import Random
 from socket import socket
@@ -34,6 +35,25 @@ class BrowserGameTest(TestCase):
                 with sync_playwright() as playwright:
                     browser = playwright.chromium.launch(channel=os.getenv("BROWSER_CHANNEL") or None)
                     page = browser.new_page(viewport={"width": 390, "height": 844}, has_touch=True)
+                    if shutil.which(os.getenv("CHESS_LC0", "lc0")):
+                        bot = browser.new_page()
+                        bot.goto(f"http://127.0.0.1:{port}")
+                        bot.get_by_label("Уровень").select_option("normal")
+                        bot.get_by_role("button", name="Играть с компьютером").click()
+                        expect(bot.get_by_text("Чёрные · Leela Chess Zero · Обычный")).to_be_visible()
+                        bot.locator('[data-square="e2"]').click()
+                        bot.locator('[data-square="e4"]').click()
+                        record = bot.get_by_label("Запись ходов").locator("li span")
+                        expect(record.nth(1)).to_have_text(re.compile(r".+"), timeout=15000)
+                        reply = record.nth(1).inner_text()
+                        position = chess.Board()
+                        position.push_san("e4")
+                        position.push_san(reply)
+                        bot.reload()
+                        expect(record.nth(0)).to_have_text("e4")
+                        expect(record.nth(1)).to_have_text(reply)
+                        expect(bot.get_by_text("Ход белых")).to_be_visible()
+                        bot.close()
                     track_audio = """window.played = [];
                         const start = AudioBufferSourceNode.prototype.start;
                         AudioBufferSourceNode.prototype.start = function (...args) {

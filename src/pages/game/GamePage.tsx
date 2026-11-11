@@ -65,18 +65,18 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     }, setDisconnected);
   }, [onlineId]);
 
-  async function create(online: boolean, control?: { minutes: number; increment: number }) {
+  async function create(online: boolean, control?: { minutes: number; increment: number }, engine_level?: Game["engine_level"]) {
     setBusy(true);
     setError("");
     try {
       const result = invite ? await requestGame("/" + encodeURIComponent(invite) + "/join", {})
-        : await requestGame("", { online, control });
+        : await requestGame("", { online, control, engine_level });
       setInvite(undefined);
       onOpen(result.id);
       receive(result, true);
       if (!result.waiting && !result.result && !result.moves.length) playSound("start");
     } catch (failure) { setError(failure instanceof RequestError && failure.message === "seat_taken"
-      ? "Оба места уже заняты." : "Не удалось открыть партию. Попробуйте ещё раз."); }
+      ? "Оба места уже заняты." : failure instanceof RequestError && failure.message === "engine_unavailable" ? "Lc0 недоступен на сервере." : "Не удалось открыть партию. Попробуйте ещё раз."); }
     finally { setBusy(false); }
   }
 
@@ -109,6 +109,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
       onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />;
   const context = game ? <>
     <p>{game.rated ? "Рейтинговая игра" : "Нерейтинговая игра"}</p>
+    {game.engine_level && <p>Чёрные · Leela Chess Zero · {game.engine_level === "easy" ? "Начальный" : "Обычный"}</p>}
     {game.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}
   </> : invite ? <><p>{inviteControl}</p><button disabled={busy || !inviteControl} onClick={() => create(true)}>Играть за чёрных</button></>
@@ -118,7 +119,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
   const actions = game && <>
       {game.previous_game && <a href={"?game=" + game.previous_game}>Предыдущая партия</a>}
       {game.next_game ? <a href={"?game=" + game.next_game}>Открыть реванш</a> :
-        game.result && game.side !== "both" && (game.rematch_offer === game.side ? <p>Реванш предложен</p> :
+        game.result && !game.engine_level && game.side !== "both" && (game.rematch_offer === game.side ? <p>Реванш предложен</p> :
           <button disabled={busy || !!pending} onClick={() => act("rematch")}>
             {game.rematch_offer ? "Принять реванш" : "Предложить реванш"}
           </button>)}
@@ -128,10 +129,10 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
           Заявить ничью · {reasons[reason]}{key.includes(":") && " · " + key.slice(6, 8) + "–" + key.slice(8)}
         </button>)}
       {game.side !== "both" && !game.result && !game.waiting && <fieldset disabled={busy || !!pending}>
-        {game.draw_offer === null ? <button onClick={() => act("offer")}>Предложить ничью</button>
+        {!game.engine_level && (game.draw_offer === null ? <button onClick={() => act("offer")}>Предложить ничью</button>
           : game.draw_offer === game.side ? <span>Ничья предложена</span>
           : <><button onClick={() => act("accept")}>Принять ничью</button>
-            <button onClick={() => act("decline")}>Отклонить ничью</button></>}
+            <button onClick={() => act("decline")}>Отклонить ничью</button></>)}
         <button onClick={() => act("resign")}>Сдаться</button>
       </fieldset>}
       {game.moves.length > 0 && <ol aria-label="Запись ходов" className={styles.history}>
