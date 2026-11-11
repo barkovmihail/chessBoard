@@ -7,6 +7,8 @@ from sqlalchemy.engine import URL
 
 metadata = MetaData()
 accounts = Table("accounts", metadata,
+    Column("notify_challenge", Boolean, nullable=False, server_default="1"),
+    Column("notify_response", Boolean, nullable=False, server_default="1"),
     Column("player", String, primary_key=True),
     Column("name", String(collation="NOCASE"), nullable=False, unique=True),
     Column("salt", LargeBinary, nullable=False),
@@ -55,6 +57,12 @@ challenges = Table("challenges", metadata,
     Column("recipient", ForeignKey("accounts.player"), nullable=False), Column("minutes", Integer, nullable=False),
     Column("increment", Integer, nullable=False), Column("expires", Integer, nullable=False),
     Column("status", String, nullable=False), Column("game_id", ForeignKey("games.id")),
+)
+notifications = Table("notifications", metadata,
+    Column("id", Integer, primary_key=True), Column("player", ForeignKey("accounts.player"), nullable=False),
+    Column("challenge_id", ForeignKey("challenges.id"), nullable=False), Column("kind", String, nullable=False),
+    Column("created", Integer, nullable=False), Column("seen", Boolean, nullable=False, server_default="0"),
+    UniqueConstraint("player", "challenge_id", "kind"), Index("ix_notifications_player_id", "player", "id"),
 )
 moves = Table("moves", metadata,
     Column("game_id", ForeignKey("games.id"), primary_key=True),

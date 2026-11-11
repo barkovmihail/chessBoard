@@ -1,6 +1,7 @@
 from sqlalchemy import case, insert, select, update
 
 from .db import accounts, challenges
+from .notifications import notify_challenge
 from .domain import GameError
 
 
@@ -37,6 +38,7 @@ class Challenges:
                 raise GameError("already_challenged", 409)
             db.execute(insert(challenges).values(id=challenge_id, sender=player, recipient=recipient,
                 minutes=minutes, increment=increment, expires=now + 600000, status="pending"))
+            notify_challenge(db, recipient, challenge_id, "challenge", now)
             return {"id": challenge_id}
 
     def respond(self, player, challenge_id, action):
@@ -54,5 +56,7 @@ class Challenges:
                     if action == "accept":
                         game = self.games.insert_game(db, row["sender"], True, (row["minutes"], row["increment"]),
                                                       guest=row["recipient"])
+                    other = row["recipient"] if action == "cancel" else row["sender"]
+                    notify_challenge(db, other, challenge_id, status, self.games.now_ms())
                 db.execute(update(challenges).where(challenges.c.id == challenge_id).values(status=status, game_id=game))
             return {"status": status, "game_id": game}

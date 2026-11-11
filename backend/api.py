@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .accounts import Accounts, SESSION_SECONDS, digest
+from .notifications import Notifications
 from .challenges import Challenges
 from .db import open_database
 from .domain import GameError
@@ -30,6 +31,11 @@ class TimeControl(BaseModel):
 
 class QueueVersion(BaseModel):
     version: int = Field(ge=0)
+
+
+class NotificationPreference(BaseModel):
+    setting: Literal["notify_challenge", "notify_response"]
+    enabled: bool
 
 
 class Challenge(BaseModel):
@@ -69,6 +75,7 @@ def create_app(path: Path):
     @asynccontextmanager
     async def lifespan(app):
         engine = open_database(path)
+        app.state.notifications = Notifications(engine)
         app.state.accounts = Accounts(engine)
         app.state.games = Games(engine)
         app.state.challenges = Challenges(app.state.games)
@@ -150,6 +157,26 @@ def create_app(path: Path):
         if not name:
             raise GameError("account_required", 403)
         return player
+
+    @app.get("/api/notifications")
+    def notification_feed(request: Request, before: int | None = Query(None, gt=0)):
+        player, name = current(request)
+        if not name:
+            return {"items": [], "unread": 0, "before": None}
+        return app.state.notifications.feed(player, before)
+
+    @app.post("/api/notifications/read")
+    def read_notifications(request: Request, item: int | None = Query(None, gt=0)):
+        app.state.notifications.read(member(request), item)
+        return {"ok": True}
+
+    @app.get("/api/notification-settings")
+    def notification_settings(request: Request):
+        return app.state.notifications.preferences(member(request))
+
+    @app.post("/api/notification-settings")
+    def change_notification_settings(request: Request, command: NotificationPreference):
+        return app.state.notifications.preferences(member(request), {command.setting: command.enabled})
 
     @app.get("/api/challenges")
     def pending_challenges(request: Request):
