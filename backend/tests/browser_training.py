@@ -61,7 +61,7 @@ class TrainingTest(unittest.TestCase):
                 "e2e4 g1f3 f1c4 c2c3", "e2e4 g1f3 f1b5 b5a4", "d2d4 c2c4 b1c3 c1g5",
                 "c7c5 d7d6 c5d4 g8f6", "e7e6 d7d5 c7c5 b8c6",
             ]):
-                page.get_by_label("Дебют", exact=True).select_option(str(index))
+                page.get_by_label("Дебют", exact=True).select_option(index=index)
                 for uci in sequence.split():
                     if uci == "e2e4":
                         touch_drag("e2", "e4")
@@ -69,6 +69,18 @@ class TrainingTest(unittest.TestCase):
                         move(uci)
                 expect(page.get_by_role("heading", name="Линия пройдена")).to_be_visible()
 
+            link = page.get_by_role("link", name="Ссылка на главу")
+            self.assertEqual(link.get_attribute("href"), "?section=openings&chapter=french-defense")
+            reader = browser.new_page()
+            reader.goto(page.url.split("?")[0] + link.get_attribute("href"))
+            expect(reader.get_by_label("Дебют", exact=True)).to_have_value("french-defense")
+            reader.get_by_label("Дебют", exact=True).select_option("queens-gambit")
+            reader.wait_for_url("**/*chapter=queens-gambit")
+            reader.reload()
+            expect(reader.get_by_label("Дебют", exact=True)).to_have_value("queens-gambit")
+            reader.go_back()
+            expect(reader.get_by_label("Дебют", exact=True)).to_have_value("french-defense")
+            reader.close()
             with page.expect_response(lambda res: "/api/puzzles/random" in res.url) as fetched:
                 page.get_by_role("link", name="Шахматные задачи").click()
             check_layout()
