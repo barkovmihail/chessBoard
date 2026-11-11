@@ -30,3 +30,25 @@ class ArchiveTest(TestCase):
             self.assertIsNone(last["next_offset"])
             self.assertEqual(service.archive("other", 0, 2)["items"], [])
             engine.dispose()
+
+
+    def test_active_games_follow_moves_and_archive_transition(self):
+        with TemporaryDirectory() as directory:
+            engine = open_database(Path(directory) / "games.db")
+            service = Games(engine)
+            game = service.create("white", True, (5, 3))["id"]
+            local = service.create("white")["id"]
+            self.assertEqual(service.active_games("white", 0, 1)["next_offset"], 1)
+            first = {entry["id"]: entry for entry in service.active_games("white", 0, 20)["items"]}
+            self.assertTrue(first[game]["waiting"])
+            self.assertFalse(first[local]["waiting"])
+            self.assertEqual(service.active_games("other", 0, 20)["items"], [])
+            service.join(game, "black")
+            service.apply(game, "white", "offer", 0, "draw")
+            service.apply(game, "white", "e2e4", 1, "move")
+            entry, = service.active_games("black", 0, 20)["items"]
+            self.assertEqual((entry["side"], entry["turn"], entry["base_minutes"]), ("black", "black", 5))
+            service.apply(game, "black", "resign", 2, "end")
+            self.assertEqual(service.active_games("black", 0, 20)["items"], [])
+            self.assertEqual(service.archive("black", 0, 20)["items"][0]["id"], game)
+            engine.dispose()

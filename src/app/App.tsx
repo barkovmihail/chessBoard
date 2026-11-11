@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Sound } from "./Sound";
+import { CurrentGames } from "./CurrentGames";
 import { Appearance } from "./Appearance";
 import { AnalysisPage } from "../pages/analysis";
 import { ProfilePage } from "../pages/profile";
@@ -26,7 +27,7 @@ export default function App() {
       <a href={"?section=puzzles" + trainingSuffix} aria-current={section === "puzzles" ? "page" : undefined}>Шахматные задачи</a>
       <a href="?section=profile" aria-current={section === "profile" ? "page" : undefined}>Профиль</a>
       <a href="?section=analysis" aria-current={section === "analysis" ? "page" : undefined}>Анализ</a>
-      <Appearance /><Sound />
+      <CurrentGames /><Appearance /><Sound />
     </nav>
     {section === "analysis" ? <AnalysisPage /> : section === "profile" ? <ProfilePage /> : section === "openings" ? <OpeningsPage /> : section === "puzzles" ? <PuzzlesPage /> : <GamePage onOpen={openGame} />}
   </>;

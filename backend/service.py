@@ -1,7 +1,7 @@
 from time import time_ns
 from uuid import uuid4
 
-from sqlalchemy import case, insert, select, update
+from sqlalchemy import case, func, insert, select, update
 
 from .db import accounts, games, moves, receipts
 from .ratings import POOLS, rating, record_result
@@ -48,6 +48,27 @@ class Games:
                 item["side"] = ("white" if owner == player else "black") if online else "both"
                 items.append(item)
             return {"items": items, "next_offset": offset + limit if len(rows) > limit else None}
+
+    def active_games(self, player, offset, limit):
+        ply = select(func.max(moves.c.ply)).where(moves.c.game_id == games.c.id).scalar_subquery()
+        rival = case((games.c.owner == player, games.c.guest), else_=games.c.owner)
+        query = (select(games.c.id, games.c.online, games.c.base_minutes, games.c.increment_seconds,
+                        (games.c.owner == player).label("white"), games.c.guest.is_(None).label("empty_seat"),
+                        ply.label("ply"), accounts.c.name.label("opponent"))
+                 .outerjoin(accounts, accounts.c.player == rival)
+                 .where(games.c.result.is_(None), (games.c.owner == player) | (games.c.guest == player))
+                 .order_by(games.c.id).offset(offset).limit(limit + 1))
+        with self.engine.connect() as db:
+            rows = db.execute(query).mappings().all()
+        items = []
+        for row in rows[:limit]:
+            item = dict(row)
+            white, online = item.pop("white"), item.pop("online")
+            item["side"] = ("white" if white else "black") if online else "both"
+            item["waiting"] = item.pop("empty_seat") and online
+            item["turn"] = "black" if (item.pop("ply") or 0) % 2 else "white"
+            items.append(item)
+        return {"items": items, "next_offset": offset + limit if len(rows) > limit else None}
 
     def invitation(self, game_id):
         with self.engine.connect() as db:

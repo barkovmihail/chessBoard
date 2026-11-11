@@ -29,3 +29,11 @@ body { background: var(--paper); color: var(--ink); }
   border: 1px solid var(--edge); border-radius: 6px; background: var(--panel); }
 .appearance-options label { display: flex; align-items: center; justify-content: space-between; gap: 1em; padding: 4px; }
 @media (max-width: 520px) { .appearance-options { position: static; } }
+
+.study-nav { position: relative; }
+.current-games summary { cursor: pointer; }
+.current-games section { position: absolute; z-index: 6; right: max(8px, calc((100% - 900px) / 2));
+  top: 100%; width: min(340px, calc(100% - 16px)); max-height: 60vh; overflow: auto; padding: 12px;
+  border: 1px solid var(--edge); border-radius: 6px; background: var(--panel); }
+.current-games ul { margin: 0; padding: 0; list-style: none; }
+.current-games li a { display: block; padding: 8px 0; }
