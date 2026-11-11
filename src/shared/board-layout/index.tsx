@@ -3,14 +3,15 @@ import styles from "./layout.module.css";
 
 interface Props {
   lang?: string;
+  gameWorkspace?: boolean;
   board: React.ReactNode;
   context?: React.ReactNode;
   actions?: React.ReactNode;
   status?: React.ReactNode;
 }
 
-export function BoardLayout({ lang, board, context, actions, status }: Props) {
-  return <main lang={lang} className={styles.layout}>
+export function BoardLayout({ lang, gameWorkspace, board, context, actions, status }: Props) {
+  return <main lang={lang} className={styles.layout} data-game-workspace={gameWorkspace || undefined}>
     {status && <header className={styles.status}>{status}</header>}
     {context && <aside className={styles.context + " game-context"}>{context}</aside>}
     <div className={styles.board}>{board}</div>

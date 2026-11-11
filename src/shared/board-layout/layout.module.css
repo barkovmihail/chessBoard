@@ -31,3 +31,16 @@
     grid-template-areas: "status" "board" "actions" "context"; }
   .layout:not(:has(.actions)) { grid-template-areas: "context" "board"; }
 }
+
+.layout[data-game-workspace] .actions { overflow-wrap: anywhere; }
+.layout[data-game-workspace] .actions > fieldset { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.layout[data-game-workspace] .actions button { min-height: 44px; }
+.layout[data-game-workspace] .actions button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+@media (min-width: 681px) {
+  .layout[data-game-workspace] {
+    max-width: 1080px;
+    grid-template-columns: minmax(0, 1.8fr) minmax(225px, 1fr);
+    grid-template-areas: "status actions" "board actions" "context actions";
+    grid-template-rows: max-content max-content 1fr;
+  }
+}

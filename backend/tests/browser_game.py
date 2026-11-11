@@ -149,7 +149,16 @@ class BrowserGameTest(TestCase):
                     host.get_by_role("button", name="Aceptar tablas").click()
                     expect(guest.get_by_text("Tablas por acuerdo", exact=True)).to_be_visible()
                     replay_es = host.get_by_role("navigation", name="Reproducción de la partida")
-                    replay_es.get_by_role("button", name="Jugada anterior").click()
+                    for width in (360, 768, 1440):
+                        host.set_viewport_size({"width": width, "height": 900})
+                        clocks_box = host.get_by_label("Relojes de ajedrez").bounding_box()
+                        nav_box = replay_es.bounding_box()
+                        if width > 680:
+                            self.assertGreaterEqual(nav_box["x"], clocks_box["x"] + clocks_box["width"])
+                        else:
+                            self.assertGreaterEqual(nav_box["y"], clocks_box["y"] + clocks_box["height"])
+                        self.assertTrue(host.evaluate("document.documentElement.scrollWidth <= innerWidth"))
+                    replay_es.get_by_role("button", name="Jugada anterior").press("Enter")
                     expect(replay_es.get_by_text("Posición inicial")).to_be_visible()
                     host.get_by_label("Menú de perfil").click()
                     host.get_by_text("Idioma", exact=True).click()

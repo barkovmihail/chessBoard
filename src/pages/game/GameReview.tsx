@@ -39,6 +39,7 @@ export function GameReview({ game, render }: {
   const arrows = comparing ? [...(mistake ? [{ uci: played!, mistake: true }] : []), { uci: best, mistake: false }] : [];
   return render(<Board arrows={arrows} position={position} flipped={game.side === "black"} lastMove={comparing ? undefined : lastMove} highlight={comparing ? undefined : game.review960?.uci?.[ply - 1]} />, <>
     <nav lang={language} aria-label={t("Просмотр партии", "Game replay", "Reproducción de la partida")}>
+      <ReplayButtons ply={ply} total={game.moves.length} onSelect={setPly} />
       <p aria-live="polite">{ply ? Math.ceil(ply / 2) + (ply % 2 ? ". " : "… ") + game.moves[ply - 1] : t("Начальная позиция", "Starting position", "Posición inicial")}</p>
       {lastMove && <p>{{
         p: t("Пешка", "Pawn", "Peón"), n: t("Конь", "Knight", "Caballo"), b: t("Слон", "Bishop", "Alfil"),
@@ -52,7 +53,6 @@ export function GameReview({ game, render }: {
         {t("Сравнить стрелками из позиции до хода", "Compare arrows from the position before the move", "Comparar con flechas desde la posición anterior")}</label>}
       {comparing && <p>{t("Сплошная — рекомендация движка", "Solid arrow — engine recommendation", "Flecha continua — recomendación del motor")} · {before.best}
         {mistake && <> · {t("Пунктир — сыгранная ошибка", "Dashed arrow — played mistake", "Flecha discontinua — error jugado")} · {game.moves[ply - 1]}</>}</p>}
-      <ReplayButtons ply={ply} total={game.moves.length} onSelect={setPly} />
     </nav>
     <ol className="review-score" aria-label={t("Запись ходов", "Move list", "Lista de jugadas")}>{game.moves.map((_, i) => i % 2 === 0 &&
       <li key={i}>{game.moves.slice(i, i + 2).map((move, offset) =>

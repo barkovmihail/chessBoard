@@ -144,8 +144,11 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
       onFocus={event => event.target.select()} /></label>}
   </> : invite ? <><p>{inviteFailed ? t("Не удалось загрузить контроль времени", "Could not load the time control", "No se pudo cargar el ritmo de juego") : inviteControl === "unlimited" ? t("Без часов", "Unlimited", "Sin reloj") : inviteControl}</p><button disabled={busy || (!inviteControl && !inviteFailed)} onClick={() => create(true)}>{t("Играть за чёрных", "Play as Black", "Jugar con negras")}</button></>
     : null;
-  const status = game && <span aria-live="polite">{game.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") :
-    game.result ?? (game.turn === "white" ? t("Ход белых", "White to move", "Juegan blancas") : t("Ход чёрных", "Black to move", "Juegan negras"))}</span>;
+  const status = game && <><span aria-live="polite">{game.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") :
+    game.result ?? (game.turn === "white" ? t("Ход белых", "White to move", "Juegan blancas") : t("Ход чёрных", "Black to move", "Juegan negras"))}</span>
+      {game.reason && <p>{resultReason(game.reason, language)}</p>}
+    {disconnected && onlineId && <p role="status">{t("Восстанавливаем связь с партией…", "Reconnecting to the game…", "Reconectando con la partida…")}</p>}
+  </>;
   const actions = game && <>
       {game.previous_game && <a href={"?game=" + game.previous_game}>{t("Предыдущая партия", "Previous game", "Partida anterior")}</a>}
       {game.next_game ? <a href={"?game=" + game.next_game}>{t("Открыть реванш", "Open rematch", "Abrir la revancha")}</a> :
@@ -153,7 +156,6 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
           <button disabled={busy || !!pending} onClick={() => act("rematch")}>
             {game.rematch_offer ? t("Принять реванш", "Accept rematch", "Aceptar la revancha") : t("Предложить реванш", "Offer rematch", "Proponer una revancha")}
           </button>)}
-      {game.reason && <p>{resultReason(game.reason, language)}</p>}
       {!game.result && (game.side === "both" || game.side === game.turn) && Object.entries(game.claims ?? {}).map(([key, reason]) =>
         <button key={key} disabled={busy || !!pending} onClick={() => act(key === "claim" ? "claim" : `claim:${key.slice(6)}`)}>
           {t("Заявить ничью", "Claim a draw", "Reclamar tablas")} · {resultReason(reason, language)}{key.includes(":") && " · " + key.slice(6, 8) + "–" + key.slice(8)}
@@ -170,12 +172,11 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
           <span>{move}</span>{" "}<span>{game.moves[index + 1]}</span>{" "}
         </li>)}
       </ol>}
-    {disconnected && onlineId && <p role="status">{t("Восстанавливаем связь с партией…", "Reconnecting to the game…", "Reconectando con la partida…")}</p>}
     {error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}
     {pending && !busy && <button onClick={() => submit(pending)}>{t("Повторить отправку", "Retry sending", "Reintentar el envío")}</button>}
   </>;
   function render(position: React.ReactElement, controls?: React.ReactElement) {
-    return <BoardLayout board={game ? <ClockPanel game={game}>{position}</ClockPanel> : position}
+    return <BoardLayout gameWorkspace={!!game} lang={language} board={game ? <ClockPanel game={game}>{position}</ClockPanel> : position}
     context={<>{context}{!game && error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}</>} actions={controls ? <>{controls}{actions}</> : actions} status={status} />;
   }
   if (!game && !invite) return <main>
