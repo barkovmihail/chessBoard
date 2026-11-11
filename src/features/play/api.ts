@@ -55,12 +55,13 @@ function parseGame(data: any): Game {
   return data;
 }
 
-export function subscribeGame(id: string, update: (game: Game) => void, connection: (lost: boolean) => void) {
+export function subscribeGame(id: string, update: (game: Game, restored: boolean) => void, connection: (lost: boolean) => void) {
   const address = new URL("/api/games/" + encodeURIComponent(id) + "/events", location.href);
   address.protocol = location.protocol === "https:" ? "wss:" : "ws:";
   let active = true;
   let socket: WebSocket;
   let retry: ReturnType<typeof setTimeout>;
+  let reconnect = false;
   function connect() {
     socket = new WebSocket(address);
     socket.onmessage = event => {
@@ -71,11 +72,13 @@ export function subscribeGame(id: string, update: (game: Game) => void, connecti
         const game = parseGame(message.game);
         if (game.id !== id) throw new Error("invalid_game");
         connection(false);
-        update(game);
+        update(game, reconnect);
+        reconnect = false;
       } catch { socket.close(); }
     };
     socket.onclose = () => {
       if (!active) return;
+      reconnect = true;
       connection(true);
       retry = setTimeout(connect, 1000);
     };

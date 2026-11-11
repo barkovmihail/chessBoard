@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Game, PlayBoard, reasons, RequestError, requestGame, subscribeGame } from "../../features/play";
+import React, { useEffect, useRef, useState } from "react";
+import { Game, gameCue, PlayBoard, reasons, RequestError, requestGame, subscribeGame } from "../../features/play";
+import { playSound } from "../../shared/sound";
 import { ClockPanel, TimeSetup } from "./TimeControl";
 import { GameReview } from "./GameReview";
 import styles from "./game.module.css";
@@ -14,6 +15,17 @@ function commandId() {
 
 export function GamePage() {
   const [game, setGame] = useState<Game>();
+  const confirmed = useRef<Game>();
+  function receive(next: Game, quiet = false) {
+    const previous = confirmed.current;
+    if (previous?.id === next.id && previous.version > next.version) return;
+    confirmed.current = next;
+    setGame(next);
+    if (previous && !quiet) {
+      const cue = gameCue(previous, next);
+      if (cue) playSound(cue);
+    }
+  }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [disconnected, setDisconnected] = useState(false);
@@ -29,7 +41,7 @@ export function GamePage() {
     let active = true;
     setBusy(true);
     requestGame("/" + encodeURIComponent(id)).then(result => {
-      if (active) setGame(result);
+      if (active) receive(result, true);
     }).catch(() => { if (active) setError("Не удалось открыть партию. Обновите страницу."); })
       .finally(() => { if (active) setBusy(false); });
     return () => { active = false; };
@@ -49,9 +61,9 @@ export function GamePage() {
   const onlineId = game && !game.next_game && (game.side !== "both" || (game.clock && !game.result)) ? game.id : undefined;
   useEffect(() => {
     if (!onlineId) return;
-    return subscribeGame(onlineId, result => {
+    return subscribeGame(onlineId, (result, restored) => {
       if (result.next_game) location.assign("?game=" + result.next_game);
-      else setGame(previous => previous && previous.version > result.version ? previous : result);
+      else receive(result, restored);
     }, setDisconnected);
   }, [onlineId]);
 
@@ -63,7 +75,8 @@ export function GamePage() {
         : await requestGame("", { online, control });
       setInvite(undefined);
       history.replaceState(null, "", "?game=" + result.id);
-      setGame(result);
+      receive(result, true);
+      if (!result.waiting && !result.result && !result.moves.length) playSound("start");
     } catch (failure) { setError(failure instanceof RequestError && failure.message === "seat_taken"
       ? "Оба места уже заняты." : "Не удалось открыть партию. Попробуйте ещё раз."); }
     finally { setBusy(false); }
@@ -76,13 +89,13 @@ export function GamePage() {
     setError("");
     try {
       const result = await requestGame("/" + game.id + ("action" in command ? "/actions" : "/moves"), command);
-      setGame(previous => previous && previous.version > result.version ? previous : result);
+      receive(result);
       if (result.next_game && "action" in command && command.action === "rematch") location.assign("?game=" + result.next_game);
       setPending(undefined);
     } catch (failure) {
       if (failure instanceof RequestError) {
         try {
-          setGame(await requestGame("/" + game.id));
+          receive(await requestGame("/" + game.id), true);
           setPending(undefined);
           setError("Позиция обновлена. Выберите ход ещё раз.");
         } catch { setError("Связь потеряна. Повторите отправку."); }

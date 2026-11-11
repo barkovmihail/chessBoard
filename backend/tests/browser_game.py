@@ -32,6 +32,12 @@ class BrowserGameTest(TestCase):
                 with sync_playwright() as playwright:
                     browser = playwright.chromium.launch(channel=os.getenv("BROWSER_CHANNEL") or None)
                     page = browser.new_page(viewport={"width": 390, "height": 844}, has_touch=True)
+                    page.add_init_script("""window.played = [];
+                        const start = AudioBufferSourceNode.prototype.start;
+                        AudioBufferSourceNode.prototype.start = function (...args) {
+                            window.played.push(this.buffer.duration);
+                            return start.apply(this, args);
+                        };""")
                     page.goto(f"http://127.0.0.1:{port}")
                     page.get_by_text("Оформление", exact=True).tap()
                     for label, value in [("Доска", "green"), ("Фигуры", "merida"), ("Тема", "dark")]:
@@ -40,6 +46,10 @@ class BrowserGameTest(TestCase):
                     expect(page.locator("html")).to_have_attribute("data-theme", "dark")
                     expect(page.locator('[data-square="e2"] [role=img]')).to_have_css(
                         "background-image", f'url("http://127.0.0.1:{port}/pieces/merida/wP.svg")')
+                    page.get_by_text("Звук", exact=True).tap()
+                    page.get_by_role("button", name="Прослушать").tap()
+                    page.wait_for_function("window.played.length === 1")
+                    page.get_by_text("Звук", exact=True).tap()
                     page.get_by_role("button", name="Начать партию").tap()
                     expect(page.get_by_label("Шахматные часы")).to_contain_text("5+3")
                     page.locator('[data-square="e2"]').drag_to(page.locator('[data-square="e5"]'))
@@ -47,11 +57,23 @@ class BrowserGameTest(TestCase):
                     page.locator('[data-square="e2"]').tap()
                     page.locator('[data-square="e4"]').tap()
                     expect(page.get_by_text("Ход чёрных")).to_be_visible()
+                    page.wait_for_function("window.played.length === 3")
                     page.reload()
                     expect(page.locator('[data-square="e4"] [role=img]')).to_have_attribute("aria-label", "white pawn e4")
                     expect(page.locator('[data-square="e2"] [role=img]')).to_have_count(0)
                     expect(page.get_by_text("Ход чёрных")).to_be_visible()
                     expect(page.get_by_text("e4", exact=True)).to_be_visible()
+                    self.assertEqual(page.evaluate("window.played.length"), 0)
+                    page.get_by_text("Звук", exact=True).tap()
+                    page.get_by_label("Звуки игры").uncheck()
+                    expect(page.get_by_role("button", name="Прослушать")).to_be_disabled()
+                    page.reload()
+                    page.get_by_text("Звук", exact=True).tap()
+                    expect(page.get_by_label("Звуки игры")).not_to_be_checked()
+                    page.get_by_text("Звук", exact=True).tap()
+                    page.locator('[data-square="e7"]').drag_to(page.locator('[data-square="e5"]'))
+                    expect(page.get_by_text("Ход белых")).to_be_visible()
+                    self.assertEqual(page.evaluate("window.played.length"), 0)
                     white = browser.new_page()
                     white.goto(f"http://127.0.0.1:{port}")
                     white.get_by_role("button", name="3+0 Блиц").click()
