@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Game, PlayBoard, RequestError, requestGame, subscribeGame } from "../../features/play";
 import { ClockPanel, TimeSetup } from "./TimeControl";
+import { GameReview } from "./GameReview";
 import styles from "./game.module.css";
 
 type Action = "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
@@ -99,8 +100,8 @@ export function GamePage() {
   }
 
   return <main className={styles.app}>
-    <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending && !game.result}
-      onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />
+    {game?.result ? <GameReview key={game.id} game={game} /> : <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending && !game.result}
+      onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />}
     {!game && (invite
       ? <><p>{inviteControl}</p><button disabled={busy || !inviteControl} onClick={() => create(true)}>Играть за чёрных</button></>
       : <TimeSetup busy={busy} create={create} />)}

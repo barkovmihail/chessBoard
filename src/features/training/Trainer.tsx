@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Chess } from "chess.js";
-import { Board, PieceColorType, PieceType, Square } from "../../entities/board";
+import { Board, boardPosition, Square } from "../../entities/board";
 
 interface Props {
   fen?: string;
@@ -8,9 +8,6 @@ interface Props {
   side: "w" | "b";
   puzzle?: boolean;
 }
-
-const types = { p: PieceType.Pawn, n: PieceType.Knight, b: PieceType.Bishop,
-  r: PieceType.Rook, q: PieceType.Queen, k: PieceType.King };
 
 export function Trainer({ fen, steps, side, puzzle }: Props) {
   const [ply, advance] = useState(0);
@@ -63,9 +60,7 @@ export function Trainer({ fen, steps, side, puzzle }: Props) {
     if (selected) attempt(square);
   }
   return <div className="training-layout">
-    <Board position={state.board().flat().flatMap(piece => piece ? [{
-      type: types[piece.type], square: piece.square, color: piece.color === "w" ? PieceColorType.White : PieceColorType.Black,
-    }] : [])} flipped={side === "b"} lastMove={lastMove} selected={selected}
+    <Board position={boardPosition(state)} flipped={side === "b"} lastMove={lastMove} selected={selected}
       targets={hint && target && !complete ? [target.from, target.to] : []}
       movableColor={side === "w" ? "white" : "black"}
       onMove={automatic || complete ? undefined : (from, to) => attempt(to, undefined, from)}
