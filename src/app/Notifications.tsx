@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 
-const labels = { challenge: "Новый вызов", accepted: "Вызов принят", declined: "Вызов отклонён", canceled: "Вызов отменён" };
+const labels = { turn: "Ваш ход", finish: "Партия завершена", challenge: "Новый вызов", accepted: "Вызов принят", declined: "Вызов отклонён", canceled: "Вызов отменён" };
 interface Notice {
-  id: number; kind: keyof typeof labels; opponent: string; created: number; seen: boolean; game_id: string | null;
+  result: string | null; id: number; kind: keyof typeof labels; opponent: string; created: number; seen: boolean; game_id: string | null;
 }
 interface Feed { items: Notice[]; unread: number; before: number | null }
 
@@ -22,7 +22,7 @@ export function Notifications({ onInbox }: { onInbox: () => void }) {
         if (!res.ok || !Number.isInteger(data.unread) || !(data.before === null || Number.isInteger(data.before)) ||
             !Array.isArray(data.items) || !data.items.every((n: Notice) => n && Object.prototype.hasOwnProperty.call(labels, n.kind) &&
             Number.isInteger(n.id) && Number.isInteger(n.created) && typeof n.opponent === "string" &&
-            typeof n.seen === "boolean" && (n.game_id === null || typeof n.game_id === "string"))) throw Error();
+            (n.result === null || typeof n.result === "string") && typeof n.seen === "boolean" && (n.game_id === null || typeof n.game_id === "string"))) throw Error();
         if (!abort.signal.aborted) { setFeed(data); setError(""); }
       } catch { if (!abort.signal.aborted) setError("Не удалось загрузить уведомления."); }
       if (!abort.signal.aborted) timer = setTimeout(load, open ? 4000 : 12000);
@@ -47,7 +47,7 @@ export function Notifications({ onInbox }: { onInbox: () => void }) {
       {feed?.unread ? <button onClick={() => read()}>Прочитать все</button> : null}
       {feed && !feed.items.length && <p>Уведомлений пока нет</p>}
       <ul>{feed?.items.map(n => <li key={n.id}>
-        <p>{labels[n.kind]} · {n.opponent} · {new Date(n.created).toLocaleString("ru-RU")}</p>
+        <p>{labels[n.kind]}{n.result && " · " + n.result} · {n.opponent} · {new Date(n.created).toLocaleString("ru-RU")}</p>
         {n.game_id ? <a href={"?game=" + encodeURIComponent(n.game_id)}>Открыть партию</a> :
           <button onClick={() => { setOpen(false); onInbox(); }}>К вызовам</button>}
         {!n.seen && <button onClick={() => read(n.id)}>Отметить прочитанным</button>}

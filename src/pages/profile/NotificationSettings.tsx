@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const labels = { notify_challenge: "Новый вызов", notify_response: "Ответ или отмена вызова" };
+const labels = { notify_turn: "Моя очередь хода", notify_finish: "Завершение партии", notify_challenge: "Новый вызов", notify_response: "Ответ или отмена вызова" };
 type Setting = keyof typeof labels;
 
 async function preferences(body?: { setting: Setting; enabled: boolean }) {

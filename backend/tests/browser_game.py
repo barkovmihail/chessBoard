@@ -323,7 +323,7 @@ class BrowserGameTest(TestCase):
                     black.locator("summary").filter(has_text="Уведомления").click()
                     feed = black.get_by_role("region", name="Лента уведомлений")
                     expect(feed).to_contain_text("Новый вызов · WhiteKnight")
-                    feed.get_by_role("button", name="Отметить прочитанным").click()
+                    feed.get_by_role("button", name="Прочитать все").click()
                     expect(feed.get_by_role("button", name="Прочитать все")).to_have_count(0)
                     feed.get_by_role("button", name="К вызовам").click()
                     black.get_by_role("button", name="Принять вызов").click()
@@ -341,6 +341,25 @@ class BrowserGameTest(TestCase):
                     white.reload()
                     white.get_by_text("Настройки уведомлений", exact=True).click()
                     expect(white.get_by_label("Ответ или отмена вызова")).not_to_be_checked()
+                    with white.expect_response(lambda r: r.url.endswith("/api/notification-settings") and r.request.method == "POST"):
+                        white.get_by_label("Моя очередь хода").uncheck()
+                    game_url = black.url
+                    white.goto(game_url)
+                    white.locator('[data-square="e2"]').click()
+                    white.locator('[data-square="e4"]').click()
+                    expect(black.get_by_text("Ход чёрных", exact=True)).to_be_visible()
+                    black.locator("summary").filter(has_text="Уведомления").click()
+                    feed = black.get_by_role("region", name="Лента уведомлений")
+                    expect(feed).to_contain_text("Ваш ход · WhiteKnight")
+                    black.locator("summary").filter(has_text="Уведомления").click()
+                    black.get_by_role("button", name="Сдаться").click()
+                    white.goto(base + "/?section=profile")
+                    white.locator("summary").filter(has_text="Уведомления").click()
+                    row = white.get_by_role("region", name="Лента уведомлений").get_by_role("listitem").filter(
+                        has_text="Партия завершена · 1-0 · BlackKnight").first
+                    row.get_by_role("link", name="Открыть партию").click()
+                    expect(white).to_have_url(game_url)
+                    expect(white.get_by_text("Сдача", exact=True)).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True

@@ -34,7 +34,7 @@ class QueueVersion(BaseModel):
 
 
 class NotificationPreference(BaseModel):
-    setting: Literal["notify_challenge", "notify_response"]
+    setting: Literal["notify_challenge", "notify_response", "notify_turn", "notify_finish"]
     enabled: bool
 
 

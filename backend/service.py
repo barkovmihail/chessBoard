@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy import case, func, insert, select, update
 
 from .db import accounts, games, moves, receipts
+from .notifications import notify_finish, notify_turn
 from .ratings import POOLS, rating, record_result
 from .domain import GameError, replay, snapshot
 
@@ -28,6 +29,8 @@ class Games:
                          black_ms=base_ms, deadline_ms=None if online and not guest else self.now_ms() + base_ms)
         db.execute(insert(games).values(id=game_id, owner=owner, version=0, online=online, guest=guest,
                                         previous_game=previous_game, rated=rated, **clock))
+        if online and guest:
+            notify_turn(db, owner, game_id, 0, self.now_ms())
         return game_id
 
     def ratings(self, player):
@@ -89,6 +92,7 @@ class Games:
                     raise GameError("seat_taken", 409)
                 db.execute(update(games).where(games.c.id == game_id).values(guest=player, deadline_ms=(self.now_ms() + game["white_ms"]
                                       if game["base_minutes"] else None)))
+                notify_turn(db, game["owner"], game_id, 0, self.now_ms())
         return self.get(game_id, player)
 
     def _view(self, game, history, player):
@@ -127,6 +131,7 @@ class Games:
         changes = {"result": result, "reason": "timeout", "finished_ms": self.now_ms(), "deadline_ms": None, "draw_offer": None,
                    "white_ms" if board.turn else "black_ms": 0, "version": game["version"] + 1}
         db.execute(update(games).where(games.c.id == game["id"]).values(**changes))
+        notify_finish(db, game, changes["finished_ms"])
         record_result(db, game, result)
         return dict(game, **changes)
 
@@ -229,7 +234,11 @@ class Games:
                         changes[moving] = remaining
             if changes.get("result"):
                 changes["finished_ms"] = now
+                notify_finish(db, game, now)
                 record_result(db, game, changes["result"])
+            elif game["online"] and len(history) > len(rows):
+                next_player = game["guest"] if view["turn"] == "white" else game["owner"]
+                notify_turn(db, next_player, game_id, len(history), now)
             db.execute(update(games).where(games.c.id == game_id, games.c.version == version).values(**changes))
             result = self._view(dict(game, **changes), history, owner)
             db.execute(insert(receipts).values(game_id=game_id, command_id=command_id, player=owner,
