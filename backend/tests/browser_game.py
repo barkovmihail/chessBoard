@@ -282,6 +282,17 @@ class BrowserGameTest(TestCase):
                     expect(review.get_by_text("2… Qh4#")).to_be_visible()
                     review.get_by_role("button", name="Назад").click()
                     expect(review.get_by_text("2. g4")).to_be_visible()
+                    notation = black.get_by_label("Запись ходов")
+                    notation.get_by_role("button", name="f3", exact=True).click()
+                    expect(review.get_by_text("1. f3")).to_be_visible()
+                    if shutil.which(os.getenv("CHESS_LC0", "lc0")):
+                        report = black.get_by_role("region", name="Подробный разбор")
+                        report.get_by_role("button", name="Найти ключевые моменты").click()
+                        expect(report.get_by_text("Проверено позиций: 5/5")).to_be_visible(timeout=60000)
+                        moment = report.get_by_role("button").first
+                        moment.click()
+                        expect(report.get_by_text("Оценка за белых до и после хода", exact=False)).to_be_visible()
+                        expect(report.get_by_role("link", name="Попробовать другой ход")).to_be_visible()
                     black.reload()
                     expect(review.get_by_text("2… Qh4#")).to_be_visible()
                     expect(black.locator('[data-square="h4"] [role=img]')).to_have_attribute("aria-label", "black queen h4")

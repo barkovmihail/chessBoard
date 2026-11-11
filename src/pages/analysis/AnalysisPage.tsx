@@ -74,7 +74,8 @@ export function AnalysisPage() {
       <nav aria-label={t("Ходы записи", "Game moves")}>
         <ReplayButtons ply={ply} total={line.moves.length} onSelect={navigate} />
       </nav>
-      <p>{t("Запись", "Game score")} · {line.moves.join(" ")} {line.result}</p>
+      <p>{t("Запись", "Game score")} · {line.moves.map((move, i) => <React.Fragment key={i}>{i > 0 && " "}<button className="notation-move"
+        aria-current={ply === i + 1 ? "step" : undefined} onClick={() => navigate(i + 1)}>{move}</button></React.Fragment>)} {line.result}</p>
       {variation.length > 0 && <><p aria-live="polite">{t("Вариант", "Variation")} · {variation.join(" ")}</p>
         <button onClick={() => setVariation(variation.slice(0, -1))}>{t("Отменить ход варианта", "Undo variation move")}</button>
         <button onClick={() => setVariation([])}>{t("Вернуться к исходной позиции", "Return to original position")}</button></>}

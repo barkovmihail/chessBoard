@@ -83,3 +83,7 @@ button, input, select, textarea { font-family: inherit; }
 .replay-buttons button:enabled:hover, .analysis-page button:not([data-square]):enabled:hover, .resign-action:enabled:hover { background: color-mix(in srgb, var(--panel) 87%, var(--link)); }
 .replay-buttons button:focus-visible, .analysis-page button:focus-visible, .resign-action:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
 .analysis-page { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+.review-score { max-height: 32vh; overflow: auto; padding-left: 2.4em; font-variant-numeric: tabular-nums; }
+.review-score li { margin: 3px 0; }
+.review-score button { min-width: 4.2em; }
+.review-score [aria-current=step], .analysis-page .notation-move[aria-current=step], .game-actions [aria-pressed=true] { outline: 2px solid var(--link); outline-offset: -2px; font-weight: 700; }

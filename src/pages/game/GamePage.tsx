@@ -165,7 +165,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
             <button onClick={() => act("decline")}>{t("Отклонить ничью", "Decline draw")}</button></>)}
         <button className="resign-action" onClick={() => act("resign")}>{t("Сдаться", "Resign")}</button>
       </fieldset>}
-      {game.moves.length > 0 && <ol aria-label={t("Запись ходов", "Move list")} className={styles.history}>
+      {!game.result && game.moves.length > 0 && <ol aria-label={t("Запись ходов", "Move list")} className={styles.history}>
         {game.moves.map((move, index) => index % 2 === 0 && <li key={index}>
           <span>{move}</span>{" "}<span>{game.moves[index + 1]}</span>{" "}
         </li>)}
