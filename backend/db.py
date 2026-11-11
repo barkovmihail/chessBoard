@@ -27,6 +27,15 @@ accounts = Table("accounts", metadata,
     Column("salt", LargeBinary, nullable=False),
     Column("password_hash", LargeBinary, nullable=False),
 )
+teams = Table("teams", metadata,
+    Column("id", String, primary_key=True), Column("name", String, nullable=False),
+    Column("owner", ForeignKey("accounts.player"), nullable=False),
+)
+team_seats = Table("team_seats", metadata,
+    Column("team", ForeignKey("teams.id"), primary_key=True),
+    Column("player", ForeignKey("accounts.player"), primary_key=True), Column("joined", Boolean, nullable=False),
+    Index("ix_team_seats_player", "player"),
+)
 arenas = Table("arenas", metadata,
     Column("ends", Integer),
     Column("id", String, primary_key=True), Column("name", String, nullable=False),

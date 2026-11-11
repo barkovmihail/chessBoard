@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .teams import Teams
 from .arenas import Arenas
 from .analysis import analyse
 from .computer import executable, play_pending
@@ -75,7 +76,11 @@ class Search(QueueVersion):
     control: TimeControl
 
 
-class CreateArena(BaseModel):
+class InvitePlayer(BaseModel):
+    name: str = Field(min_length=1, max_length=32)
+
+
+class NamedGroup(BaseModel):
     id: UUID
     name: str = Field(min_length=1, max_length=80)
 
@@ -119,6 +124,7 @@ def create_app(path: Path):
         app.state.notifications = Notifications(engine)
         app.state.accounts = Accounts(engine)
         app.state.games = Games(engine)
+        app.state.teams = Teams(engine)
         app.state.arenas = Arenas(app.state.games)
         app.state.challenges = Challenges(app.state.games)
         app.state.queue = Matchmaking(app.state.games)
@@ -221,8 +227,28 @@ def create_app(path: Path):
             raise GameError("account_required", 403)
         return player
 
+    @app.get("/api/teams")
+    def team_list(request: Request, response: Response):
+        response.headers["Cache-Control"] = "private, no-store"
+        return app.state.teams.overview(member(request))
+
+    @app.post("/api/teams", status_code=201)
+    def create_team(command: NamedGroup, request: Request):
+        app.state.teams.create(member(request), command.id.hex, command.name)
+        return {"ok": True}
+
+    @app.post("/api/teams/{key}/invite")
+    def invite_teammate(key: UUID, command: InvitePlayer, request: Request):
+        app.state.teams.invite(member(request), key.hex, command.name)
+        return {"ok": True}
+
+    @app.post("/api/teams/{key}/{action}")
+    def respond_to_team(key: UUID, action: Literal["accept", "decline"], request: Request):
+        app.state.teams.respond(member(request), key.hex, action == "accept")
+        return {"ok": True}
+
     @app.post("/api/arenas", status_code=201)
-    def create_arena(command: CreateArena, request: Request):
+    def create_arena(command: NamedGroup, request: Request):
         return app.state.arenas.create(member(request), command.id.hex, command.name)
 
     @app.get("/api/arenas")

@@ -520,6 +520,18 @@ class BrowserGameTest(TestCase):
                     expect(white.get_by_role("row").filter(has_text="WhiteKnight").get_by_role("cell").last).to_have_text("2")
                     black.get_by_role("link", name="Вернуться на арену").click()
                     expect(black.get_by_role("heading", name="Итоговая таблица")).to_be_visible()
+                    for player in (white, black):
+                        player.goto(base + "/?section=profile")
+                        player.get_by_role("link", name="Команды").click()
+                    white.get_by_label("Название команды").fill("Белая ладья")
+                    white.get_by_role("button", name="Создать команду").click()
+                    white.get_by_label("Имя игрока").fill("BlackKnight")
+                    white.get_by_role("button", name="Пригласить в команду").click()
+                    black.get_by_role("button", name="Принять приглашение").click()
+                    expect(white.get_by_role("listitem").filter(has_text="BlackKnight")).to_have_text("BlackKnight")
+                    black.reload()
+                    expect(black.get_by_role("heading", name="Белая ладья")).to_be_visible()
+                    expect(black.get_by_role("listitem").filter(has_text="WhiteKnight")).to_have_text("WhiteKnight")
                     browser.close()
             finally:
                 server.should_exit = True

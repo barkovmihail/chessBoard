@@ -37,7 +37,7 @@ export function ProfilePage({ onInbox }: { onInbox: () => void }) {
     }).catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [offset, retry]);
-  return <main><h1>Профиль</h1><Account /><button onClick={onInbox}>Входящие</button><h2>История игр</h2>
+  return <main><h1>Профиль</h1><Account /><a href="?section=teams">Команды</a> <button onClick={onInbox}>Входящие</button><h2>История игр</h2>
     {error ? <p role="alert">Не удалось загрузить партии. <button onClick={() => setRetry(retry + 1)}>Повторить</button></p> :
       !page ? <p>Загрузка…</p> : <>
         {!page.items.length && <p>Завершённых партий пока нет</p>}
