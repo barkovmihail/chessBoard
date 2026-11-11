@@ -65,12 +65,12 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     }, setDisconnected);
   }, [onlineId]);
 
-  async function create(online: boolean, control?: { minutes: number; increment: number }, engine_level?: Game["engine_level"], engine_name?: Game["engine_name"]) {
+  async function create(online: boolean, control?: { minutes: number; increment: number }, engine_level?: Game["engine_level"], engine_name?: Game["engine_name"], visible = false) {
     setBusy(true);
     setError("");
     try {
       const result = invite ? await requestGame("/" + encodeURIComponent(invite) + "/join", {})
-        : await requestGame("", { online, control, engine_level, engine_name });
+        : await requestGame("", { online, control, engine_level, engine_name, public: visible });
       setInvite(undefined);
       onOpen(result.id);
       receive(result, true);
@@ -109,6 +109,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
       onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />;
   const context = game ? <>
     <p>{game.rated ? "Рейтинговая игра" : "Нерейтинговая игра"}</p>
+    {game.watch_key && <a href={"?watch=" + game.watch_key}>Ссылка для зрителей</a>}
     {game.engine_level && <p>Чёрные · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {game.engine_level === "easy" ? "Начальный" : "Обычный"}</p>}
     {game.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}

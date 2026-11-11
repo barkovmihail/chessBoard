@@ -2,6 +2,7 @@ import type { BoardPiece } from "../../entities/board";
 
 export interface Game {
   id: string;
+  watch_key?: string | null;
   engine_name?: "lc0" | "stockfish" | null;
   engine_level?: "easy" | "normal" | null;
   version: number;

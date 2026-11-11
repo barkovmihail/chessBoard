@@ -10,8 +10,9 @@ const presets: [string, number, number][] = [
 ];
 
 export function TimeSetup({ create, busy }: {
-  create: (online: boolean, control: { minutes: number; increment: number }, level?: Game["engine_level"], engine?: Game["engine_name"]) => void; busy: boolean;
+  create: (online: boolean, control: { minutes: number; increment: number }, level?: Game["engine_level"], engine?: Game["engine_name"], visible?: boolean) => void; busy: boolean;
 }) {
+  const [visible, setVisible] = useState(false);
   const [engine, setEngine] = useState<"lc0" | "stockfish">("lc0");
   const [level, setLevel] = useState<"easy" | "normal">("easy");
   const [searching, setSearching] = useState(false);
@@ -34,14 +35,15 @@ export function TimeSetup({ create, busy }: {
         value={increment} onChange={e => setIncrement(e.target.value)} /></label>
       <p>{valid ? minutes + "+" + increment : "Введите 1–1440 минут и 0–3600 секунд целыми числами."}</p></div>}
     <QuickGame control={control} valid={valid} onSearching={setSearching} />
-    <button disabled={!valid || searching} onClick={() => create(false, control)}>Начать партию</button>
-    <button disabled={!valid || searching} onClick={() => create(true, control)}>Пригласить друга</button>
+    {!searching && <label><input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} /> Разрешить просмотр по ссылке</label>}
+    <button disabled={!valid || searching} onClick={() => create(false, control, undefined, undefined, visible)}>Начать партию</button>
+    <button disabled={!valid || searching} onClick={() => create(true, control, undefined, undefined, visible)}>Пригласить друга</button>
     {!searching && <fieldset><legend>Компьютер</legend>
       <label>Движок <select value={engine} onChange={e => setEngine(e.target.value === "stockfish" ? "stockfish" : "lc0")}>
         <option value="lc0">Leela Chess Zero</option><option value="stockfish">Stockfish</option></select></label>
       <label>Уровень <select value={level} onChange={e => setLevel(e.target.value === "normal" ? "normal" : "easy")}>
         <option value="easy">Начальный</option><option value="normal">Обычный</option></select></label>
-      <button disabled={!valid} onClick={() => create(false, control, level, engine)}>Играть с компьютером</button>
+      <button disabled={!valid} onClick={() => create(false, control, level, engine, visible)}>Играть с компьютером</button>
     </fieldset>}
   </fieldset>;
 }

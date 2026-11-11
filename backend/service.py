@@ -20,10 +20,12 @@ class Games:
         self.engine = engine
         self.now_ms = now_ms or (lambda: time_ns() // 1_000_000)
 
-    def create(self, owner, online=False, control=None, engine_level=None, engine_name="lc0"):
+    def create(self, owner, online=False, control=None, engine_level=None, engine_name="lc0", public=False):
         with self.engine.begin() as db:
             game_id = self.insert_game(db, owner, online or bool(engine_level), control,
                                        guest=SEATS[engine_name] if engine_level else None, engine_level=engine_level)
+            if public:
+                db.execute(update(games).where(games.c.id == game_id).values(watch_key=uuid4().hex))
         return self.get(game_id, owner)
 
     def insert_game(self, db, owner, online, control, guest=None, previous_game=None, rated=False, engine_level=None):
@@ -108,6 +110,7 @@ class Games:
         view["waiting"] = bool(game["online"] and not game["guest"])
         view["engine_name"] = game["guest"].split(":")[1] if game["engine_level"] else None
         view["engine_level"] = game["engine_level"]
+        view["watch_key"] = game["watch_key"]
         view.update(rated=game["rated"], version=game["version"], draw_offer=game["draw_offer"])
         for key in ("previous_game", "next_game", "rematch_offer"):
             view[key] = game[key]
@@ -132,6 +135,19 @@ class Games:
             db.exec_driver_sql("BEGIN")
             game, rows = self._load(db, game_id, owner)
             return self._view(game, [row["uci"] for row in rows], owner)
+
+    def watch(self, key, version):
+        with self.engine.connect() as db:
+            db.exec_driver_sql("BEGIN")
+            game = db.execute(select(games.c.id, games.c.version, games.c.result, games.c.reason,
+                                     games.c.online, games.c.guest).where(games.c.watch_key == key)).one_or_none()
+            if not game:
+                raise GameError("game_unavailable", 404)
+            if version == game.version:
+                return None
+            history = db.scalars(select(moves.c.uci).where(moves.c.game_id == game.id).order_by(moves.c.ply)).all()
+            return {"moves": history, "version": game.version, "result": game.result, "reason": game.reason,
+                    "waiting": bool(game.online and not game.guest)}
 
     def _flag(self, db, game, history):
         board, _ = replay(history)

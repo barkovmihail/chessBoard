@@ -75,6 +75,7 @@ class Search(QueueVersion):
 
 
 class CreateGame(BaseModel):
+    public: bool = False
     engine_name: Literal["lc0", "stockfish"] = "lc0"
     engine_level: Literal["easy", "normal"] | None = None
     control: TimeControl | None = None
@@ -281,7 +282,14 @@ def create_app(path: Path):
         if level and not executable(name):
             raise GameError("engine_unavailable", 503)
         return app.state.games.create(player_session(request, response), bool(options and options.online),
-                                      (control.minutes, control.increment) if control else None, engine_level=level, engine_name=name)
+                                      (control.minutes, control.increment) if control else None, engine_level=level, engine_name=name,
+                                      public=bool(options and options.public))
+
+    @app.get("/api/watch/{key}")
+    def watch(key: UUID, version: int | None = Query(None, ge=0)):
+        view = app.state.games.watch(key.hex, version)
+        headers = {"Cache-Control": "no-store"}
+        return Response(status_code=204, headers=headers) if view is None else JSONResponse(view, headers=headers)
 
     @app.get("/api/games/{game_id}/invitation")
     def invitation(game_id: str):
