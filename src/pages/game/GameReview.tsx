@@ -1,7 +1,8 @@
+import { readReviewPly, readScores, reportKey, saveReviewPly, saveScores } from "./savedReport";
 import { classifyMove, qualityLabels } from "./moveQuality";
 import { ReplayButtons } from "../../shared/replay";
 import { useLanguage } from "../../shared/language";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { EvaluationChart } from "./EvaluationChart";
 import { MoveTimes } from "./MoveTimes";
 import { GameReport, type PositionScore } from "./GameReport";
@@ -14,9 +15,16 @@ export function GameReview({ game, render }: {
   game: Game; render: (board: React.ReactElement, controls: React.ReactElement, belowBoard: React.ReactElement) => React.ReactElement;
 }) {
   const { language, t } = useLanguage();
-  const [ply, setPly] = useState(game.moves.length);
+  const key = reportKey(game);
   const [timeView, setTimeView] = useState(false);
-  const [scores, setScores] = useState<PositionScore[]>([]);
+  const [scores, setScores] = useState<PositionScore[]>(() => readScores(key, game.moves.length));
+  const [ply, setPly] = useState(() => scores.length ? readReviewPly(key, game.moves.length) : game.moves.length);
+  useEffect(() => {
+    if (scores.length) saveScores(key, scores, game.moves.length);
+  }, [key, scores, game.moves.length]);
+  useEffect(() => {
+    if (scores.length) saveReviewPly(key, ply);
+  }, [key, ply, scores.length]);
   const [showArrows, setShowArrows] = useState(true);
   const before = scores[ply - 1], after = scores[ply];
   const best = before?.bestUci;
