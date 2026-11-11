@@ -48,3 +48,10 @@
 .columns button span { width: 100%; border: 1px solid #56585a; background: #e3dfd6; }
 .columns > div:nth-child(even) button span { background: #53585d; }
 .columns button[aria-pressed=true], .columns button:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; }
+
+.evalPlot { display: grid; grid-template-columns: auto 1fr; gap: 8px; margin-block: 8px; }
+.evalPlot > div:first-child { display: flex; flex-direction: column; justify-content: space-between; font-size: .8rem; }
+.evalInput { position: relative; min-width: 0; height: 96px; background: var(--paper); }
+.evalInput svg, .evalInput input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; }
+.evalInput input { opacity: 0; cursor: pointer; }
+.evalInput:focus-within { outline: 2px solid var(--link); outline-offset: 2px; }

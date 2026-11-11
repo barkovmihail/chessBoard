@@ -386,6 +386,12 @@ class BrowserGameTest(TestCase):
                         report = black.get_by_role("region", name="Подробный разбор")
                         report.get_by_role("button", name="Найти ключевые моменты").click()
                         expect(report.get_by_text("Проверено позиций: 5/5")).to_be_visible(timeout=60000)
+                        plot = black.get_by_role("slider", name="График оценки за белых")
+                        plot.press("Home")
+                        expect(review.get_by_text("Начальная позиция")).to_be_visible()
+                        plot.press("End")
+                        expect(plot).to_have_attribute("aria-valuetext", "2… Qh4# · 0–1")
+                        expect(notation.get_by_role("button", name="Qh4#")).to_have_attribute("aria-current", "step")
                         moment = report.get_by_role("button").first
                         moment.click()
                         recommended = black.locator('[data-arrow="recommended"]')

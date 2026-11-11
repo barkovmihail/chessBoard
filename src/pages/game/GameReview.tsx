@@ -1,6 +1,7 @@
 import { ReplayButtons } from "../../shared/replay";
 import { useLanguage } from "../../shared/language";
 import React, { useMemo, useState } from "react";
+import { EvaluationChart } from "./EvaluationChart";
 import { MoveTimes } from "./MoveTimes";
 import { GameReport, type PositionScore } from "./GameReport";
 import { EngineAnalysis } from "./EngineAnalysis";
@@ -70,6 +71,7 @@ export function GameReview({ game, render }: {
       <button aria-pressed={!timeView} onClick={() => setTimeView(false)}>{t("Разбор", "Review", "Revisión")}</button>
       <button aria-pressed={timeView} onClick={() => setTimeView(true)}>{t("Время", "Time", "Tiempo")}</button>
     </div>
-    {timeView && <MoveTimes game={game} ply={ply} select={setPly} />}
+    {timeView ? <MoveTimes game={game} ply={ply} select={setPly} /> :
+      <EvaluationChart moves={game.moves} scores={scores} ply={ply} select={setPly} />}
   </section>);
 }
