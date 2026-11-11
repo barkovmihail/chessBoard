@@ -20,12 +20,12 @@ function isEntry(row: Entry) {
     typeof row.waiting === "boolean" && [row.base_minutes, row.increment_seconds].every(n => n === null || Number.isInteger(n));
 }
 
-function describe(row: Entry, t: (ru: string, en: string) => string) {
-  const color = row.side === "white" ? t("Белые", "White") : t("Чёрные", "Black");
-  const title = row.side === "both" ? t("На одном устройстве", "On one device") : row.waiting ? color : (row.opponent ?? t("Гость", "Guest")) + " · " + color;
-  const status = row.waiting ? t("Ожидание соперника", "Waiting for opponent") : row.side === "both" ?
-    (row.turn === "white" ? t("Ход белых", "White to move") : t("Ход чёрных", "Black to move")) : row.turn === row.side ? t("Ваш ход", "Your turn") : t("Ход соперника", "Opponent’s turn");
-  const clock = row.base_minutes === null ? t("Без часов", "Unlimited") : row.base_minutes + "+" + row.increment_seconds;
+function describe(row: Entry, t: (ru: string, en: string, es: string) => string) {
+  const color = row.side === "white" ? t("Белые", "White", "Blancas") : t("Чёрные", "Black", "Negras");
+  const title = row.side === "both" ? t("На одном устройстве", "On one device", "En un solo dispositivo") : row.waiting ? color : (row.opponent ?? t("Гость", "Guest", "Invitado")) + " · " + color;
+  const status = row.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando rival") : row.side === "both" ?
+    (row.turn === "white" ? t("Ход белых", "White to move", "Juegan las blancas") : t("Ход чёрных", "Black to move", "Juegan las negras")) : row.turn === row.side ? t("Ваш ход", "Your turn", "Tu turno") : t("Ход соперника", "Opponent’s turn", "Turno del rival");
+  const clock = row.base_minutes === null ? t("Без часов", "Unlimited", "Sin reloj") : row.base_minutes + "+" + row.increment_seconds;
   return [title, clock, status].join(" · ");
 }
 
@@ -61,15 +61,15 @@ export function CurrentGames({ open, setOpen }: { open: boolean; setOpen: (open:
     setOpen(event.currentTarget.open);
     if (!event.currentTarget.open) setOffset(0);
   }}>
-    <summary className="nav-trigger" title={t("Вызовы и текущие игры", "Challenges and current games")} aria-label={t("Вызовы и текущие игры", "Challenges and current games") + (count ? " · " + count : "")}><NavIcon name="swords" />{count > 0 && <small>{count}</small>}</summary>
+    <summary className="nav-trigger" title={t("Вызовы и текущие игры", "Challenges and current games", "Desafíos y partidas en curso")} aria-label={t("Вызовы и текущие игры", "Challenges and current games", "Desafíos y partidas en curso") + (count ? " · " + count : "")}><NavIcon name="swords" />{count > 0 && <small>{count}</small>}</summary>
     <section><Challenges open={open} count={setCount} />
-    <div role="region" aria-label={t("Текущие партии", "Active games")}><h3>{t("Текущие игры", "Current games")}</h3>
-      {error ? <p role="alert">{t("Не удалось обновить список. Повторяем запрос…", "Could not update the list. Retrying…")}</p> : !page && <p>{t("Загрузка…", "Loading…")}</p>}
+    <div role="region" aria-label={t("Текущие партии", "Active games", "Partidas en curso")}><h3>{t("Текущие игры", "Current games", "Partidas en curso")}</h3>
+      {error ? <p role="alert">{t("Не удалось обновить список. Повторяем запрос…", "Could not update the list. Retrying…", "No se pudo actualizar la lista. Reintentando…")}</p> : !page && <p>{t("Загрузка…", "Loading…", "Cargando…")}</p>}
       {page && <>
-        {!page.items.length && <p>{t("Текущих игр нет", "No current games")}</p>}
+        {!page.items.length && <p>{t("Текущих игр нет", "No current games", "No hay partidas en curso")}</p>}
         <ul>{page.items.map(row => <li key={row.id}><a href={"?game=" + encodeURIComponent(row.id)}>{describe(row, t)}</a></li>)}</ul>
-        {offset > 0 && <button onClick={() => setOffset(offset - 20)}>{t("Назад", "Previous")}</button>}
-        {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Далее", "Next")}</button>}
+        {offset > 0 && <button onClick={() => setOffset(offset - 20)}>{t("Назад", "Previous", "Anterior")}</button>}
+        {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Далее", "Next", "Siguiente")}</button>}
       </>}
     </div></section>
   </details>;

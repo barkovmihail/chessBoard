@@ -3,12 +3,12 @@ import React, { useEffect, useState } from "react";
 import { commandId } from "../shared/commandId";
 
 const errors = {
-  invalid_opponent: ["Введите имя другого зарегистрированного игрока.", "Enter another registered player’s name."],
-  already_challenged: ["У этого игрока уже есть ваш вызов.", "You already challenged this player."],
-  failed: ["Не удалось выполнить действие.", "Could not complete the action."],
-  expired: ["Срок вызова истёк.", "This challenge has expired."],
-  canceled: ["Вызов отменён.", "This challenge was canceled."],
-  offline: ["Связь потеряна. Проверьте список вызовов.", "Connection lost. Check the challenge list."],
+  invalid_opponent: ["Введите имя другого зарегистрированного игрока.", "Enter another registered player’s name.", "Introduce el nombre de otro jugador registrado."],
+  already_challenged: ["У этого игрока уже есть ваш вызов.", "You already challenged this player.", "Ya has desafiado a este jugador."],
+  failed: ["Не удалось выполнить действие.", "Could not complete the action.", "No se pudo completar la acción."],
+  expired: ["Срок вызова истёк.", "This challenge has expired.", "El desafío ha caducado."],
+  canceled: ["Вызов отменён.", "This challenge was canceled.", "Se ha cancelado el desafío."],
+  offline: ["Связь потеряна. Проверьте список вызовов.", "Connection lost. Check the challenge list.", "Se ha perdido la conexión. Consulta la lista de desafíos."],
 } as const;
 
 interface Entry {
@@ -69,36 +69,36 @@ export function Challenges({ open, count }: { open: boolean; count: (n: number) 
     finally { setBusy(false); setRefresh(n => n + 1); }
   }
   return <>
-    {offline && <p role="alert">{t("Не удалось обновить вызовы.", "Could not refresh challenges.")}</p>}
+    {offline && <p role="alert">{t("Не удалось обновить вызовы.", "Could not refresh challenges.", "No se pudieron actualizar los desafíos.")}</p>}
     {[true, false].map(incoming => {
       const rows = items.filter(x => x.incoming === incoming);
       if (!incoming && !rows.length) return null;
-      return <div key={String(incoming)}><h3>{incoming ? t("Входящие вызовы", "Incoming challenges") : t("Исходящие вызовы", "Outgoing challenges")}</h3>
-        {!rows.length && <p>{t("Нет вызовов", "No challenges")}</p>}
-        {rows.map(x => <div key={x.id}><strong>{x.opponent}</strong> · {x.minutes}+{x.increment} · {incoming ? t("Вы играете чёрными", "You play Black") : t("Вы играете белыми", "You play White")}
-          {incoming ? <><button disabled={busy} onClick={() => send("/" + x.id + "/accept")}>{t("Принять вызов", "Accept challenge")}</button>
-            <button disabled={busy} onClick={() => send("/" + x.id + "/decline")}>{t("Отклонить", "Decline")}</button></> :
-            <button disabled={busy} onClick={() => send("/" + x.id + "/cancel")}>{t("Отменить вызов", "Cancel challenge")}</button>}
+      return <div key={String(incoming)}><h3>{incoming ? t("Входящие вызовы", "Incoming challenges", "Desafíos recibidos") : t("Исходящие вызовы", "Outgoing challenges", "Desafíos enviados")}</h3>
+        {!rows.length && <p>{t("Нет вызовов", "No challenges", "No hay desafíos")}</p>}
+        {rows.map(x => <div key={x.id}><strong>{x.opponent}</strong> · {x.minutes}+{x.increment} · {incoming ? t("Вы играете чёрными", "You play Black", "Juegas con negras") : t("Вы играете белыми", "You play White", "Juegas con blancas")}
+          {incoming ? <><button disabled={busy} onClick={() => send("/" + x.id + "/accept")}>{t("Принять вызов", "Accept challenge", "Aceptar desafío")}</button>
+            <button disabled={busy} onClick={() => send("/" + x.id + "/decline")}>{t("Отклонить", "Decline", "Rechazar")}</button></> :
+            <button disabled={busy} onClick={() => send("/" + x.id + "/cancel")}>{t("Отменить вызов", "Cancel challenge", "Cancelar desafío")}</button>}
         </div>)}
       </div>;
     })}
-    {expired.length > 0 && <details><summary>{t("Истёкшие входящие вызовы", "Expired incoming challenges")}</summary>
-      <ul>{expired.map(x => <li key={x.id}>{x.opponent} · {x.minutes}+{x.increment} · {t("Срок истёк", "Expired")}</li>)}</ul>
+    {expired.length > 0 && <details><summary>{t("Истёкшие входящие вызовы", "Expired incoming challenges", "Desafíos recibidos caducados")}</summary>
+      <ul>{expired.map(x => <li key={x.id}>{x.opponent} · {x.minutes}+{x.increment} · {t("Срок истёк", "Expired", "Caducado")}</li>)}</ul>
     </details>}
-    {member && <a href="?section=messages">{t("Личные сообщения", "Private messages")}</a>}
+    {member && <a href="?section=messages">{t("Личные сообщения", "Private messages", "Mensajes privados")}</a>}
     {member && <form onSubmit={event => {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
       void send("", { name: form.get("name"), command_id: commandId(),
         control: { minutes: Number(form.get("minutes")), increment: Number(form.get("increment")) } });
     }}>
-      <fieldset disabled={busy}><legend>{t("Вызвать на партию", "Challenge a player")}</legend>
-        <label>{t("Имя соперника", "Opponent’s username")} <input required name="name" pattern="[a-zA-Z0-9_]{3,32}" /></label>
-        <label>{t("Минуты", "Minutes")} <input required name="minutes" type="number" min="1" max="1440" defaultValue="5" /></label>
-        <label>{t("Добавка, с", "Increment, seconds")} <input required name="increment" type="number" min="0" max="3600" defaultValue="3" /></label>
-        <button>{t("Отправить вызов", "Send challenge")}</button>
+      <fieldset disabled={busy}><legend>{t("Вызвать на партию", "Challenge a player", "Desafiar a un jugador")}</legend>
+        <label>{t("Имя соперника", "Opponent’s username", "Nombre de usuario del rival")} <input required name="name" pattern="[a-zA-Z0-9_]{3,32}" /></label>
+        <label>{t("Минуты", "Minutes", "Minutos")} <input required name="minutes" type="number" min="1" max="1440" defaultValue="5" /></label>
+        <label>{t("Добавка, с", "Increment, seconds", "Incremento en segundos")} <input required name="increment" type="number" min="0" max="3600" defaultValue="3" /></label>
+        <button>{t("Отправить вызов", "Send challenge", "Enviar desafío")}</button>
       </fieldset>
     </form>}
-    {error && <p role="alert">{t(errors[error][0], errors[error][1])}</p>}
+    {error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}
   </>;
 }
