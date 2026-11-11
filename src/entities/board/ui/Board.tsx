@@ -4,7 +4,14 @@ import type { BoardPiece, Square } from "../model/position";
 import styles from "./board.module.css";
 import pieces from "./pieces.module.css";
 
-export function Board({ position }: { position: readonly BoardPiece[] }) {
+interface BoardProps {
+  position: readonly BoardPiece[];
+  selected?: Square;
+  targets?: readonly string[];
+  onSquare?: (square: Square) => void;
+}
+
+export function Board({ position, selected, targets, onSquare }: BoardProps) {
   const occupied = new Map(position.map(piece => [piece.square, piece]));
   return (
     <div className={styles.board}>
@@ -13,11 +20,13 @@ export function Board({ position }: { position: readonly BoardPiece[] }) {
           const square: Square = `${file}${rank}`;
           const piece = occupied.get(square);
           return (
-            <div key={square} data-square={square}
+            <button type="button" key={square} data-square={square} aria-label={square}
+              disabled={!onSquare} aria-pressed={selected === square} data-target={targets?.includes(square)}
+              onClick={() => onSquare?.(square)}
               className={(row + column) % 2 === 0 ? styles.light : styles.dark}>
               {piece && <div role="img" aria-label={`${piece.color} ${piece.type} ${square}`}
                 className={[pieces.piece, pieces[piece.color], pieces[piece.type]].join(" ")} />}
-            </div>
+            </button>
           );
         }))}
       </div>

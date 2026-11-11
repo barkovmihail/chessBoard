@@ -14,3 +14,11 @@ The classic version of the chessboard was chosen. If desired, you can add styles
 Требуется Node.js 22.12 или новее. Установите зависимости командой `npm ci` и запустите доску через `npm start`. Команда `npm test` проверяет расстановку и архитектурные границы, `npm run build` проверяет типы и создаёт сборку в `build/`.
 
 [Архитектура приложения](ARCHITECTURE.md) · [План развития и приоритеты](ROADMAP.md)
+
+## Игра с сохранением
+
+Из корня проекта выполните `python3 -m venv .venv`, затем `.venv/bin/python -m pip install -r backend/requirements.txt`. Соберите клиент через `npm run build` и запустите `.venv/bin/python -m uvicorn backend.api:app`. Откройте http://127.0.0.1:8000. Для разработки интерфейса можно одновременно запустить `npm start`: Vite передаёт запросы API тому же серверу.
+
+Нажмите «Начать партию», затем e2 и e4. Эта партия предназначена для двух сторон за одним устройством. Адрес страницы и cookie этого браузера позволяют вернуться к позиции. По умолчанию база хранится в `chessboard.sqlite3`; переменная `CHESSBOARD_DB` задаёт другой путь.
+
+Для серверных проверок установите `backend/requirements-test.txt` в то же окружение и выполните `.venv/bin/python -m unittest discover -s backend/tests`. Для браузерной проверки после сборки установите Chromium командой `.venv/bin/playwright install chromium` и выполните `.venv/bin/python -m backend.tests.browser_game`. Для установленного Chrome задайте `BROWSER_CHANNEL=chrome`.
