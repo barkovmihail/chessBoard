@@ -39,17 +39,17 @@ export function ProfilePage({ onInbox }: { onInbox: () => void }) {
     }).catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [offset, retry]);
-  return <main lang={language}><h1>{t("Профиль", "Profile")}</h1><Account /><a href="?section=teams">{t("Команды", "Teams")}</a> <button onClick={onInbox}>{t("Входящие", "Inbox")}</button><h2>{t("История игр", "Game history")}</h2>
-    {error ? <p role="alert">{t("Не удалось загрузить партии.", "Could not load games.")} <button onClick={() => setRetry(retry + 1)}>{t("Повторить", "Retry")}</button></p> :
-      !page ? <p>{t("Загрузка…", "Loading\u2026")}</p> : <>
-        {!page.items.length && <p>{t("Завершённых партий пока нет", "No finished games yet")}</p>}
+  return <main lang={language}><h1>{t("Профиль", "Profile", "Perfil")}</h1><Account /><a href="?section=teams">{t("Команды", "Teams", "Equipos")}</a> <button onClick={onInbox}>{t("Входящие", "Inbox", "Bandeja de entrada")}</button><h2>{t("История игр", "Game history", "Historial de partidas")}</h2>
+    {error ? <p role="alert">{t("Не удалось загрузить партии.", "Could not load games.", "No se pudieron cargar las partidas.")} <button onClick={() => setRetry(retry + 1)}>{t("Повторить", "Retry", "Reintentar")}</button></p> :
+      !page ? <p>{t("Загрузка…", "Loading\u2026", "Cargando…")}</p> : <>
+        {!page.items.length && <p>{t("Завершённых партий пока нет", "No finished games yet", "Todavía no hay partidas finalizadas")}</p>}
         <ul>{page.items.map(game => <li key={game.id}><a href={"?game=" + encodeURIComponent(game.id)}>
-          {game.finished_ms === null ? t("Дата неизвестна", "Unknown date") : new Date(game.finished_ms).toLocaleString(language)} · {
-          game.side === "both" ? t("На одном устройстве", "On one device") : (game.opponent ?? t("Гость", "Guest")) + " · " + (game.side === "white" ? t("Вы играли белыми", "You played White") : t("Вы играли чёрными", "You played Black"))} · {
-          game.base_minutes === null ? t("Без часов", "Unlimited") : game.base_minutes + "+" + game.increment_seconds} · {
+          {game.finished_ms === null ? t("Дата неизвестна", "Unknown date", "Fecha desconocida") : new Date(game.finished_ms).toLocaleString(language)} · {
+          game.side === "both" ? t("На одном устройстве", "On one device", "En un mismo dispositivo") : (game.opponent ?? t("Гость", "Guest", "Invitado")) + " · " + (game.side === "white" ? t("Вы играли белыми", "You played White", "Jugaste con blancas") : t("Вы играли чёрными", "You played Black", "Jugaste con negras"))} · {
+          game.base_minutes === null ? t("Без часов", "Unlimited", "Sin reloj") : game.base_minutes + "+" + game.increment_seconds} · {
           game.result} · {resultReason(game.reason, language)}</a></li>)}</ul>
-        {offset > 0 && <button onClick={() => setOffset(Math.max(0, offset - 20))}>{t("Предыдущая страница", "Previous page")}</button>}
-        {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Следующая страница", "Next page")}</button>}
+        {offset > 0 && <button onClick={() => setOffset(Math.max(0, offset - 20))}>{t("Предыдущая страница", "Previous page", "Página anterior")}</button>}
+        {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Следующая страница", "Next page", "Página siguiente")}</button>}
       </>}
   </main>;
 }

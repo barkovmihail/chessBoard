@@ -1,6 +1,7 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
 
+const spanish = { notify_sound: "Sonido de las notificaciones", notify_turn: "Mi turno", notify_finish: "Fin de la partida", notify_challenge: "Nuevo desafío", notify_response: "Desafío respondido o cancelado" };
 const english = { notify_sound: "Notification sound", notify_turn: "My turn", notify_finish: "Game ended", notify_challenge: "New challenge", notify_response: "Challenge answered or cancelled" };
 const labels = { notify_sound: "Звуковой сигнал уведомлений", notify_turn: "Моя очередь хода", notify_finish: "Завершение партии", notify_challenge: "Новый вызов", notify_response: "Ответ или отмена вызова" };
 type Setting = keyof typeof labels;
@@ -14,7 +15,7 @@ async function preferences(body?: { setting: Setting; enabled: boolean }) {
 }
 
 export function NotificationSettings() {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [values, setValues] = useState<Record<Setting, boolean>>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -32,9 +33,9 @@ export function NotificationSettings() {
     catch { setValues(previous); setError(true); }
     finally { setBusy(false); }
   }
-  return <details id="notification-settings" open={new URLSearchParams(location.search).get("settings") === "1" || undefined}><summary>{t("Настройки уведомлений", "Notification settings")}</summary>
-    {values && <fieldset disabled={busy}><legend>{t("События", "Events")}</legend>{(Object.keys(labels) as Setting[]).map(k =>
-      <label key={k}><input type="checkbox" checked={values[k]} onChange={e => change(k, e.target.checked)} />{language === "ru" ? labels[k] : english[k]}</label>)}</fieldset>}
-    {error && <p role="alert">{t("Не удалось загрузить настройки. Обновите страницу.", "Could not load settings. Reload the page.")}</p>}
+  return <details id="notification-settings" open={new URLSearchParams(location.search).get("settings") === "1" || undefined}><summary>{t("Настройки уведомлений", "Notification settings", "Ajustes de notificaciones")}</summary>
+    {values && <fieldset disabled={busy}><legend>{t("События", "Events", "Eventos")}</legend>{(Object.keys(labels) as Setting[]).map(k =>
+      <label key={k}><input type="checkbox" checked={values[k]} onChange={e => change(k, e.target.checked)} />{t(labels[k], english[k], spanish[k])}</label>)}</fieldset>}
+    {error && <p role="alert">{t("Не удалось загрузить настройки. Обновите страницу.", "Could not load settings. Reload the page.", "No se pudieron cargar los ajustes. Recarga la página.")}</p>}
   </details>;
 }

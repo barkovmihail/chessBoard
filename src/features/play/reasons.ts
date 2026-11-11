@@ -14,6 +14,13 @@ const englishReasons: Record<string, string> = {
   fivefold_repetition: "Fivefold repetition", seventyfive_moves: "Seventy-five-move rule",
 };
 
+const spanishReasons: Record<string, string> = {
+  threefold_repetition: "Triple repetición", fifty_moves: "Regla de los 50 movimientos",
+  timeout: "Tiempo agotado", resignation: "Abandono", agreement: "Tablas por acuerdo",
+  checkmate: "Jaque mate", stalemate: "Ahogado", insufficient_material: "Material insuficiente",
+  fivefold_repetition: "Quíntuple repetición", seventyfive_moves: "Regla de los 75 movimientos",
+};
+
 export function resultReason(key: string, language: Language) {
-  return (language === "ru" ? reasons : englishReasons)[key] ?? key;
+  return ({ ru: reasons, en: englishReasons, es: spanishReasons })[language][key] ?? key;
 }
