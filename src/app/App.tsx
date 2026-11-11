@@ -36,7 +36,7 @@ export default function App() {
       <a href={"?section=openings" + trainingSuffix} title={t("Тренажёр дебютов", "Opening trainer", "Entrenador de aperturas")} aria-label={t("Тренажёр дебютов", "Opening trainer", "Entrenador de aperturas")} aria-current={section === "openings" ? "page" : undefined}><NavIcon name="book" />{t("Тренажёр дебютов", "Opening trainer", "Entrenador de aperturas")}</a>
       <a href={"?section=puzzles" + trainingSuffix} title={t("Шахматные задачи", "Puzzles", "Problemas de ajedrez")} aria-label={t("Шахматные задачи", "Puzzles", "Problemas de ajedrez")} aria-current={section === "puzzles" ? "page" : undefined}><NavIcon name="puzzle" /></a>
       <a href="?section=analysis" title={t("Анализ", "Analysis")} aria-label={t("Анализ", "Analysis")} aria-current={section === "analysis" ? "page" : undefined}><NavIcon name="chart" />{t("Анализ", "Analysis")}</a>
-      <a href="?section=arenas" title={t("Турниры", "Tournaments")} aria-label={t("Турниры", "Tournaments")} aria-current={section === "arenas" ? "page" : undefined}><NavIcon name="cup" /></a>
+      <a href="?section=arenas" title={t("Турниры", "Tournaments", "Torneos")} aria-label={t("Турниры", "Tournaments", "Torneos")} aria-current={section === "arenas" ? "page" : undefined}><NavIcon name="cup" /></a>
       <a href="?section=chat" title={t("Чат", "Chat", "Chat")} aria-label={t("Чат", "Chat", "Chat")} aria-current={section === "chat" ? "page" : undefined}><NavIcon name="chat" /></a>
       <CurrentGames open={gamesOpen} setOpen={setGamesOpen} /><Notifications onInbox={() => setGamesOpen(true)} /><ProfileMenu current={section === "profile"} onInbox={() => setGamesOpen(true)} />
     </nav>
