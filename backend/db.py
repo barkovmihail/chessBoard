@@ -6,6 +6,12 @@ from sqlalchemy import JSON, Boolean, Column, Index, ForeignKey, Integer, LargeB
 from sqlalchemy.engine import URL
 
 metadata = MetaData()
+puzzle_attempts = Table("puzzle_attempts", metadata,
+    Column("player", String, primary_key=True), Column("id", String, primary_key=True),
+    Column("puzzle", String, nullable=False), Column("started", Integer, nullable=False),
+    Column("mistakes", Integer, nullable=False), Column("solved", Boolean, nullable=False),
+    Index("ix_attempts_history", "player", "started", "id"),
+)
 accounts = Table("accounts", metadata,
     Column("notify_sound", Boolean, nullable=False, server_default="0"),
     Column("notify_turn", Boolean, nullable=False, server_default="1"),

@@ -23,9 +23,17 @@ from .challenges import Challenges
 from .db import open_database
 from .domain import GameError
 from .matchmaking import Matchmaking
+from .puzzle_attempts import PuzzleAttempts
 from .puzzles import random_puzzle
 from .service import Games
 from .events import GameEvents
+
+
+class PuzzleProgress(BaseModel):
+    id: UUID
+    puzzle: str = Field(pattern=r"^[A-Za-z0-9]{1,16}$")
+    mistakes: int = Field(ge=0, le=1000000)
+    solved: bool
 
 
 class TimeControl(BaseModel):
@@ -81,6 +89,7 @@ def create_app(path: Path):
     @asynccontextmanager
     async def lifespan(app):
         engine = open_database(path)
+        app.state.attempts = PuzzleAttempts(engine)
         app.state.notifications = Notifications(engine)
         app.state.accounts = Accounts(engine)
         app.state.games = Games(engine)
@@ -304,9 +313,22 @@ def create_app(path: Path):
 
     catalogue = Path(os.environ.get("CHESSBOARD_PUZZLES_DB", path.with_name("puzzles.sqlite3")))
 
+    @app.get("/api/puzzles/attempts")
+    def attempts(request: Request, offset: int = Query(0, ge=0)):
+        return app.state.attempts.history(current(request)[0], offset)
+
+    @app.post("/api/puzzles/attempts")
+    def record_attempt(command: PuzzleProgress, request: Request, response: Response):
+        app.state.attempts.record(player_session(request, response), str(command.id), command.puzzle,
+                                  command.mistakes, command.solved)
+        return {"ok": True}
+
     @app.get("/api/puzzles/random")
-    def puzzle(theme: Literal["mateIn1", "mateIn2", "fork", "pin", "endgame"] | None = None):
-        return random_puzzle(catalogue, theme)
+    def puzzle(request: Request, response: Response, theme: Literal["mateIn1", "mateIn2", "fork", "pin", "endgame"] | None = None):
+        puzzle = random_puzzle(catalogue, theme)
+        player_session(request, response)
+        response.headers["Cache-Control"] = "private, no-store"
+        return puzzle
 
     build = Path(__file__).resolve().parents[1] / "build"
     if build.is_dir():

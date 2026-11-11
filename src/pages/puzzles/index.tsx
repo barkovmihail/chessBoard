@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { AttemptHistory } from "./AttemptHistory";
+import { commandId } from "../../shared/commandId";
 import { Chess } from "chess.js";
 import { Trainer } from "../../features/training";
 
@@ -10,13 +12,40 @@ interface Puzzle {
   steps: [string, string][];
 }
 
+interface Progress { id: string; puzzle: string; mistakes: number; solved: boolean }
+
 export function PuzzlesPage() {
+  const attempt = useRef<Progress | null>(null);
+  const [failed, setFailed] = useState<Progress[]>([]);
+  const [pending, setPending] = useState(0);
+  const [revision, setRevision] = useState(0);
+  async function save(entry: Progress) {
+    setPending(n => n + 1);
+    try {
+      const response = await fetch("/api/puzzles/attempts", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry), keepalive: true });
+      if (!response.ok) throw Error();
+      setRevision(n => n + 1);
+    } catch {
+      setFailed(entries => [...entries, entry]);
+    } finally {
+      setPending(n => n - 1);
+    }
+  }
+  function record(wrong: boolean, solved: boolean) {
+    if (!puzzle) return;
+    const prior = attempt.current;
+    const entry = { id: prior?.id ?? commandId(), puzzle: puzzle.id, mistakes: (prior?.mistakes ?? 0) + Number(wrong), solved };
+    attempt.current = entry;
+    void save(entry);
+  }
   const [theme, setTheme] = useState("");
   const [sequence, next] = useState(0);
   const [puzzle, setPuzzle] = useState<Puzzle>();
   const [error, setError] = useState("");
   useEffect(() => {
     const abort = new AbortController();
+    attempt.current = null;
     setPuzzle(undefined);
     setError("");
     async function load() {
@@ -43,13 +72,17 @@ export function PuzzlesPage() {
       <option value="">Все темы</option><option value="mateIn1">Мат в один ход</option>
       <option value="mateIn2">Мат в два хода</option><option value="fork">Вилка</option>
       <option value="pin">Связка</option><option value="endgame">Эндшпиль</option>
-    </select></label></>;
+    </select></label>
+    <AttemptHistory revision={revision} />
+    {failed.length > 0 ? <p role="alert">История не сохранена. <button onClick={() => { setFailed([]); failed.forEach(entry => void save(entry)); }}>Повторить сохранение</button></p> :
+      pending > 0 && <p role="status">Сохраняем попытку…</p>}
+  </>;
   const button = <button onClick={() => next(sequence + 1)} disabled={!error && !puzzle}>
     {error ? "Повторить загрузку" : "Следующая задача"}
   </button>;
   if (!puzzle) return <main className="study-page">{title}
     <p role="status">{error || "Загружаем позицию…"}</p>{button}
   </main>;
-  return <Trainer key={puzzle.id + sequence} fen={puzzle.fen} steps={puzzle.steps} side={puzzle.side} puzzle
+  return <Trainer key={puzzle.id + sequence} fen={puzzle.fen} onAttempt={record} onRestart={() => { attempt.current = null; }} steps={puzzle.steps} side={puzzle.side} puzzle
     context={<>{title}<p>Задача {puzzle.id} · Рейтинг {puzzle.rating}</p></>} next={button} />;
 }

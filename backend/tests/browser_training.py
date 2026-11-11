@@ -82,11 +82,27 @@ class TrainingTest(unittest.TestCase):
             self.assertIn("fork", puzzle["themes"])
             expect(page.get_by_text("Задача " + puzzle["puzzle_id"], exact=False)).to_be_visible()
             board = chess.Board(puzzle["fen"])
+            board.push_uci(puzzle["moves"][0])
+            source = puzzle["moves"][1][:2]
+            illegal = next(chess.square_name(sq) for sq in chess.SQUARES
+                           if not board.piece_at(sq) and not any(m.from_square == chess.parse_square(source)
+                           and m.to_square == sq for m in board.legal_moves))
+            move(source + illegal)
+            expect(page.get_by_text("Так пойти нельзя.", exact=False)).to_be_visible()
+            page.get_by_text("История попыток", exact=True).click()
+            expect(page.get_by_role("listitem").filter(has_text="Не завершена · Ошибок 1")).to_be_visible()
+            board.pop()
             for ply, uci in enumerate(puzzle["moves"]):
                 board.push_uci(uci)
                 if ply % 2:
                     move(uci)
             expect(page.get_by_role("heading", name="Задача решена")).to_be_visible()
+            result = page.get_by_role("listitem").filter(has_text=f"Задача {puzzle['puzzle_id']} · Решена · Ошибок 1")
+            expect(result).to_be_visible()
+            page.reload()
+            expect(page.get_by_role("button", name="Начать заново")).to_be_visible()
+            page.get_by_text("История попыток", exact=True).click()
+            expect(result).to_be_visible()
             browser.close()
 
 

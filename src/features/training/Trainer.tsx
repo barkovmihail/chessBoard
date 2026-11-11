@@ -8,11 +8,13 @@ interface Props {
   steps: readonly [string, string][];
   side: "w" | "b";
   puzzle?: boolean;
+  onAttempt?: (wrong: boolean, solved: boolean) => void;
+  onRestart?: () => void;
   context: React.ReactNode;
   next?: React.ReactNode;
 }
 
-export function Trainer({ fen, steps, side, puzzle, context, next }: Props) {
+export function Trainer({ fen, steps, side, puzzle, context, next, onAttempt, onRestart }: Props) {
   const [ply, advance] = useState(0);
   const [selected, select] = useState<Square>();
   const [hint, showHint] = useState(false);
@@ -46,13 +48,16 @@ export function Trainer({ fen, steps, side, puzzle, context, next }: Props) {
     promote(undefined);
     select(undefined);
     if (puzzle && move?.san.endsWith("#") && move.lan !== target?.lan) {
+      onAttempt?.(false, true);
       setOtherMate(move.san); say("Мат. Решение верно."); return;
     }
     if (!move || move.lan !== target?.lan) {
+      onAttempt?.(true, false);
       say((move ? "Допустимый ход, но в этой линии нужен другой." : "Так пойти нельзя.") +
         (puzzle ? " Попробуйте ещё раз." : " " + expected[1]));
       return;
     }
+    onAttempt?.(false, ply + 2 >= steps.length);
     say("Верно, " + move.san + ". " + expected[1]);
     showHint(false);
     advance(ply + 1);
@@ -78,7 +83,7 @@ export function Trainer({ fen, steps, side, puzzle, context, next }: Props) {
       {promotion && <div>{(["q","r","b","n"] as const).map((p,i) =>
         <button key={p} onClick={() => attempt(promotion, p)}>{["Ферзь","Ладья","Слон","Конь"][i]}</button>)}</div>}
       {history.length > 0 && <p aria-label="Сыгранные ходы">{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
-      <button onClick={() => { advance(0); select(undefined); showHint(false); say(""); promote(undefined); setOtherMate(""); }}>Начать заново</button>
+      <button onClick={() => { onRestart?.(); advance(0); select(undefined); showHint(false); say(""); promote(undefined); setOtherMate(""); }}>Начать заново</button>
       {next}
     </>} />;
 }
