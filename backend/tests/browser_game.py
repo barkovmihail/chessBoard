@@ -89,6 +89,19 @@ class BrowserGameTest(TestCase):
                         expect(white.get_by_text(reason, exact=True)).to_be_visible()
                         black.reload()
                         expect(black.get_by_text(reason, exact=True)).to_be_visible()
+                    page.goto(f"http://127.0.0.1:{port}")
+                    page.get_by_role("button", name="Начать партию").tap()
+                    cycle = ["g1f3", "g8f6", "f3g1", "f6g8"] * 2
+                    for index, move in enumerate(cycle[:7]):
+                        page.locator(f'[data-square="{move[:2]}"]').tap()
+                        page.locator(f'[data-square="{move[2:]}"]').tap()
+                        expect(page.get_by_text("Ход белых" if index % 2 else "Ход чёрных")).to_be_visible()
+                    page.reload()
+                    page.get_by_role("button", name="Заявить ничью · Троекратное повторение · f6–g8").tap()
+                    expect(page.get_by_text("1/2-1/2", exact=True)).to_be_visible()
+                    page.reload()
+                    expect(page.get_by_text("Троекратное повторение", exact=True)).to_be_visible()
+                    expect(page.get_by_text("Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1", exact=True)).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True

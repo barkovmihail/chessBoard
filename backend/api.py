@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import UUID
-from typing import Literal
 
 from anyio import from_thread
 from fastapi import FastAPI, Request, Response, WebSocket
@@ -38,7 +37,7 @@ class Move(BaseModel):
 
 
 class Action(BaseModel):
-    action: Literal["resign", "offer", "accept", "decline"]
+    action: str = Field(pattern=r"^(resign|offer|accept|decline|claim(:[a-h][1-8][a-h][1-8][qrbn]?)?)$")
     version: int = Field(ge=0)
     command_id: UUID
 

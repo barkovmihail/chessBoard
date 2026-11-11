@@ -3,10 +3,11 @@ import { Game, PlayBoard, RequestError, requestGame, subscribeGame } from "../..
 import { ClockPanel, TimeSetup } from "./TimeControl";
 import styles from "./game.module.css";
 
-type Action = "offer" | "accept" | "decline" | "resign";
+type Action = "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
 type Command = { version: number; command_id: string } & ({ uci: string } | { action: Action });
 
 const reasons: Record<string, string> = {
+  threefold_repetition: "Троекратное повторение", fifty_moves: "Правило 50 ходов",
   timeout: "Время истекло", resignation: "Сдача", agreement: "Ничья по соглашению", checkmate: "Мат", stalemate: "Пат",
   insufficient_material: "Недостаточно материала", fivefold_repetition: "Пятикратное повторение",
   seventyfive_moves: "Правило 75 ходов",
@@ -109,6 +110,10 @@ export function GamePage() {
     {game && <section aria-live="polite">
       <p>{game.waiting ? "Ожидание соперника" : game.result ?? (game.turn === "white" ? "Ход белых" : "Ход чёрных")}</p>
       {game.reason && <p>{reasons[game.reason] ?? game.reason}</p>}
+      {!game.result && (game.side === "both" || game.side === game.turn) && Object.entries(game.claims ?? {}).map(([key, reason]) =>
+        <button key={key} disabled={busy || !!pending} onClick={() => act(key === "claim" ? "claim" : `claim:${key.slice(6)}`)}>
+          Заявить ничью · {reasons[reason]}{key.includes(":") && " · " + key.slice(6, 8) + "–" + key.slice(8)}
+        </button>)}
       {game.side !== "both" && !game.result && !game.waiting && <fieldset disabled={busy || !!pending}>
         {game.draw_offer === null ? <button onClick={() => act("offer")}>Предложить ничью</button>
           : game.draw_offer === game.side ? <span>Ничья предложена</span>

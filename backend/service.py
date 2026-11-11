@@ -51,7 +51,7 @@ class Games:
         view["waiting"] = bool(game["online"] and not game["guest"])
         view.update(version=game["version"], draw_offer=game["draw_offer"])
         if game["result"]:
-            view.update(result=game["result"], reason=game["reason"], legal=[])
+            view.update(result=game["result"], reason=game["reason"], legal=[], claims={})
         if game["base_minutes"]:
             view["clock"] = {key: game[key] for key in (
                 "base_minutes", "increment_seconds", "white_ms", "black_ms", "deadline_ms")}
@@ -137,6 +137,13 @@ class Games:
                 if side == "both":
                     raise GameError("online_only", 409)
                 changes.update(self._action(command, side, view["draw_offer"]))
+            elif command == "claim" or command.startswith("claim:"):
+                if side not in ("both", view["turn"]):
+                    raise GameError("not_your_turn", 403)
+                reason = view["claims"].get(command)
+                if not reason:
+                    raise GameError("invalid_draw_claim", 422)
+                changes.update(result="1/2-1/2", reason=reason, draw_offer=None)
             else:
                 if side not in ("both", view["turn"]):
                     raise GameError("not_your_turn", 403)
