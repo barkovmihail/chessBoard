@@ -305,8 +305,8 @@ def create_app(path: Path):
     catalogue = Path(os.environ.get("CHESSBOARD_PUZZLES_DB", path.with_name("puzzles.sqlite3")))
 
     @app.get("/api/puzzles/random")
-    def puzzle():
-        return random_puzzle(catalogue)
+    def puzzle(theme: Literal["mateIn1", "mateIn2", "fork", "pin", "endgame"] | None = None):
+        return random_puzzle(catalogue, theme)
 
     build = Path(__file__).resolve().parents[1] / "build"
     if build.is_dir():

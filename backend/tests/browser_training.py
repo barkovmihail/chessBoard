@@ -72,7 +72,15 @@ class TrainingTest(unittest.TestCase):
             with page.expect_response(lambda res: "/api/puzzles/random" in res.url) as fetched:
                 page.get_by_role("link", name="Шахматные задачи").click()
             check_layout()
-            puzzle = fetched.value.json()
+            self.assertEqual(fetched.value.status, 200)
+            with page.expect_response(lambda res: "theme=fork" in res.url) as themed:
+                page.get_by_label("Тема задачи").select_option("fork")
+            self.assertIn("fork", themed.value.json()["themes"])
+            with page.expect_response(lambda res: "theme=fork" in res.url) as following:
+                page.get_by_role("button", name="Следующая задача").click()
+            puzzle = following.value.json()
+            self.assertIn("fork", puzzle["themes"])
+            expect(page.get_by_text("Задача " + puzzle["puzzle_id"], exact=False)).to_be_visible()
             board = chess.Board(puzzle["fen"])
             for ply, uci in enumerate(puzzle["moves"]):
                 board.push_uci(uci)
