@@ -21,7 +21,21 @@ class TrainingTest(unittest.TestCase):
                     names = {"q": "Ферзь", "r": "Ладья", "b": "Слон", "n": "Конь"}
                     page.get_by_role("button", name=names[uci[4]]).click()
 
-            move("e2e5")
+            def touch_drag(start, end):
+                session = page.context.new_cdp_session(page)
+                try:
+                    for phase, square in [("touchStart", start), ("touchMove", end)]:
+                        cell = page.locator(f'[data-square="{square}"]')
+                        cell.scroll_into_view_if_needed()
+                        box = cell.bounding_box()
+                        session.send("Input.dispatchTouchEvent", {"type": phase, "touchPoints": [{
+                            "x": box["x"] + box["width"] / 2, "y": box["y"] + box["height"] / 2,
+                        }]})
+                    session.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+                finally:
+                    session.detach()
+
+            touch_drag("e2", "e5")
             expect(page.get_by_text("Так пойти нельзя.", exact=False)).to_be_visible()
             move("d2d4")
             expect(page.get_by_text("Допустимый ход", exact=False)).to_be_visible()
@@ -34,7 +48,10 @@ class TrainingTest(unittest.TestCase):
             ]):
                 page.get_by_label("Дебют", exact=True).select_option(str(index))
                 for uci in sequence.split():
-                    move(uci)
+                    if uci == "e2e4":
+                        touch_drag("e2", "e4")
+                    else:
+                        move(uci)
                 expect(page.get_by_role("heading", name="Линия пройдена")).to_be_visible()
 
             with page.expect_response(lambda res: "/api/puzzles/random" in res.url) as fetched:

@@ -30,7 +30,16 @@ class BrowserGameTest(TestCase):
                     browser = playwright.chromium.launch(channel=os.getenv("BROWSER_CHANNEL") or None)
                     page = browser.new_page(viewport={"width": 390, "height": 844}, has_touch=True)
                     page.goto(f"http://127.0.0.1:{port}")
+                    page.get_by_text("Оформление", exact=True).tap()
+                    for label, value in [("Доска", "green"), ("Фигуры", "merida"), ("Тема", "dark")]:
+                        page.get_by_label(label, exact=True).select_option(value)
+                    page.reload()
+                    expect(page.locator("html")).to_have_attribute("data-theme", "dark")
+                    expect(page.locator('[data-square="e2"] [role=img]')).to_have_css(
+                        "background-image", f'url("http://127.0.0.1:{port}/pieces/merida/wP.svg")')
                     page.get_by_role("button", name="Начать партию").tap()
+                    page.locator('[data-square="e2"]').drag_to(page.locator('[data-square="e5"]'))
+                    expect(page.get_by_text("Ход белых")).to_be_visible()
                     page.locator('[data-square="e2"]').tap()
                     page.locator('[data-square="e4"]').tap()
                     expect(page.get_by_text("Ход чёрных")).to_be_visible()
@@ -54,6 +63,9 @@ class BrowserGameTest(TestCase):
 
                     for player, start, end in [(white, "f2", "f3"), (black, "e7", "e5"),
                                                (white, "g2", "g4"), (black, "d8", "h4")]:
+                        if start == "e7":
+                            player.locator('[data-square="e7"]').drag_to(player.locator('[data-square="e5"]'))
+                            continue
                         player.locator(f'[data-square="{start}"]').click()
                         if start == "d8":
                             white.context.set_offline(True)

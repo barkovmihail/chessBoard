@@ -17,7 +17,11 @@ export function PlayBoard({ game, enabled, onMove }: Props) {
     setPromotions([]);
     if (selected === square) return select(undefined);
     if (game?.legal.some(move => move.startsWith(square))) return select(square);
-    const candidates = choices.filter(move => move.slice(2, 4) === square);
+    if (selected) drop(selected, square);
+  }
+  function drop(from: Square, to: Square) {
+    setPromotions([]);
+    const candidates = game?.legal.filter(move => move.startsWith(from + to)) ?? [];
     if (candidates.length > 1) return setPromotions(candidates);
     if (candidates.length === 1) onMove(candidates[0]);
     select(undefined);
@@ -25,6 +29,7 @@ export function PlayBoard({ game, enabled, onMove }: Props) {
   const names: Record<string, string> = { q: "Ферзь", r: "Ладья", b: "Слон", n: "Конь" };
   return <>
     <Board flipped={game?.side === "black"} position={game?.position ?? initialPosition} selected={selected}
+      movableColor={game?.turn} onMove={enabled ? drop : undefined}
       targets={choices.map(move => move.slice(2, 4))} onSquare={enabled ? choose : undefined} />
     {enabled && promotions.map(move => <button key={move} onClick={() => {
       setPromotions([]); select(undefined); onMove(move);

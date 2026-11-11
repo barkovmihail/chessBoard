@@ -39,9 +39,9 @@ export function Trainer({ fen, steps, side, puzzle }: Props) {
     return () => clearTimeout(timer);
   }, [automatic, ply]);
 
-  function attempt(square: Square, choice?: string) {
-    const candidates = moves.filter(m => m.from === selected && m.to === square);
-    if (candidates.some(m => m.promotion) && !choice) { promote(square); return; }
+  function attempt(square: Square, choice?: string, from = selected) {
+    const candidates = moves.filter(m => m.from === from && m.to === square);
+    if (candidates.some(m => m.promotion) && !choice) { select(from); promote(square); return; }
     const move = candidates.find(m => m.promotion === choice);
     promote(undefined);
     select(undefined);
@@ -67,6 +67,8 @@ export function Trainer({ fen, steps, side, puzzle }: Props) {
       type: types[piece.type], square: piece.square, color: piece.color === "w" ? PieceColorType.White : PieceColorType.Black,
     }] : [])} flipped={side === "b"} lastMove={lastMove} selected={selected}
       targets={hint && target && !complete ? [target.from, target.to] : []}
+      movableColor={side === "w" ? "white" : "black"}
+      onMove={automatic || complete ? undefined : (from, to) => attempt(to, undefined, from)}
       onSquare={automatic || complete ? undefined : click} />
     <section className="training-notes">
       <h2>{complete ? (puzzle ? "Задача решена" : "Линия пройдена") : automatic ? "Ответ соперника" : "Ваш ход"}</h2>

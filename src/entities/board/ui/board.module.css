@@ -10,8 +10,8 @@
   grid-template: repeat(8, 1fr) / repeat(8, 1fr);
 }
 
-.light { background: #f0d9b5; }
-.dark { background: #b58862; }
+.light { background: var(--square-light, #f0d9b5); }
+.dark { background: var(--square-dark, #b58862); }
 
 .files, .ranks {
   position: absolute;
@@ -40,3 +40,7 @@
 .arriving { position: relative; z-index: 1; animation: arrive 220ms ease-out; }
 @keyframes arrive { from { transform: translate(var(--from-x), var(--from-y)); } }
 @media (prefers-reduced-motion: reduce) { .arriving { animation: none; } }
+
+.cells button[data-movable=true] { touch-action: none; cursor: grab; user-select: none; }
+.cells button[data-movable=true]:active { cursor: grabbing; }
+.dragging { position: relative; z-index: 3; pointer-events: none; }
