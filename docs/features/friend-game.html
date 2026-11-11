@@ -1,0 +1,41 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Партия с другом · chessBoard</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f4ef;color:#252723;font:16px/1.45 Inter,-apple-system,BlinkMacSystemFont,sans-serif}header{height:64px;border-bottom:1px solid #d4d2c8;display:flex;align-items:center;justify-content:space-between;padding:0 5vw}header span{display:flex;align-items:center;font-size:25px;letter-spacing:-1.3px}header img{width:33px;margin-right:8px}a{color:inherit}main{max-width:956px;margin:36px auto;padding:0 20px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr);gap:36px;align-items:center}h1{font-size:clamp(28px,4vw,42px);letter-spacing:-.05em;line-height:1.08;margin:12px 0}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #994029;outline-offset:2px}.action{display:block;width:100%;padding:13px;border:0;border-radius:6px;background:#292c26;color:white;margin:10px 0}small{color:#615e52}.player{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-weight:600}.clock{font:600 20px monospace;background:#e5e2d8;padding:3px 9px;border-radius:4px}.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;overflow:hidden;border-radius:3px}.square{position:relative;display:grid;place-items:center;min-width:0;min-height:0;border:0;padding:0;background:#e9deca}.shade{background:#a2957e}.marked{box-shadow:inset 0 0 0 3px #98452c;background:#ecc29d}.square img{width:95%;height:95%;position:absolute}.panel{border-top:2px solid;padding:18px 0}.record{border-block:1px solid #d6d3ca;padding:12px 0;font:15px/1.65 monospace}.invite{grid-column:1/-1;max-width:440px;width:100%;margin:5vh auto;border-top:2px solid;padding:20px 0}.invite input{width:100%;padding:10px;font:inherit}.feedback{color:#853b26}.square span{position:absolute;left:2px;bottom:0;font:9px monospace}p{margin:10px 0 18px}@media(max-width:650px){header{height:52px}main{display:flex;flex-direction:column;gap:12px;margin:14px auto;padding:0 14px}.position,.panel{width:100%}.panel{padding:10px 0}.panel h1{font-size:26px;margin:5px 0}.panel p{margin:6px 0}.record{display:none}.clock{font-size:16px}.board{max-width:min(100%,52vh);margin:auto}}
+</style>
+<header><span><img src="logo-options/knights/staunton.svg" alt=""><b>chess</b>Board</span><a href="lobby-preview.html#friend">В игровой зал</a></header><main></main>
+<script>
+const main=document.querySelector('main');
+const lobby='lobby-preview.html#friend';
+const key='prototype.friendGame';
+const before='r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR';
+const after='r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR';
+let selected=false;
+function screen(mode){
+ sessionStorage.setItem(key,mode);
+ if(mode==='invite'){
+ main.innerHTML='<section class="invite"><small>Блиц · 5+3</small><h1>Пригласите друга</h1><p>5 минут каждому, плюс 3 секунды за ход.</p><label hidden>Ссылка на демопартию<input readonly></label><button class="action" id="copy">Скопировать ссылку</button><p role="status"></p><button class="action" id="accept">Принять за друга · демо</button><small>После принятия откроется игровой зал с текущей партией.</small></section>';
+ const input=main.querySelector('input');input.value=new URL('friend-game.html#join',location.href).href;
+ document.querySelector('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(input.value);main.querySelector('[role=status]').textContent='Ссылка скопирована.'}catch{input.parentElement.hidden=false;input.select();main.querySelector('[role=status]').textContent='Ссылка выделена. Скопируйте её.'}};
+ document.querySelector('#accept').onclick=()=>{sessionStorage.setItem(key,'live');location.href=lobby};return;
+ }
+ const done=mode==='end', review=mode==='review', solved=mode==='solved', final=done||solved;
+ const title=done?'Победа · 1–0':review?'Ключевой момент':solved?'Ферзь под защитой':'Ваш ход';
+ const copy=done?'Мат на f7. Вернитесь на один ход назад и найдите решающую идею.':solved?'Слон c4 защищает ферзя на f7. Королю некуда уйти.':review?'Чёрные сыграли 3…Nf6. Найдите мат в один ход.':'Закончите демопартию: выберите ферзя h5, затем пешку f7.';
+ main.innerHTML='<section class="position"><div class="player">Алексей · чёрные <b class="clock">04:48</b></div><div class="board"></div><div class="player">Вы · белые <b class="clock">'+(final?'04:56':'04:53')+'</b></div></section><section class="panel"><small>Блиц · 5+3 / '+(review||solved?'Разбор':'Демопартия')+'</small><h1>'+title+'</h1><p>'+copy+'</p><div class="record">1. e4 e5<br>2. Bc4 Nc6<br>3. Qh5 Nf6'+(final?'<br>4. Qxf7#':'')+'</div><div role="status" class="feedback"></div></section>';
+ const board=main.querySelector('.board'),status=main.querySelector('[role=status]');
+ (final?after:before).split('/').forEach((row,r)=>{let file=0;for(const ch of row){for(let n=0;n<(Number(ch)||1);n++){
+ const square='abcdefgh'[file]+(8-r),piece=Number(ch)?null:(ch===ch.toUpperCase()?'w':'b')+ch.toUpperCase();
+ const cell=document.createElement(final?'div':'button');cell.className='square'+((r+file)%2?' shade':'')+((final&&['f7','h5'].includes(square))?' marked':'');cell.setAttribute('aria-label',square+(piece?' '+({K:'король',Q:'ферзь',N:'конь',B:'слон',R:'ладья',P:'пешка'}[piece[1]]):''));
+ if(piece){const img=new Image();img.alt='';img.src='../../public/pieces/merida/'+piece+'.svg';cell.append(img)}
+ if(r===7||file===0){const label=document.createElement('span');label.textContent=(file===0?8-r:'')+(r===7?'abcdefgh'[file]:'');cell.append(label)}
+ if(!final)cell.onclick=()=>{if(square==='h5'){selected=true;cell.classList.add('marked');status.textContent='Ферзь выбран.'}else if(selected&&square==='f7'){selected=false;screen(review?'solved':'end')}else status.textContent=review?'Попробуйте другой ход.':'Выберите h5, затем f7.'};
+ board.append(cell);file++}}});
+ const action=(label,fn)=>{const b=document.createElement('button');b.className='action';b.textContent=label;b.onclick=fn;main.querySelector('.panel').append(b)};
+ if(done)action('Открыть ключевой момент',()=>screen('review'));
+ if(review)action('Подсказка',()=>status.textContent='Слон c4 смотрит на f7. Какая ещё фигура может атаковать это поле?');
+ if(solved)action('Повторить позицию',()=>screen('review'));
+}
+const saved=sessionStorage.getItem(key);
+screen(['#join','#invite'].includes(location.hash)||!['live','end','review','solved','invite'].includes(saved)?'invite':saved);
+</script></html>

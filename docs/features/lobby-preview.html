@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="logo-options/knights/staunton.svg"><title>Быстрый старт · chessBoard</title>
+<link rel="stylesheet" href="typefaces/type.css"><style>
+*{box-sizing:border-box}body{margin:0;--bg:#f4f3ef;--panel:#fcfbf8;--ink:#252723;--muted:#666962;--line:#d6d7ce;--accent:#a33e26;--tint:#f8e9df;--solid:#262923;color:var(--ink);background:var(--bg);font:16px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body.dark{--bg:#20221f;--panel:#292c28;--ink:#f2f1eb;--muted:#b5bab0;--line:#4c5048;--accent:#ffab8d;--tint:#43332c;--solid:#eceee5}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}button,select,input{font:inherit;color:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+header{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 clamp(18px,4vw,70px);gap:54px;background:var(--panel)}.brand{display:flex;gap:10px;align-items:center;font-size:27px;letter-spacing:-1.5px}.brand b{font-weight:720}.brand img{width:36px;height:36px}.dark .brand img{background:#eceee5;border-radius:3px}nav{display:flex;gap:28px;font-size:15px}nav strong{position:relative}nav strong:after{content:"";position:absolute;height:2px;background:var(--accent);bottom:-24px;left:0;right:0}.switch{margin-left:auto;border:1px solid var(--line);background:none;border-radius:4px;width:44px;height:44px;font-size:22px}
+main{max-width:1480px;margin:auto;padding:clamp(30px,5vw,74px) clamp(18px,4vw,70px)}.layout{display:grid;grid-template-columns:minmax(160px,.85fr) minmax(430px,2.55fr) minmax(200px,1fr);gap:clamp(16px,2.4vw,40px);align-items:start}
+h1,h2,p{margin:0}h1{font-size:clamp(32px,3.25vw,50px);line-height:1.05;font-weight:610;letter-spacing:-.055em}h2{font-size:18px;letter-spacing:-.035em;font-weight:650}.rail,.settings{margin-top:78px;border-top:2px solid var(--ink);padding-top:14px}.rail h2,.settings h2{margin-bottom:16px}.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;background:#e5dece}.board i{background:#e5dece}.board i.b{background:#a99d85}.board img{display:block;width:100%;height:100%}.rail article{background:var(--panel);padding:12px;border:1px solid var(--line);border-radius:4px}.rail p{font-size:14px;font-weight:600;margin:10px 0 4px}.rail a{font-size:14px;color:var(--accent)}
+.grid{margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.tile{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:5px;min-height:clamp(94px,8vw,124px);display:grid;place-content:center;text-align:center;gap:3px}.tile:hover{border-color:var(--ink)}.tile[aria-pressed=true]{background:var(--tint);border:2px solid var(--accent)}.tile[aria-pressed=true]:after{content:"✓";position:absolute;right:9px;top:5px;color:var(--accent);font-size:15px;font-weight:bold}.time{font-size:clamp(30px,2.9vw,46px);line-height:1.1;font-weight:450;letter-spacing:-.065em;font-variant-numeric:tabular-nums}.tile small,.muted{font-size:14px;color:var(--muted)}.settings select{width:100%;margin-top:6px;padding:10px 6px;background:var(--panel);border:1px solid var(--line);border-radius:4px}.settings label{display:block;font-size:14px;color:var(--muted);margin:12px 0}.settings .total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:15px;margin-top:20px}.total b{font-size:27px;letter-spacing:-.055em}.start{width:100%;margin-top:16px;min-height:46px;background:var(--solid);color:var(--bg);border:0;border-radius:4px;font-weight:600}.start:disabled{opacity:.5}.custom{display:flex;gap:10px;margin-top:10px}.custom input{width:70px;background:var(--panel);border:1px solid var(--line);padding:5px}[hidden]{display:none!important}.feedback{color:var(--accent);font-size:14px;margin-top:10px}
+@media(max-width:990px){.layout{grid-template-columns:minmax(0,2fr) minmax(190px,1fr)}.rail{grid-column:1/-1;grid-row:2;margin-top:16px;max-width:200px}nav{gap:16px}}
+@media(max-width:650px){header{height:56px;gap:16px}.brand{font-size:23px}.brand img{width:29px;height:29px}nav{display:none}main{padding-top:26px}.layout{display:flex;flex-direction:column;gap:22px}.play,.settings{width:100%}.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:16px}.tile{min-height:80px}.settings{margin:0}.rail{order:3;margin:0}.time{font-size:29px}}
+
+.dark .brand img{background:none;filter:invert(1)}
+.layouts{display:flex;justify-content:center;gap:1em;flex-wrap:wrap;margin:32px 0 8px;border-top:1px solid var(--line);padding-top:14px;font-size:14px;color:var(--muted)}
+.layouts [aria-current]{color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:4px}
+.club h1{font-family:Georgia,serif;font-weight:normal}.club .rail{margin-top:0;border:0;padding:0}.club .rail article{padding:0;border:0;background:none}.club .rail .board{border:5px solid var(--panel)}.club .tile{min-height:66px}.club .time{font-size:26px}.club .tile small{font-size:12px}.club .settings{margin-top:0}
+.compact .rail{order:3}.compact .settings{order:2}.compact .tile{min-height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border:0;border-bottom:1px solid var(--line);border-radius:0}.compact .tile[aria-pressed=true]{box-shadow:inset 3px 0 var(--accent)}.compact .tile[aria-pressed=true]:after{display:none}.compact .time{font-size:29px}.compact .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px 12px}
+@media(min-width:991px){.club .layout{grid-template-columns:1.1fr 1fr;max-width:1000px;margin:auto}.club .rail{grid-row:span 2}.club .settings{grid-column:2}.club .rail h2{font-family:Georgia,serif;font-size:30px;font-weight:normal}.compact .layout{grid-template-columns:minmax(360px,2fr) 1fr .85fr}.compact .rail,.compact .settings{margin-top:70px}}
+@media(max-width:650px){.compact .tile{padding:0 9px}.compact .time{font-size:23px}}
+.return-game{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--accent);margin-bottom:20px;background:var(--panel)}.return-game a{color:var(--accent);font-weight:600}</style>
+<header><a class="brand" href="lobby-preview.html"><img src="logo-options/knights/staunton.svg" alt=""><span><b>chess</b>Board</span></a><nav aria-label="Разделы макета"><strong>Игра</strong><a href="design-preview.html">Анализ</a></nav><button type="button" class="switch" aria-label="Переключить тему" aria-pressed="false">◐</button></header>
+<main><div class="layout">
+<aside class="rail"><h2>Последняя партия</h2><article><div class="board" aria-hidden="true"></div><p>WhiteKnight — BlackKnight</p><span class="muted">Рапид · ½–½</span><br><a href="design-preview.html">Открыть разбор ↗</a></article></aside>
+<section class="play"><h1>Быстрый старт</h1><div class="grid" aria-label="Контроль времени"></div><div class="custom" hidden><label>Минуты <input id="minutes" type="number" min="1" max="1440" value="7"></label><label>Добавка, с <input id="seconds" type="number" min="0" max="3600" value="2"></label></div></section>
+<aside class="settings"><h2>Новая партия</h2><label>Соперник<select id="opponent"><option>Случайный игрок</option><option>Друг по ссылке</option><option>Компьютер</option></select></label><label id="bot" hidden>Движок<select><option>Leela Chess Zero</option><option>Stockfish</option></select></label><div class="total"><span class="muted">Контроль</span><b id="control"></b></div><button class="start" id="start"></button><p class="feedback" role="status"></p></aside>
+</div><footer class="layouts" aria-label="Варианты макета"><a href="?layout=lobby">Игровой зал</a><a href="?layout=club">Клубная доска</a><a href="?layout=compact">Турнирный лист</a></footer></main>
+<script>
+const layout = new URLSearchParams(location.search).get('layout');
+const variant = ['club','compact'].includes(layout) ? layout : 'lobby';
+document.body.classList.add(variant);
+document.querySelector('.layouts a[href="?layout='+variant+'"]').setAttribute('aria-current','page');
+if(variant==='compact'){
+  document.body.classList.add('dark');
+  document.querySelector('.switch').setAttribute('aria-pressed','true');
+}
+const font = new URLSearchParams(location.search).get('font');
+if (['golos','nunito','serif'].includes(font)) {
+  document.body.classList.add(font);
+  const back = document.createElement('a');
+  back.href = 'typefaces.html';
+  back.textContent = 'Сравнить шрифты';
+  document.querySelector('.layouts').append(back);
+}
+const presets=[['1+0','Пуля'],['2+1','Пуля'],['3+0','Блиц'],['3+2','Блиц'],['5+0','Блиц'],['5+3','Блиц'],['10+0','Рапид'],['10+5','Рапид'],['15+10','Рапид'],['30+0','Классика'],['30+20','Классика'],['＋','Своя игра']];
+const $=s=>document.querySelector(s);
+let selected=7;
+function update(){
+  const custom=selected===11;
+  $('.custom').hidden=!custom;
+  document.querySelectorAll('.tile').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===selected)));
+  const valid=!custom||['#minutes','#seconds'].every(id=>$(id).value!==''&&$(id).checkValidity());
+  $('#control').textContent=valid?(custom?$('#minutes').value+'+'+$('#seconds').value:presets[selected][0]):'—';
+  const opponent=$('#opponent').selectedIndex;
+  $('#bot').hidden=opponent!==2;
+  $('#start').textContent=['Найти соперника','Создать приглашение','Начать партию'][opponent]+'　→';
+  $('#start').disabled=!valid;
+  $('.feedback').textContent=valid?'':'Введите 1–1440 минут и 0–3600 секунд.';
+}
+presets.forEach(([time,name],i)=>{const b=document.createElement('button');b.className='tile';b.innerHTML='<span class="time">'+time+'</span><small>'+name+'</small>';b.onclick=()=>{selected=i;update()};$('.grid').append(b)});
+$('#opponent').onchange=update;$('.custom').oninput=update;$('#start').onclick=()=>$('.feedback').textContent='В макете выбран контроль '+$('#control').textContent+' · '+$('#opponent').value+'.';
+$('.switch').onclick=e=>e.currentTarget.setAttribute('aria-pressed',String(document.body.classList.toggle('dark')));
+const rows=['r1bqk2r','pppp1ppp','2n2n2','2b1p3','2B1P3','2P2N2','PP1P1PPP','RNBQK2R'];
+rows.forEach((row,r)=>{let col=0;for(const p of row)for(let n=0;n<(Number(p)||1);n++){const cell=document.createElement('i');if((r+col++)%2)cell.className='b';if(!Number(p)){const img=new Image();img.src='../../public/pieces/merida/'+(p===p.toUpperCase()?'w':'b')+p.toUpperCase()+'.svg';img.alt='';cell.append(img)}$('.board').append(cell)}});
+if(location.hash==='#friend'){
+  selected=5;
+  $('#opponent').selectedIndex=1;
+  const state=sessionStorage.getItem('prototype.friendGame');
+  if(state && state!=='invite'){
+    const active=state==='live';
+    const card=document.createElement('section');
+    card.className='return-game';
+    card.innerHTML='<strong>'+(active?'Текущая партия · ваш ход':'Завершённая партия · 1–0')+'</strong><a href="friend-game.html">'+(active?'Вернуться в партию':'Открыть партию')+' →</a>';
+    $('.layout').before(card);
+  }
+}
+const demoMessage=$('#start').onclick;
+$('#start').onclick=()=>{
+  if(selected===5 && $('#opponent').selectedIndex===1)location.href='friend-game.html#invite';
+  else demoMessage();
+};
+update();
+</script></html>

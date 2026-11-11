@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="logo-options/knights/staunton.svg"><title>chessBoard · Макет разбора партии</title>
+<style>
+*{box-sizing:border-box}body{--paper:#f4f3ee;--panel:#fffcf6;--ink:#202e28;--muted:#58665f;--line:#cccfc5;--action:#28563f;--active:#dce8d7;--on:#fff; margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body.dark{--paper:#1b221f;--panel:#252e29;--ink:#edf1e9;--muted:#b1bdb4;--line:#47554b;--action:#afd5b5;--active:#344c3b;--on:#17261b}
+header{border-bottom:1px solid var(--line)}.bar,main{max-width:1392px;margin:auto;padding:0 clamp(16px,3.8vw,68px)}.bar{height:72px;display:flex;align-items:center;gap:38px}.brand{font: bold 29px Georgia,serif;letter-spacing:-1.7px;display:flex;gap:8px;align-items:center}.brand img{width:32px;background:#ede2c8;border-radius:5px}.sections{display:flex;align-items:center;gap:26px;color:var(--muted)}.current{color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:9px;text-decoration-color:var(--action)}button{font:inherit;cursor:pointer;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:7px;min-height:44px;padding:0 13px}button:focus-visible{outline:3px solid var(--action);outline-offset:2px}button:disabled{opacity:.45;cursor:default}.theme{margin-left:auto}.crumb{color:var(--muted);margin:28px 0 20px;font-size:14px}.layout{display:grid;grid-template-columns:minmax(165px,0.77fr) minmax(320px,2.35fr) minmax(220px,1fr);gap:clamp(16px,2vw,32px);align-items:start}.context{border-top:2px solid var(--ink);padding-top:16px}h1,h2,p{margin:0}h1{font:normal clamp(30px,3.3vw,54px)/1.04 Georgia,serif;letter-spacing:-.04em;margin:14px 0}.caption,dt,time{color:var(--muted);font-size:14px}dl{margin:26px 0}dt{margin-top:16px}dd{margin:2px 0;font-weight:600}.player{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:4px 0 10px}.player:last-child{padding:10px 0 4px}.player span{font-weight:650}.player small{font-weight:400;color:var(--muted)}.score{font:600 23px/1.3 Georgia,serif}.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;overflow:hidden;border-radius:3px;box-shadow:0 4px 14px #12191122}.sq{position:relative;background:#f0d9b5;display:grid;place-items:center;min-height:0}.sq.b{background:#b58863}.sq.last{box-shadow:inset 0 0 0 3px #665418;background-image:linear-gradient(#f6d95e55,#f6d95e55)}.sq img{width:84%;height:84%;object-fit:contain}.sq i,.sq em{position:absolute;font:700 clamp(8px,.8vw,12px)/1 Arial;color:#422f1e}.sq i{top:3px;left:3px}.sq em{bottom:2px;right:3px}.sheet{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}.sheet h2{font:normal 26px Georgia,serif;padding:18px}.row{display:grid;grid-template-columns:24px 1fr 1fr;align-items:center;border-top:1px solid var(--line);padding:3px 10px;gap:2px}.row small{text-align:center;color:var(--muted)}.row button{border:0;text-align:left;background:transparent;border-radius:4px;font-variant-numeric:tabular-nums}.row button[aria-pressed=true]{background:var(--active);color:var(--ink);font-weight:750;border-left:3px solid var(--action)}.controls{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}.controls button{flex:1;font-size:21px}.status{padding:2px 18px 15px;font-size:14px;color:var(--muted)}
+@media(max-width:980px){.layout{grid-template-columns:minmax(0,1fr) 225px}.context{grid-column:1/-1;border:0;padding:0}.context h1{margin:0}.context .caption,.context dl{display:none}.sections{gap:12px}.bar{gap:18px}.crumb{margin:15px 0}}
+@media(max-width:680px){.bar{height:60px}.sections{display:none}.layout{display:flex;flex-direction:column;gap:14px}.board-area,.sheet{width:100%}.brand{font-size:25px}.context h1{font-size:32px}.sheet{margin-bottom:20px}.theme{font-size:14px}.player{font-size:14px}}
+@media(min-width:981px){.board-area{width:min(100%,max(340px,calc(100vh - 250px)));justify-self:center}}
+.mobile-menu{display:none;position:relative}.mobile-menu summary{cursor:pointer;padding:10px}.mobile-menu div{position:absolute;z-index:2;background:var(--panel);padding:12px 18px;border:1px solid var(--line);border-radius:7px}.mobile-menu span{display:block}
+@media(max-width:680px){.mobile-menu{display:block}.bar{gap:8px}.theme{padding:0 9px}}
+.brand{font:600 27px Inter,-apple-system,sans-serif;letter-spacing:-1.4px}.brand img{background:transparent}.dark .brand img{background:#eceee5}h1,.sheet h2{font-family:Inter,-apple-system,sans-serif;font-weight:550}body{--action:#a33e26;--active:#f8e9df;--paper:#f4f3ef;--ink:#252723}.dark{--action:#ffab8d;--active:#43332c}
+</style>
+<header><div class="bar"><b class="brand"><img src="logo-options/knights/staunton.svg" alt="">chessBoard</b><div class="sections"><a href="lobby-preview.html">Игра</a><span>Тренировки</span><span class="current">Анализ</span><span>Сообщество</span></div><details class="mobile-menu"><summary>Меню</summary><div><a href="lobby-preview.html">Игра</a><span>Тренировки</span><span class="current">Анализ</span><span>Сообщество</span></div></details><button class="theme" id="theme">Тёмная тема</button></div></header>
+<main><p class="crumb">Профиль　/　История игр　/　Разбор</p><div class="layout">
+<aside class="context"><span class="caption">Завершённая партия</span><h1>Разбор партии</h1><dl><dt>Контроль</dt><dd>Рапид · 10+5</dd><dt>Результат</dt><dd>½–½ · Ничья</dd><dt>Окончание</dt><dd>По соглашению</dd></dl></aside>
+<section class="board-area" aria-label="Позиция"><div class="player"><span>BlackKnight <small>· Чёрные</small></span><b class="score">½</b></div><div class="board" id="board"></div><div class="player"><span>WhiteKnight <small>· Белые</small></span><b class="score">½</b></div></section>
+<section class="sheet"><h2>Запись ходов</h2><div id="moves"></div><div class="controls"><button id="prev" aria-label="Предыдущий полуход">←</button><button id="next" aria-label="Следующий полуход">→</button></div><p class="status" id="status" aria-live="polite"></p></section></div></main>
+<script>
+const file="abcdefgh",line=[["e4","e2","e4"],["e5","e7","e5"],["Nf3","g1","f3"],["Nc6","b8","c6"],["Bc4","f1","c4"],["Bc5","f8","c5"],["c3","c2","c3"],["Nf6","g8","f6"],["d4","d2","d4"],["exd4","e5","d4"],["cxd4","c3","d4"],["Bb4+","c5","b4"]];
+let ply=8;
+const choices=[];
+for(let n=0;n<line.length;n+=2){
+  const row=document.createElement("div");row.className="row";row.innerHTML="<small>"+(n/2+1)+"</small>";
+  for(let i=n;i<n+2;i++){const button=document.createElement("button");button.textContent=line[i][0];button.onclick=()=>draw(i+1);row.append(button);choices.push(button)}
+  document.querySelector("#moves").append(row)
+}
+function draw(index){
+  ply=index;const position={};const order="RNBQKBNR";
+  for(let i=0;i<8;i++)for(const [rank,piece] of [[1,"w"+order[i]],[2,"wP"],[7,"bP"],[8,"b"+order[i]]])position[file[i]+rank]=piece;
+  for(const [,from,to] of line.slice(0,ply)){position[to]=position[from];delete position[from]}
+  const board=document.querySelector("#board");board.replaceChildren();
+  for(let rank=8;rank;rank--)for(let i=0;i<8;i++){const square=file[i]+rank,cell=document.createElement("div");cell.className="sq"+((rank+i)%2?" b":"")+(line[ply-1]?.slice(1).includes(square)?" last":"");
+    if(i===0)cell.innerHTML="<i>"+rank+"</i>";if(rank===1)cell.insertAdjacentHTML("beforeend","<em>"+file[i]+"</em>");
+    if(position[square]){const image=new Image();image.src="../../public/pieces/merida/"+position[square]+".svg";image.alt=square+" · "+position[square];cell.append(image)}board.append(cell)}
+  choices.forEach((button,i)=>button.setAttribute("aria-pressed",String(i+1===ply)));
+  document.querySelector("#prev").disabled=!ply;document.querySelector("#next").disabled=ply===line.length;
+  document.querySelector("#status").textContent=ply?"Позиция после "+Math.ceil(ply/2)+(ply%2?". ":"… ")+line[ply-1][0]:"Начальная позиция";
+}
+document.querySelector("#prev").onclick=()=>draw(ply-1);document.querySelector("#next").onclick=()=>draw(ply+1);
+document.querySelector("#theme").onclick=event=>{const dark=document.body.classList.toggle("dark");event.target.textContent=dark?"Светлая тема":"Тёмная тема"};
+draw(ply);
+</script></html>

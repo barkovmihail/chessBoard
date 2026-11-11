@@ -5,7 +5,7 @@ import "@radix-ui/themes/tokens/colors/bronze.css";
 import "@radix-ui/themes/components.css";
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
-import type { Game } from "../../features/play";
+import { Game, EngineLevel, isEngineLevel, levelLabels } from "../../features/play";
 import { QuickGame } from "./QuickGame";
 import styles from "./game.module.css";
 
@@ -26,7 +26,7 @@ export function TimeSetup({ create, busy, board }: {
   const [computer, setComputer] = useState(false);
   const [visible, setVisible] = useState(false);
   const [engine, setEngine] = useState<"lc0" | "stockfish">("lc0");
-  const [level, setLevel] = useState<"easy" | "normal">("easy");
+  const [level, setLevel] = useState<EngineLevel>("easy");
   const [searching, setSearching] = useState(false);
   const [category, setCategory] = useState("");
   const [selected, select] = useState(5);
@@ -81,8 +81,8 @@ export function TimeSetup({ create, busy, board }: {
     {computer && !searching && <fieldset><legend>{t("Настройки движка", "Engine settings")}</legend>
       <label>{t("Движок", "Engine")} <select value={engine} onChange={e => setEngine(e.target.value === "stockfish" ? "stockfish" : "lc0")}>
         <option value="lc0">Leela Chess Zero</option><option value="stockfish">Stockfish</option></select></label>
-      <label>{t("Уровень", "Level")} <select value={level} onChange={e => setLevel(e.target.value === "normal" ? "normal" : "easy")}>
-        <option value="easy">{t("Начальный", "Beginner")}</option><option value="normal">{t("Обычный", "Normal")}</option></select></label>
+      <label>{t("Уровень", "Level")} <select value={level} onChange={e => { if (isEngineLevel(e.target.value)) setLevel(e.target.value); }}>
+        {Object.entries(levelLabels).map(([value, [ru, en]]) => <option key={value} value={value}>{t(ru, en)}</option>)}</select></label>
       <Button size="3" highContrast variant="solid" disabled={!valid} onClick={() => create(false, control, level, engine, visible)}>{t("Играть с компьютером", "Play against the computer")}</Button>
     </fieldset>}
     </section>

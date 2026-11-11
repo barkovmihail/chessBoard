@@ -120,7 +120,7 @@ class CreateGame(BaseModel):
     chess960: int | None = Field(None, ge=0, le=959, strict=True)
     public: bool = False
     engine_name: Literal["lc0", "stockfish"] = "lc0"
-    engine_level: Literal["easy", "normal"] | None = None
+    engine_level: Literal["easy", "casual", "normal", "strong", "expert"] | None = None
     control: TimeControl | None = None
     online: bool = False
 

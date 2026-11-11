@@ -1,3 +1,4 @@
+import { EngineLevel, isEngineLevel } from "./levels";
 import type { BoardPiece } from "../../entities/board";
 
 export interface Game {
@@ -8,7 +9,7 @@ export interface Game {
   review960?: { fens: string[]; pgn: string; uci?: string[] };
   watch_key?: string | null;
   engine_name?: "lc0" | "stockfish" | null;
-  engine_level?: "easy" | "normal" | null;
+  engine_level?: EngineLevel | null;
   version: number;
   position: BoardPiece[];
   turn: "white" | "black";
@@ -40,7 +41,7 @@ export async function requestGame(path: string, body?: object): Promise<Game> {
 }
 
 function parseGame(data: any): Game {
-  if (!data || ![undefined, null, "lc0", "stockfish"].includes(data.engine_name) || ![undefined, null, "easy", "normal"].includes(data.engine_level) || ![null, "white", "black"].includes(data.draw_offer) ||
+  if (!data || ![undefined, null, "lc0", "stockfish"].includes(data.engine_name) || (data.engine_level != null && !isEngineLevel(data.engine_level)) || ![null, "white", "black"].includes(data.draw_offer) ||
       !(data.reason === null || typeof data.reason === "string") || !["white", "black", "both"].includes(data.side) || typeof data.waiting !== "boolean" ||
       typeof data.id !== "string" || !Number.isInteger(data.version) ||
       !["white", "black"].includes(data.turn) || !Array.isArray(data.position) ||

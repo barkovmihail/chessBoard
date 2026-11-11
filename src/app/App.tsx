@@ -31,7 +31,7 @@ export default function App() {
   }
   return <>
     <nav lang={language} className="study-nav" aria-label={t("Разделы", "Sections")}>
-      <a className="brand" href="/" aria-label={t("Игровой зал chessBoard", "chessBoard lobby")}><img src="/staunton.svg" alt="" />chessBoard</a>
+      <a className="brand" href="/" aria-label={t("Игровой зал ChessBoard", "ChessBoard lobby")}><img src="/staunton.svg" alt="" />ChessBoard</a>
       <a href={game && (training || !section) ? gameQuery : section || watch ? "/" : query || "/"} aria-current={!section ? "page" : undefined}><NavIcon name="board" />{training && game ? t("Вернуться к партии", "Return to game") : t("Игра", "Play")}</a>
       <a href={"?section=openings" + trainingSuffix} title={t("Тренажёр дебютов", "Opening trainer")} aria-label={t("Тренажёр дебютов", "Opening trainer")} aria-current={section === "openings" ? "page" : undefined}><NavIcon name="book" />{t("Тренажёр дебютов", "Opening trainer")}</a>
       <a href={"?section=puzzles" + trainingSuffix} title={t("Шахматные задачи", "Puzzles")} aria-label={t("Шахматные задачи", "Puzzles")} aria-current={section === "puzzles" ? "page" : undefined}><NavIcon name="puzzle" /></a>

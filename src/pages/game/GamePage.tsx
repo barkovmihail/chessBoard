@@ -1,6 +1,6 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useRef, useState } from "react";
-import { Game, gameCue, PlayBoard, resultReason, RequestError, requestGame, subscribeGame } from "../../features/play";
+import { Game, gameCue, levelLabels, PlayBoard, resultReason, RequestError, requestGame, subscribeGame } from "../../features/play";
 import { commandId } from "../../shared/commandId";
 import { playSound } from "../../shared/sound";
 import { ClockPanel, TimeSetup } from "./TimeControl";
@@ -139,7 +139,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     {game.arena_id && <a href={"?section=arenas&arena=" + game.arena_id}>{t("Вернуться на арену", "Return to arena")}</a>}
     {game.watch_key && <a href={"?watch=" + game.watch_key}>{t("Ссылка для зрителей", "Spectator link")}</a>}
     {game.chess960 != null && <p>Chess960 · {t("Расстановка №", "Position #")}{game.chess960}. {t("Для рокировки переместите короля на свою ладью.", "To castle, move your king onto your rook.")}</p>}
-    {game.engine_level && <p>{t("Чёрные", "Black")} · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {game.engine_level === "easy" ? t("Начальный", "Beginner") : t("Обычный", "Normal")}</p>}
+    {game.engine_level && <p>{t("Чёрные", "Black")} · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {t(levelLabels[game.engine_level][0], levelLabels[game.engine_level][1])}</p>}
     {game.waiting && <label>{t("Ссылка для соперника", "Opponent link")} <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}
   </> : invite ? <><p>{inviteFailed ? t("Не удалось загрузить контроль времени", "Could not load the time control") : inviteControl === "unlimited" ? t("Без часов", "Unlimited") : inviteControl}</p><button disabled={busy || (!inviteControl && !inviteFailed)} onClick={() => create(true)}>{t("Играть за чёрных", "Play as Black")}</button></>

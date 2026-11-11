@@ -46,7 +46,7 @@ class BrowserGameTest(TestCase):
                         bot.get_by_label("Движок").select_option(name)
                         bot.get_by_label("Уровень").select_option("normal")
                         bot.get_by_role("button", name="Играть с компьютером").click()
-                        expect(bot.get_by_text(f"Чёрные · {label} · Обычный")).to_be_visible()
+                        expect(bot.get_by_text(f"Чёрные · {label} · 3 · Средний")).to_be_visible()
                         bot.locator('[data-square="e2"]').click()
                         bot.locator('[data-square="e4"]').click()
                         record = bot.get_by_label("Запись ходов").locator("li span")
@@ -64,7 +64,7 @@ class BrowserGameTest(TestCase):
                     for label in played_engines:
                         bot.goto(f"http://127.0.0.1:{port}/?section=profile")
                         bot.get_by_role("link", name=re.compile(label)).click()
-                        expect(bot.get_by_text(f"Чёрные · {label} · Обычный")).to_be_visible()
+                        expect(bot.get_by_text(f"Чёрные · {label} · 3 · Средний")).to_be_visible()
                         expect(bot.get_by_label("Запись ходов")).to_contain_text("e4")
                         bot.get_by_role("button", name="Оценить позицию").click()
                         bot.get_by_role("button", name="В начало").click()

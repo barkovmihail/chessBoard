@@ -24,6 +24,7 @@ export function Sound() {
         onChange={e => change({ ...settings, enabled: e.target.checked })} />{t("Звуки игры", "Game sounds")}</label>
       <label>{t("Громкость", "Volume")} <input type="range" min="0" max="100" value={settings.volume}
         onChange={e => change({ ...settings, volume: Number(e.target.value) })} />{settings.volume}%</label>
+      <span>{t("Ход фигуры · Алебастр", "Piece move · Alabaster")}</span>
       <button disabled={!settings.enabled || !settings.volume} onClick={() => playSound("move")}>{t("Прослушать", "Preview")}</button>
     </div>
   </details>;

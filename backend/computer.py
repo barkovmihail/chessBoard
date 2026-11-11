@@ -14,7 +14,8 @@ from .domain import GameError
 # Session identities are generated as hex strings, so this seat cannot be claimed.
 SEATS = {"lc0": "computer:lc0", "stockfish": "computer:stockfish"}
 NAMES = {"lc0": "Leela Chess Zero", "stockfish": "Stockfish"}
-LEVELS = {"easy": 4, "normal": 32}
+LC0_NODES = {"easy": 4, "casual": 12, "normal": 32, "strong": 96, "expert": 256}
+STOCKFISH_SKILL = {"easy": 0, "casual": 4, "normal": 8, "strong": 14, "expert": 20}
 
 
 def executable(name):
@@ -51,8 +52,8 @@ def play_pending(service, stopped: Event):
             name = seat.split(":")[1]
             with chess.engine.SimpleEngine.popen_uci(engine_command(name), timeout=5) as engine:
                 if name == "stockfish":
-                    engine.configure({"Skill Level": 0 if level == "easy" else 8})
-                limit = chess.engine.Limit(time=0.8, nodes=LEVELS[level] if name == "lc0" else None)
+                    engine.configure({"Skill Level": STOCKFISH_SKILL[level]})
+                limit = chess.engine.Limit(time=0.8, nodes=LC0_NODES[level] if name == "lc0" else None)
                 answer = engine.play(board, limit)
             service.apply(game_id, seat, answer.move.uci(), version, uuid4().hex)
             yield game_id
