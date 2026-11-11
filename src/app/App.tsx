@@ -13,6 +13,7 @@ export default function App() {
   const params = new URLSearchParams(query);
   const section = params.get("section");
   const [game, setGame] = useState(params.get("game"));
+  const [gamesOpen, setGamesOpen] = useState(false);
   const training = section === "openings" || section === "puzzles";
   const gameQuery = game ? "?game=" + encodeURIComponent(game) : "/";
   const trainingSuffix = game ? "&game=" + encodeURIComponent(game) : "";
@@ -27,8 +28,8 @@ export default function App() {
       <a href={"?section=puzzles" + trainingSuffix} aria-current={section === "puzzles" ? "page" : undefined}>Шахматные задачи</a>
       <a href="?section=profile" aria-current={section === "profile" ? "page" : undefined}>Профиль</a>
       <a href="?section=analysis" aria-current={section === "analysis" ? "page" : undefined}>Анализ</a>
-      <CurrentGames /><Appearance /><Sound />
+      <CurrentGames open={gamesOpen} setOpen={setGamesOpen} /><Appearance /><Sound />
     </nav>
-    {section === "analysis" ? <AnalysisPage /> : section === "profile" ? <ProfilePage /> : section === "openings" ? <OpeningsPage /> : section === "puzzles" ? <PuzzlesPage /> : <GamePage onOpen={openGame} />}
+    {section === "analysis" ? <AnalysisPage /> : section === "profile" ? <ProfilePage onInbox={() => setGamesOpen(true)} /> : section === "openings" ? <OpeningsPage /> : section === "puzzles" ? <PuzzlesPage /> : <GamePage onOpen={openGame} />}
   </>;
 }

@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .accounts import Accounts, SESSION_SECONDS, digest
+from .challenges import Challenges
 from .db import open_database
 from .domain import GameError
 from .matchmaking import Matchmaking
@@ -29,6 +30,12 @@ class TimeControl(BaseModel):
 
 class QueueVersion(BaseModel):
     version: int = Field(ge=0)
+
+
+class Challenge(BaseModel):
+    name: str = Field(pattern=r"^[a-zA-Z0-9_]{3,32}$")
+    control: TimeControl
+    command_id: UUID
 
 
 class Search(QueueVersion):
@@ -64,6 +71,7 @@ def create_app(path: Path):
         engine = open_database(path)
         app.state.accounts = Accounts(engine)
         app.state.games = Games(engine)
+        app.state.challenges = Challenges(app.state.games)
         app.state.queue = Matchmaking(app.state.games)
         app.state.events = GameEvents()
         async def monitor():
@@ -136,6 +144,26 @@ def create_app(path: Path):
         app.state.accounts.logout(request.cookies.get("player"))
         response.delete_cookie("player")
         return {"ok": True}
+
+    def member(request):
+        player, name = current(request)
+        if not name:
+            raise GameError("account_required", 403)
+        return player
+
+    @app.get("/api/challenges")
+    def pending_challenges(request: Request):
+        player, name = current(request)
+        return {"member": bool(name), "items": app.state.challenges.pending(player) if name else []}
+
+    @app.post("/api/challenges")
+    def create_challenge(command: Challenge, request: Request):
+        return app.state.challenges.create(member(request), command.name, command.control.minutes,
+                                           command.control.increment, str(command.command_id))
+
+    @app.post("/api/challenges/{challenge_id}/{action}")
+    def respond_challenge(challenge_id: UUID, action: Literal["accept", "decline", "cancel"], request: Request):
+        return app.state.challenges.respond(member(request), str(challenge_id), action)
 
     @app.get("/api/queue")
     def queue_status(request: Request):

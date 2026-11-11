@@ -50,6 +50,12 @@ queue = Table("match_queue", metadata,
     Column("started", Integer, nullable=False), Column("expires", Integer, nullable=False),
     Column("game_id", ForeignKey("games.id")),
 )
+challenges = Table("challenges", metadata,
+    Column("id", String, primary_key=True), Column("sender", ForeignKey("accounts.player"), nullable=False),
+    Column("recipient", ForeignKey("accounts.player"), nullable=False), Column("minutes", Integer, nullable=False),
+    Column("increment", Integer, nullable=False), Column("expires", Integer, nullable=False),
+    Column("status", String, nullable=False), Column("game_id", ForeignKey("games.id")),
+)
 moves = Table("moves", metadata,
     Column("game_id", ForeignKey("games.id"), primary_key=True),
     Column("ply", Integer, primary_key=True),

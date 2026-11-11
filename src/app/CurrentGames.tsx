@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 
+import { Challenges } from "./Challenges";
+
 interface Entry {
   id: string;
   opponent: string | null;
@@ -25,8 +27,8 @@ function describe(row: Entry) {
   return [title, clock, status].join(" · ");
 }
 
-export function CurrentGames() {
-  const [open, setOpen] = useState(false);
+export function CurrentGames({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
+  const [count, setCount] = useState(0);
   const [offset, setOffset] = useState(0);
   const [page, setPage] = useState<{items: Entry[]; next_offset: number | null}>();
   const [error, setError] = useState(false);
@@ -52,12 +54,13 @@ export function CurrentGames() {
     void load();
     return () => { abort.abort(); clearTimeout(timer); };
   }, [open, offset]);
-  return <details className="current-games" onToggle={event => {
+  return <details open={open} className="current-games" onToggle={event => {
     setOpen(event.currentTarget.open);
     if (!event.currentTarget.open) setOffset(0);
   }}>
-    <summary aria-label="Текущие игры">⚔ Текущие игры</summary>
-    <section aria-label="Текущие партии">
+    <summary aria-label={"Вызовы и текущие игры" + (count ? " · " + count : "")}>⚔ Вызовы и игры {count || ""}</summary>
+    <section><Challenges open={open} count={setCount} />
+    <div role="region" aria-label="Текущие партии"><h3>Текущие игры</h3>
       {error ? <p role="alert">Не удалось обновить список. Повторяем запрос…</p> : !page && <p>Загрузка…</p>}
       {page && <>
         {!page.items.length && <p>Текущих игр нет</p>}
@@ -65,6 +68,6 @@ export function CurrentGames() {
         {offset > 0 && <button onClick={() => setOffset(offset - 20)}>Назад</button>}
         {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>Далее</button>}
       </>}
-    </section>
+    </div></section>
   </details>;
 }

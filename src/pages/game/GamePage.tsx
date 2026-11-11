@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Game, gameCue, PlayBoard, reasons, RequestError, requestGame, subscribeGame } from "../../features/play";
+import { commandId } from "../../shared/commandId";
 import { playSound } from "../../shared/sound";
 import { ClockPanel, TimeSetup } from "./TimeControl";
 import { GameReview } from "./GameReview";
@@ -9,10 +10,6 @@ import styles from "./game.module.css";
 type Action = "rematch" | "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
 type Command = { version: number; command_id: string } & ({ uci: string } | { action: Action });
 
-function commandId() {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
-}
 
 export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
   const [game, setGame] = useState<Game>();

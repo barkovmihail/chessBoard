@@ -19,7 +19,7 @@ function validEntry(row: Entry) {
     [row.finished_ms, row.base_minutes, row.increment_seconds].every(n => n === null || Number.isSafeInteger(n));
 }
 
-export function ProfilePage() {
+export function ProfilePage({ onInbox }: { onInbox: () => void }) {
   const [offset, setOffset] = useState(0);
   const [page, setPage] = useState<{items: Entry[]; next_offset: number | null}>();
   const [error, setError] = useState(false);
@@ -37,7 +37,7 @@ export function ProfilePage() {
     }).catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [offset, retry]);
-  return <main><h1>Профиль</h1><Account /><h2>История игр</h2>
+  return <main><h1>Профиль</h1><Account /><button onClick={onInbox}>Входящие</button><h2>История игр</h2>
     {error ? <p role="alert">Не удалось загрузить партии. <button onClick={() => setRetry(retry + 1)}>Повторить</button></p> :
       !page ? <p>Загрузка…</p> : <>
         {!page.items.length && <p>Завершённых партий пока нет</p>}

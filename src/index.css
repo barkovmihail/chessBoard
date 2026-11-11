@@ -37,3 +37,6 @@ body { background: var(--paper); color: var(--ink); }
   border: 1px solid var(--edge); border-radius: 6px; background: var(--panel); }
 .current-games ul { margin: 0; padding: 0; list-style: none; }
 .current-games li a { display: block; padding: 8px 0; }
+.current-games fieldset { min-width: 0; }
+.current-games label { display: block; }
+.current-games input { max-width: 100%; }
