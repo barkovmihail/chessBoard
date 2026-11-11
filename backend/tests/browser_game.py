@@ -705,6 +705,25 @@ class BrowserGameTest(TestCase):
                     white.get_by_label("Message", exact=True).fill("Хорошая партия")
                     white.get_by_role("button", name="Send message").click()
                     expect(white.get_by_label("Chat messages")).to_contain_text("Хорошая партия")
+                    for player, menu, inbox, messages in [
+                        (white, "Profile menu", "Inbox", "Private messages"),
+                        (black, "Меню профиля", "Входящие", "Личные сообщения"),
+                    ]:
+                        player.get_by_label(menu).click()
+                        player.get_by_role("button", name=inbox, exact=True).click()
+                        player.get_by_role("link", name=messages).click()
+                    white.get_by_label("Recipient").fill("BlackKnight")
+                    white.get_by_label("Message text").fill("Разберём эндшпиль?")
+                    white.get_by_role("button", name="Send", exact=True).click()
+                    letter = black.get_by_role("listitem").filter(has_text="Разберём эндшпиль?")
+                    expect(letter).to_contain_text("От WhiteKnight")
+                    letter.get_by_role("button", name="Ответить").click()
+                    expect(black.get_by_label("Кому")).to_have_value("WhiteKnight")
+                    black.get_by_label("Текст сообщения").fill("Да, после партии.")
+                    black.get_by_role("button", name="Отправить", exact=True).click()
+                    expect(white.get_by_role("listitem").filter(has_text="Да, после партии.")).to_contain_text("From BlackKnight")
+                    white.reload()
+                    expect(white.get_by_text("Да, после партии.", exact=True)).to_be_visible()
                     browser.close()
             finally:
                 server.should_exit = True

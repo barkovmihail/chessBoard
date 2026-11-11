@@ -75,6 +75,7 @@ export function Challenges({ open, count }: { open: boolean; count: (n: number) 
         </div>)}
       </div>;
     })}
+    {member && <a href="?section=messages">{t("Личные сообщения", "Private messages")}</a>}
     {member && <form onSubmit={event => {
       event.preventDefault();
       const form = new FormData(event.currentTarget);

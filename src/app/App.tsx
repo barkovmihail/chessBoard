@@ -1,5 +1,6 @@
 import { useLanguage } from "../shared/language";
 import React, { useState } from "react";
+import { MessagesPage } from "../pages/messages";
 import { ChatPage } from "../pages/chat";
 import { TeamsPage } from "../pages/teams";
 import { ArenasPage } from "../pages/arenas";
@@ -37,6 +38,6 @@ export default function App() {
       <a href="?section=chat" aria-current={section === "chat" ? "page" : undefined}>{t("Чат", "Chat")}</a>
       <CurrentGames open={gamesOpen} setOpen={setGamesOpen} /><Notifications onInbox={() => setGamesOpen(true)} /><ProfileMenu current={section === "profile"} onInbox={() => setGamesOpen(true)} />
     </nav>
-    {watch ? <WatchPage token={watch} /> : section === "chat" ? <ChatPage /> : section === "teams" ? <TeamsPage /> : section === "arenas" ? <ArenasPage /> : section === "analysis" ? <AnalysisPage /> : section === "profile" ? <ProfilePage onInbox={() => setGamesOpen(true)} /> : section === "openings" ? <OpeningsPage /> : section === "puzzles" ? <PuzzlesPage /> : <GamePage onOpen={openGame} />}
+    {watch ? <WatchPage token={watch} /> : section === "messages" ? <MessagesPage /> : section === "chat" ? <ChatPage /> : section === "teams" ? <TeamsPage /> : section === "arenas" ? <ArenasPage /> : section === "analysis" ? <AnalysisPage /> : section === "profile" ? <ProfilePage onInbox={() => setGamesOpen(true)} /> : section === "openings" ? <OpeningsPage /> : section === "puzzles" ? <PuzzlesPage /> : <GamePage onOpen={openGame} />}
   </>;
 }
