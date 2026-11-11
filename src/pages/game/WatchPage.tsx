@@ -49,12 +49,12 @@ export function WatchPage({ token }: { token: string }) {
     void refresh();
     return () => { abort.abort(); clearTimeout(timer); };
   }, [token]);
-  const message = error === "unavailable" ? t("Просмотр этой партии недоступен.", "Spectator access is unavailable.") :
-    error === "offline" ? t("Восстанавливаем связь…", "Reconnecting…") : "";
-  if (!view) return <main><h1>{t("Просмотр партии", "Watch game")}</h1><p role="status">{message || t("Загружаем позицию…", "Loading position…")}</p></main>;
+  const message = error === "unavailable" ? t("Просмотр этой партии недоступен.", "Spectator access is unavailable.", "Esta partida no está disponible para espectadores.") :
+    error === "offline" ? t("Восстанавливаем связь…", "Reconnecting…", "Reconectando…") : "";
+  if (!view) return <main><h1>{t("Просмотр партии", "Watch game", "Ver partida")}</h1><p role="status">{message || t("Загружаем позицию…", "Loading position…", "Cargando la posición…")}</p></main>;
   const history = view.board.history({ verbose: true });
-  return <BoardLayout context={<h1>{t("Просмотр партии", "Watch game")}</h1>} board={<Board position={boardPosition(view.board)} lastMove={history[history.length - 1]} highlight={view.lastUci} />}
+  return <BoardLayout context={<h1>{t("Просмотр партии", "Watch game", "Ver partida")}</h1>} board={<Board position={boardPosition(view.board)} lastMove={history[history.length - 1]} highlight={view.lastUci} />}
     status={<p role="status">{message || (view.result ? view.result + " · " + resultReason(view.reason ?? "", language) :
-      view.waiting ? t("Ожидание соперника", "Waiting for opponent") : view.board.turn() === "w" ? t("Ход белых", "White to move") : t("Ход чёрных", "Black to move"))}</p>}
-    actions={<p aria-label={t("Запись ходов", "Move list")}>{view.notation.map((m, i) => (i % 2 === 0 ? (i / 2 + 1) + ". " : "") + m).join(" ")}</p>} />;
+      view.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") : view.board.turn() === "w" ? t("Ход белых", "White to move", "Juegan blancas") : t("Ход чёрных", "Black to move", "Juegan negras"))}</p>}
+    actions={<p aria-label={t("Запись ходов", "Move list", "Lista de jugadas")}>{view.notation.map((m, i) => (i % 2 === 0 ? (i / 2 + 1) + ". " : "") + m).join(" ")}</p>} />;
 }

@@ -83,7 +83,7 @@ export function TimeSetup({ create, busy, board }: {
       <label>{t("Движок", "Engine", "Motor")} <select aria-label={t("Движок", "Engine", "Motor")} value={engine} onChange={e => setEngine(e.target.value === "stockfish" ? "stockfish" : "lc0")}>
         <option value="lc0">Leela Chess Zero</option><option value="stockfish">Stockfish</option></select></label>
       <label>{t("Уровень", "Level", "Nivel")} <select aria-label={t("Уровень", "Level", "Nivel")} value={level} onChange={e => { if (isEngineLevel(e.target.value)) setLevel(e.target.value); }}>
-        {Object.entries(levelLabels).map(([value, [ru, en]]) => <option key={value} value={value}>{t(ru, en)}</option>)}</select></label>
+        {Object.entries(levelLabels).map(([value, [ru, en, es]]) => <option key={value} value={value}>{t(ru, en, es)}</option>)}</select></label>
       <Button size="3" highContrast variant="solid" disabled={!valid} onClick={() => create(false, control, level, engine, visible)}>{t("Играть с компьютером", "Play against the computer", "Jugar contra el ordenador")}</Button>
     </fieldset>}
     </section>

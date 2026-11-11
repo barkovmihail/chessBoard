@@ -136,10 +136,10 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
   const context = game ? <>
     <p>{game.rated ? t("Рейтинговая игра", "Rated game", "Partida puntuada") : t("Нерейтинговая игра", "Casual game", "Partida amistosa")}</p>
     <button disabled={busy || !!pending} onClick={setVisibility}>{game.watch_key ? t("Закрыть просмотр", "Disable spectator access", "Desactivar el acceso de espectadores") : t("Открыть просмотр по ссылке", "Allow spectators with the link", "Permitir espectadores con el enlace")}</button>
-    {game.arena_id && <a href={"?section=arenas&arena=" + game.arena_id}>{t("Вернуться на арену", "Return to arena")}</a>}
+    {game.arena_id && <a href={"?section=arenas&arena=" + game.arena_id}>{t("Вернуться на арену", "Return to arena", "Volver a la arena")}</a>}
     {game.watch_key && <a href={"?watch=" + game.watch_key}>{t("Ссылка для зрителей", "Spectator link", "Enlace para espectadores")}</a>}
-    {game.chess960 != null && <p>Chess960 · {t("Расстановка №", "Position #")}{game.chess960}. {t("Для рокировки переместите короля на свою ладью.", "To castle, move your king onto your rook.")}</p>}
-    {game.engine_level && <p>{t("Чёрные", "Black", "Negras")} · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {t(levelLabels[game.engine_level][0], levelLabels[game.engine_level][1])}</p>}
+    {game.chess960 != null && <p>Chess960 · {t("Расстановка №", "Position #", "Posición n.º ")}{game.chess960}. {t("Для рокировки переместите короля на свою ладью.", "To castle, move your king onto your rook.", "Para enrocar, mueve el rey a la casilla de tu torre.")}</p>}
+    {game.engine_level && <p>{t("Чёрные", "Black", "Negras")} · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {t(levelLabels[game.engine_level][0], levelLabels[game.engine_level][1], levelLabels[game.engine_level][2])}</p>}
     {game.waiting && <label>{t("Ссылка для соперника", "Opponent link", "Enlace para el rival")} <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}
   </> : invite ? <><p>{inviteFailed ? t("Не удалось загрузить контроль времени", "Could not load the time control", "No se pudo cargar el ritmo de juego") : inviteControl === "unlimited" ? t("Без часов", "Unlimited", "Sin reloj") : inviteControl}</p><button disabled={busy || (!inviteControl && !inviteFailed)} onClick={() => create(true)}>{t("Играть за чёрных", "Play as Black", "Jugar con negras")}</button></>
@@ -147,22 +147,22 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
   const status = game && <span aria-live="polite">{game.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") :
     game.result ?? (game.turn === "white" ? t("Ход белых", "White to move", "Juegan blancas") : t("Ход чёрных", "Black to move", "Juegan negras"))}</span>;
   const actions = game && <>
-      {game.previous_game && <a href={"?game=" + game.previous_game}>{t("Предыдущая партия", "Previous game")}</a>}
-      {game.next_game ? <a href={"?game=" + game.next_game}>{t("Открыть реванш", "Open rematch")}</a> :
-        game.result && !game.engine_level && game.side !== "both" && (game.rematch_offer === game.side ? <p>{t("Реванш предложен", "Rematch offered")}</p> :
+      {game.previous_game && <a href={"?game=" + game.previous_game}>{t("Предыдущая партия", "Previous game", "Partida anterior")}</a>}
+      {game.next_game ? <a href={"?game=" + game.next_game}>{t("Открыть реванш", "Open rematch", "Abrir la revancha")}</a> :
+        game.result && !game.engine_level && game.side !== "both" && (game.rematch_offer === game.side ? <p>{t("Реванш предложен", "Rematch offered", "Revancha propuesta")}</p> :
           <button disabled={busy || !!pending} onClick={() => act("rematch")}>
-            {game.rematch_offer ? t("Принять реванш", "Accept rematch") : t("Предложить реванш", "Offer rematch")}
+            {game.rematch_offer ? t("Принять реванш", "Accept rematch", "Aceptar la revancha") : t("Предложить реванш", "Offer rematch", "Proponer una revancha")}
           </button>)}
       {game.reason && <p>{resultReason(game.reason, language)}</p>}
       {!game.result && (game.side === "both" || game.side === game.turn) && Object.entries(game.claims ?? {}).map(([key, reason]) =>
         <button key={key} disabled={busy || !!pending} onClick={() => act(key === "claim" ? "claim" : `claim:${key.slice(6)}`)}>
-          {t("Заявить ничью", "Claim a draw")} · {resultReason(reason, language)}{key.includes(":") && " · " + key.slice(6, 8) + "–" + key.slice(8)}
+          {t("Заявить ничью", "Claim a draw", "Reclamar tablas")} · {resultReason(reason, language)}{key.includes(":") && " · " + key.slice(6, 8) + "–" + key.slice(8)}
         </button>)}
       {game.side !== "both" && !game.result && !game.waiting && <fieldset disabled={busy || !!pending}>
         {!game.engine_level && (game.draw_offer === null ? <button onClick={() => act("offer")}>{t("Предложить ничью", "Offer draw", "Ofrecer tablas")}</button>
-          : game.draw_offer === game.side ? <span>{t("Ничья предложена", "Draw offered")}</span>
-          : <><button onClick={() => act("accept")}>{t("Принять ничью", "Accept draw")}</button>
-            <button onClick={() => act("decline")}>{t("Отклонить ничью", "Decline draw")}</button></>)}
+          : game.draw_offer === game.side ? <span>{t("Ничья предложена", "Draw offered", "Tablas ofrecidas")}</span>
+          : <><button onClick={() => act("accept")}>{t("Принять ничью", "Accept draw", "Aceptar tablas")}</button>
+            <button onClick={() => act("decline")}>{t("Отклонить ничью", "Decline draw", "Rechazar tablas")}</button></>)}
         <button className="resign-action" onClick={() => act("resign")}>{t("Сдаться", "Resign", "Abandonar")}</button>
       </fieldset>}
       {!game.result && game.moves.length > 0 && <ol aria-label={t("Запись ходов", "Move list", "Lista de jugadas")} className={styles.history}>

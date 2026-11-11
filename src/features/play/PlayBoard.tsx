@@ -29,7 +29,7 @@ export function PlayBoard({ game, enabled, onMove }: Props) {
     if (candidates.length === 1) onMove(candidates[0]);
     select(undefined);
   }
-  const names: Record<string, string> = { q: t("Ферзь", "Queen"), r: t("Ладья", "Rook"), b: t("Слон", "Bishop"), n: t("Конь", "Knight") };
+  const names: Record<string, string> = { q: t("Ферзь", "Queen", "Dama"), r: t("Ладья", "Rook", "Torre"), b: t("Слон", "Bishop", "Alfil"), n: t("Конь", "Knight", "Caballo") };
   return <>
     <Board flipped={game?.side === "black"} position={game?.position ?? initialPosition} selected={selected} highlight={game?.last_uci ?? undefined}
       movableColor={game?.turn} onMove={enabled ? drop : undefined}
