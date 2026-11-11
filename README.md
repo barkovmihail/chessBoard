@@ -17,7 +17,7 @@ The classic version of the chessboard was chosen. If desired, you can add styles
 
 ## Игра с сохранением
 
-Из корня проекта выполните `python3 -m venv .venv`, затем `.venv/bin/python -m pip install -r backend/requirements.txt`. Соберите клиент через `npm run build` и запустите `.venv/bin/python -m uvicorn backend.api:app`. Откройте http://127.0.0.1:8000. Для разработки интерфейса можно одновременно запустить `npm start`: Vite передаёт запросы API тому же серверу.
+Из корня проекта выполните `python3 -m venv .venv`, затем `.venv/bin/python -m pip install -r backend/requirements.txt`. Соберите клиент через `npm run build` и запустите `npm run backend`. Откройте http://127.0.0.1:8011. Для разработки интерфейса можно одновременно запустить `npm start`: Vite передаёт запросы API тому же серверу.
 
 Нажмите «Начать партию», затем e2 и e4. Эта партия предназначена для двух сторон за одним устройством. Адрес страницы и cookie этого браузера позволяют вернуться к позиции. По умолчанию база хранится в `chessboard.sqlite3`; переменная `CHESSBOARD_DB` задаёт другой путь.
 

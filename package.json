@@ -5,6 +5,7 @@
   "engines": { "node": ">=22.12.0" },
   "scripts": {
     "start": "vite",
+    "backend": ".venv/bin/python -m uvicorn backend.api:app --host 127.0.0.1 --port 8011",
     "build": "npm run typecheck && vite build --outDir build",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs"
