@@ -14,7 +14,9 @@
 .actions { grid-area: actions; }
 .context, .actions { min-width: 0; padding: 14px; border: 1px solid var(--edge); background: var(--panel); border-radius: 6px; }
 .layout fieldset { min-width: 0; margin: 0; }
-.layout input { max-width: 100%; }
+.context h1 { font-size: clamp(1.4rem, 2vw, 2rem); margin: 0 0 12px; }
+.status h2, .status p { margin: 4px 0; }
+.layout select, .layout input { max-width: 100%; }
 .layout button:not([data-square]) { padding: 6px 9px; }
 .layout a { color: var(--link); }
 @media (min-width: 1001px) {

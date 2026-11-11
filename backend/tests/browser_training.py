@@ -14,6 +14,21 @@ class TrainingTest(unittest.TestCase):
             page.goto(os.getenv("CHESSBOARD_TEST_URL", "http://127.0.0.1:8011"))
             page.get_by_role("link", name="Тренажёр дебютов").click()
 
+            def check_layout():
+                for width in (360, 768, 1440):
+                    page.set_viewport_size({"width": width, "height": 900})
+                    cell = page.locator("[data-square]").first.bounding_box()
+                    action = page.get_by_role("button", name="Начать заново").bounding_box()
+                    self.assertAlmostEqual(cell["width"], cell["height"], delta=1)
+                    self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
+                    if width > 680:
+                        self.assertGreater(action["x"], cell["x"] + 7 * cell["width"])
+                    else:
+                        self.assertGreater(action["y"], cell["y"] + 7 * cell["height"])
+                page.set_viewport_size({"width": 390, "height": 844})
+
+            check_layout()
+
             def move(uci):
                 for square in [uci[:2], uci[2:4]]:
                     page.locator(f'[data-square="{square}"]').tap()
@@ -56,6 +71,7 @@ class TrainingTest(unittest.TestCase):
 
             with page.expect_response(lambda res: "/api/puzzles/random" in res.url) as fetched:
                 page.get_by_role("link", name="Шахматные задачи").click()
+            check_layout()
             puzzle = fetched.value.json()
             board = chess.Board(puzzle["fen"])
             for ply, uci in enumerate(puzzle["moves"]):

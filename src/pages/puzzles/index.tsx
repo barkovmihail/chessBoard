@@ -33,10 +33,13 @@ export function PuzzlesPage() {
     load().catch(() => { if (!abort.signal.aborted) setError(true); });
     return () => abort.abort();
   }, [sequence]);
-  return <main className="study-page"><h1>Шахматные задачи</h1>
-    {puzzle && <><p>Задача {puzzle.id} · Рейтинг {puzzle.rating}</p>
-      <Trainer key={sequence} fen={puzzle.fen} steps={puzzle.steps} side={puzzle.side} puzzle /></>}
-    {!puzzle && <p role="status">{error ? "Не удалось загрузить задачу из каталога." : "Загружаем позицию…"}</p>}
-    <button onClick={() => next(sequence + 1)} disabled={!error && !puzzle}>{error ? "Повторить загрузку" : "Следующая задача"}</button>
+  const title = <h1>Шахматные задачи</h1>;
+  const button = <button onClick={() => next(sequence + 1)} disabled={!error && !puzzle}>
+    {error ? "Повторить загрузку" : "Следующая задача"}
+  </button>;
+  if (!puzzle) return <main className="study-page">{title}
+    <p role="status">{error ? "Не удалось загрузить задачу из каталога." : "Загружаем позицию…"}</p>{button}
   </main>;
+  return <Trainer key={sequence} fen={puzzle.fen} steps={puzzle.steps} side={puzzle.side} puzzle
+    context={<>{title}<p>Задача {puzzle.id} · Рейтинг {puzzle.rating}</p></>} next={button} />;
 }

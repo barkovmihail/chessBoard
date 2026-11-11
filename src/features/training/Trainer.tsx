@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { BoardLayout } from "../../shared/board-layout";
 import { Chess } from "chess.js";
 import { Board, boardPosition, Square } from "../../entities/board";
 
@@ -7,9 +8,11 @@ interface Props {
   steps: readonly [string, string][];
   side: "w" | "b";
   puzzle?: boolean;
+  context: React.ReactNode;
+  next?: React.ReactNode;
 }
 
-export function Trainer({ fen, steps, side, puzzle }: Props) {
+export function Trainer({ fen, steps, side, puzzle, context, next }: Props) {
   const [ply, advance] = useState(0);
   const [selected, select] = useState<Square>();
   const [hint, showHint] = useState(false);
@@ -59,15 +62,15 @@ export function Trainer({ fen, steps, side, puzzle }: Props) {
     if (state.get(square)?.color === side) { select(selected === square ? undefined : square); return; }
     if (selected) attempt(square);
   }
-  return <div className="training-layout">
-    <Board position={boardPosition(state)} flipped={side === "b"} lastMove={lastMove} selected={selected}
+  return <BoardLayout context={context} board={<Board position={boardPosition(state)} flipped={side === "b"} lastMove={lastMove} selected={selected}
       targets={hint && target && !complete ? [target.from, target.to] : []}
       movableColor={side === "w" ? "white" : "black"}
       onMove={automatic || complete ? undefined : (from, to) => attempt(to, undefined, from)}
-      onSquare={automatic || complete ? undefined : click} />
-    <section className="training-notes">
+      onSquare={automatic || complete ? undefined : click} />}
+    status={<>
       <h2>{complete ? (puzzle ? "Задача решена" : "Линия пройдена") : automatic ? "Ответ соперника" : "Ваш ход"}</h2>
       <p>{side === "w" ? "Вы играете белыми" : "Вы играете чёрными"}</p>
+    </>} actions={<>
       <p aria-live="polite">{feedback}</p>
       {!puzzle && lastMove && lastMove.color !== side && <p>Ответ {lastMove.san}. {steps[ply - 1][1]}</p>}
       {!complete && !automatic && <button onClick={() => showHint(true)}>Показать ход</button>}
@@ -76,6 +79,6 @@ export function Trainer({ fen, steps, side, puzzle }: Props) {
         <button key={p} onClick={() => attempt(promotion, p)}>{["Ферзь","Ладья","Слон","Конь"][i]}</button>)}</div>}
       {history.length > 0 && <p aria-label="Сыгранные ходы">{state.pgn({ newline: " " }).replace(/\[[^\]]*\]/g, "").replace(/\s*\*$/, "").trim()}</p>}
       <button onClick={() => { advance(0); select(undefined); showHint(false); say(""); promote(undefined); setOtherMate(""); }}>Начать заново</button>
-    </section>
-  </div>;
+      {next}
+    </>} />;
 }

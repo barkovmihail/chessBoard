@@ -3,7 +3,7 @@ import { Game, gameCue, PlayBoard, reasons, RequestError, requestGame, subscribe
 import { playSound } from "../../shared/sound";
 import { ClockPanel, TimeSetup } from "./TimeControl";
 import { GameReview } from "./GameReview";
-import { BoardLayout } from "../../widgets/board-layout";
+import { BoardLayout } from "../../shared/board-layout";
 import styles from "./game.module.css";
 
 type Action = "rematch" | "offer" | "accept" | "decline" | "resign" | "claim" | `claim:${string}`;
@@ -14,7 +14,7 @@ function commandId() {
   return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-export function GamePage() {
+export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
   const [game, setGame] = useState<Game>();
   const confirmed = useRef<Game>();
   function receive(next: Game, quiet = false) {
@@ -75,7 +75,7 @@ export function GamePage() {
       const result = invite ? await requestGame("/" + encodeURIComponent(invite) + "/join", {})
         : await requestGame("", { online, control });
       setInvite(undefined);
-      history.replaceState(null, "", "?game=" + result.id);
+      onOpen(result.id);
       receive(result, true);
       if (!result.waiting && !result.result && !result.moves.length) playSound("start");
     } catch (failure) { setError(failure instanceof RequestError && failure.message === "seat_taken"
