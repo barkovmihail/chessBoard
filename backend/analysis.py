@@ -17,10 +17,11 @@ async def evaluate(board, engine_name):
         info = await engine.analyse(board, chess.engine.Limit(time=1))
         score = info["score"].white()
         line = []
+        best_uci = info["pv"][0].uci() if info["pv"] else None
         for move in info["pv"][:8]:
             line.append(board.san(move))
             board.push(move)
-        return {"cp": score.score(), "mate": score.mate(), "line": line}
+        return {"cp": score.score(), "mate": score.mate(), "line": line, "best_uci": best_uci}
     finally:
         transport.close()
 

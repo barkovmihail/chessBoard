@@ -7,6 +7,7 @@ import pieces from "./pieces.module.css";
 
 interface BoardProps {
   position: readonly BoardPiece[];
+  arrows?: readonly { uci: string; mistake: boolean }[];
   selected?: Square;
   flipped?: boolean;
   lastMove?: { from: Square; to: Square };
@@ -17,7 +18,7 @@ interface BoardProps {
   onSquare?: (square: Square) => void;
 }
 
-export function Board({ position, selected, targets, onSquare, flipped, lastMove, highlight, onMove, movableColor }: BoardProps) {
+export function Board({ position, arrows, selected, targets, onSquare, flipped, lastMove, highlight, onMove, movableColor }: BoardProps) {
   const pointer = usePieceDrag(onMove);
   const squares = highlight ?? (lastMove && lastMove.from + lastMove.to);
   const occupied = new Map(position.map(piece => [piece.square, piece]));
@@ -54,6 +55,20 @@ export function Board({ position, selected, targets, onSquare, flipped, lastMove
           );
         }))}
       </div>
+      {arrows?.length ? <svg className={styles.arrows} viewBox="0 0 8 8" aria-hidden="true">
+        {arrows.map(({ uci, mistake }) => {
+          const x = (file: string) => visibleFiles.indexOf(file as typeof files[number]) + 0.5;
+          const y = (rank: string) => visibleRanks.indexOf(Number(rank) as typeof ranks[number]) + 0.5;
+          const dx = x(uci[2]) - x(uci[0]), dy = y(uci[3]) - y(uci[1]);
+          const length = Math.hypot(dx, dy);
+          return <g key={uci} data-arrow={mistake ? "mistake" : "recommended"} data-uci={uci}
+            transform={`translate(${x(uci[0])} ${y(uci[1])}) rotate(${Math.atan2(dy, dx) * 180 / Math.PI})`}
+            color={mistake ? "#ad2936" : "#137443"}>
+            <line x1=".16" x2={length - .24} stroke="currentColor" strokeWidth=".105" strokeDasharray={mistake ? ".18 .09" : undefined} />
+            <path d={`M ${length} 0 l -.32 -.19 v .38 Z`} fill="currentColor" stroke="white" strokeWidth=".025" />
+          </g>;
+        })}
+      </svg> : null}
       <div className={styles.ranks}>{visibleRanks.map(rank => <span key={rank}>{rank}</span>)}</div>
       <div className={styles.files}>{visibleFiles.map(file => <span key={file}>{file.toUpperCase()}</span>)}</div>
     </div>

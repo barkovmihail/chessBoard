@@ -2,20 +2,19 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../../shared/language";
 import type { Game } from "../../features/play";
 
-interface PositionScore { value: number; label: string; best?: string }
+export interface PositionScore { value: number; label: string; best?: string; bestUci?: string }
 
-function positionScore(data: { cp?: number; mate?: number; outcome?: string; line?: string[] }): PositionScore {
+function positionScore(data: { cp?: number; mate?: number; outcome?: string; line?: string[]; best_uci?: string }): PositionScore {
   if (data.outcome === "1-0") return { value: 100000, label: "1–0" };
   if (data.outcome === "0-1") return { value: -100000, label: "0–1" };
   if (data.outcome === "1/2-1/2") return { value: 0, label: "½–½" };
-  if (typeof data.mate === "number") return { value: Math.sign(data.mate) * (100000 - Math.abs(data.mate)), label: "#" + data.mate, best: data.line?.[0] };
+  if (typeof data.mate === "number") return { value: Math.sign(data.mate) * (100000 - Math.abs(data.mate)), label: "#" + data.mate, best: data.line?.[0], bestUci: data.best_uci };
   if (typeof data.cp !== "number" || !Number.isFinite(data.cp)) throw Error();
-  return { value: data.cp, label: (data.cp > 0 ? "+" : "") + (data.cp / 100).toFixed(2), best: data.line?.[0] };
+  return { value: data.cp, label: (data.cp > 0 ? "+" : "") + (data.cp / 100).toFixed(2), best: data.line?.[0], bestUci: data.best_uci };
 }
 
-export function GameReport({ game, ply, select }: { game: Game; ply: number; select: (ply: number) => void }) {
+export function GameReport({ game, ply, select, scores, setScores }: { game: Game; ply: number; select: (ply: number) => void; scores: PositionScore[]; setScores: React.Dispatch<React.SetStateAction<PositionScore[]>> }) {
   const { t } = useLanguage();
-  const [scores, setScores] = useState<PositionScore[]>([]);
   const [state, setState] = useState<"idle" | "running" | "error">("idle");
   const request = useRef<AbortController>();
   useEffect(() => () => request.current?.abort(), []);

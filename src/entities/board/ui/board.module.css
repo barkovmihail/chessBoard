@@ -45,3 +45,5 @@
 .cells button[data-movable=true] { touch-action: none; cursor: grab; user-select: none; }
 .cells button[data-movable=true]:active { cursor: grabbing; }
 .dragging { position: relative; z-index: 3; pointer-events: none; }
+
+.arrows { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
