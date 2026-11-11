@@ -5,7 +5,7 @@ import chess
 import chess.engine
 
 from .computer import engine_command
-from .domain import GameError
+from .domain import GameError, start_board
 
 
 async def evaluate(board, engine_name):
@@ -30,7 +30,7 @@ async def analyse(game, ply, name, request, slots):
         raise GameError("unfinished_game", 409)
     if ply > len(game["moves"]):
         raise GameError("invalid_ply", 422)
-    board = chess.Board()
+    board = start_board(game.get("chess960"))
     for san in game["moves"][:ply]:
         board.push_san(san)
 

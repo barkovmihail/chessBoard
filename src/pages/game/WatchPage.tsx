@@ -5,7 +5,7 @@ import { reasons } from "../../features/play";
 import { BoardLayout } from "../../shared/board-layout";
 
 interface View {
-  board: Chess; result: string | null; reason: string | null; waiting: boolean;
+  board: Chess; notation: string[]; result: string | null; reason: string | null; waiting: boolean;
 }
 
 export function WatchPage({ token }: { token: string }) {
@@ -29,10 +29,12 @@ export function WatchPage({ token }: { token: string }) {
           if (!Number.isSafeInteger(data.version) || !Array.isArray(data.moves) || typeof data.waiting !== "boolean" ||
               !(data.result === null || ["1-0", "0-1", "1/2-1/2"].includes(data.result)) ||
               !(data.reason === null || typeof data.reason === "string")) throw Error();
-          const board = new Chess();
-          for (const uci of data.moves) board.move(uci);
+          const board = new Chess(data.fen);
+          if (!data.fen) for (const uci of data.moves) board.move(uci);
+          const notation = data.fen ? data.notation : board.history();
+          if (!Array.isArray(notation) || !notation.every(m => typeof m === "string")) throw Error();
           if (abort.signal.aborted) return;
-          setView({ board, result: data.result, reason: data.reason, waiting: data.waiting });
+          setView({ board, notation, result: data.result, reason: data.reason, waiting: data.waiting });
           version = data.waiting ? undefined : data.version;
         }
         setError("");
@@ -50,5 +52,5 @@ export function WatchPage({ token }: { token: string }) {
   return <BoardLayout context={<h1>Просмотр партии</h1>} board={<Board position={boardPosition(view.board)} lastMove={history[history.length - 1]} />}
     status={<p role="status">{error || (view.result ? view.result + " · " + (reasons[view.reason ?? ""] ?? "") :
       view.waiting ? "Ожидание соперника" : view.board.turn() === "w" ? "Ход белых" : "Ход чёрных")}</p>}
-    actions={<p aria-label="Запись ходов">{history.map((m, i) => (i % 2 === 0 ? (i / 2 + 1) + ". " : "") + m.san).join(" ")}</p>} />;
+    actions={<p aria-label="Запись ходов">{view.notation.map((m, i) => (i % 2 === 0 ? (i / 2 + 1) + ". " : "") + m).join(" ")}</p>} />;
 }

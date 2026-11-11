@@ -1,4 +1,5 @@
 import chess
+import chess.pgn
 
 
 class GameError(Exception):
@@ -7,8 +8,28 @@ class GameError(Exception):
         self.status = status
 
 
-def replay(history):
-    board = chess.Board()
+def start_board(index):
+    return chess.Board() if index is None else chess.Board.from_chess960_pos(index)
+
+
+def display_fen(board):
+    return f"{board.board_fen()} {'w' if board.turn else 'b'} - - 0 1"
+
+
+def review960(index, history, result):
+    board = start_board(index)
+    fens = [display_fen(board)]
+    for uci in history:
+        board.push_uci(uci)
+        fens.append(display_fen(board))
+    record = chess.pgn.Game.from_board(board)
+    record.headers["Variant"] = "Chess960"
+    record.headers["Result"] = result
+    return {"fens": fens, "pgn": str(record)}
+
+
+def replay(history, index=None):
+    board = start_board(index)
     notation = []
     for uci in history:
         move = chess.Move.from_uci(uci)
@@ -39,8 +60,8 @@ def claim_options(board):
     return options
 
 
-def snapshot(game_id, history):
-    board, notation = replay(history)
+def snapshot(game_id, history, index=None):
+    board, notation = replay(history, index)
     outcome = board.outcome()
     return {
         "id": game_id, "version": len(history), "moves": notation,

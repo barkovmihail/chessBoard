@@ -97,6 +97,7 @@ class Visibility(BaseModel):
 
 
 class CreateGame(BaseModel):
+    chess960: int | None = Field(None, ge=0, le=959, strict=True)
     public: bool = False
     engine_name: Literal["lc0", "stockfish"] = "lc0"
     engine_level: Literal["easy", "normal"] | None = None
@@ -386,11 +387,13 @@ def create_app(path: Path):
         control = options.control if options else None
         level = options.engine_level if options else None
         name = options.engine_name if options else "lc0"
+        if level and options.chess960 is not None:
+            raise GameError("variant_unavailable", 422)
         if level and not executable(name):
             raise GameError("engine_unavailable", 503)
         return app.state.games.create(player_session(request, response), bool(options and options.online),
                                       (control.minutes, control.increment) if control else None, engine_level=level, engine_name=name,
-                                      public=bool(options and options.public))
+                                      public=bool(options and options.public), chess960=options.chess960 if options else None)
 
     @app.post("/api/games/{game_id}/visibility")
     def visibility(game_id: str, change: Visibility, request: Request):

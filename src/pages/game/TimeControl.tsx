@@ -10,8 +10,9 @@ const presets: [string, number, number][] = [
 ];
 
 export function TimeSetup({ create, busy }: {
-  create: (online: boolean, control: { minutes: number; increment: number }, level?: Game["engine_level"], engine?: Game["engine_name"], visible?: boolean) => void; busy: boolean;
+  create: (online: boolean, control: { minutes: number; increment: number }, level?: Game["engine_level"], engine?: Game["engine_name"], visible?: boolean, chess960?: number) => void; busy: boolean;
 }) {
+  const [index, setIndex] = useState(() => String(Math.floor(Math.random() * 960)));
   const [visible, setVisible] = useState(false);
   const [engine, setEngine] = useState<"lc0" | "stockfish">("lc0");
   const [level, setLevel] = useState<"easy" | "normal">("easy");
@@ -38,6 +39,12 @@ export function TimeSetup({ create, busy }: {
     {!searching && <label><input type="checkbox" checked={visible} onChange={e => setVisible(e.target.checked)} /> Разрешить просмотр по ссылке</label>}
     <button disabled={!valid || searching} onClick={() => create(false, control, undefined, undefined, visible)}>Начать партию</button>
     <button disabled={!valid || searching} onClick={() => create(true, control, undefined, undefined, visible)}>Пригласить друга</button>
+    {!searching && <details><summary>Chess960</summary>
+      <label>Номер расстановки <input type="number" min="0" max="959" value={index} onChange={e => setIndex(e.target.value)} /></label>
+      <button onClick={() => setIndex(String(Math.floor(Math.random() * 960)))}>Случайная расстановка</button>
+      <button disabled={!valid || !/^\d{1,3}$/.test(index) || Number(index) > 959}
+        onClick={() => create(false, control, undefined, undefined, visible, Number(index))}>Начать Chess960 на одном устройстве</button>
+    </details>}
     {!searching && <fieldset><legend>Компьютер</legend>
       <label>Движок <select value={engine} onChange={e => setEngine(e.target.value === "stockfish" ? "stockfish" : "lc0")}>
         <option value="lc0">Leela Chess Zero</option><option value="stockfish">Stockfish</option></select></label>

@@ -7,7 +7,7 @@ from .computer import NAMES, SEATS
 from .db import accounts, games, moves, receipts
 from .notifications import notify_finish, notify_turn
 from .ratings import POOLS, rating, record_result
-from .domain import GameError, replay, snapshot
+from .domain import GameError, display_fen, replay, review960, snapshot
 
 
 def opponent_name():
@@ -20,15 +20,15 @@ class Games:
         self.engine = engine
         self.now_ms = now_ms or (lambda: time_ns() // 1_000_000)
 
-    def create(self, owner, online=False, control=None, engine_level=None, engine_name="lc0", public=False):
+    def create(self, owner, online=False, control=None, engine_level=None, engine_name="lc0", public=False, chess960=None):
         with self.engine.begin() as db:
             game_id = self.insert_game(db, owner, online or bool(engine_level), control,
-                                       guest=SEATS[engine_name] if engine_level else None, engine_level=engine_level)
+                                       guest=SEATS[engine_name] if engine_level else None, engine_level=engine_level, chess960=chess960)
             if public:
                 db.execute(update(games).where(games.c.id == game_id).values(watch_key=uuid4().hex))
         return self.get(game_id, owner)
 
-    def insert_game(self, db, owner, online, control, guest=None, previous_game=None, rated=False, engine_level=None):
+    def insert_game(self, db, owner, online, control, guest=None, previous_game=None, rated=False, engine_level=None, chess960=None):
         game_id = uuid4().hex
         clock = {}
         if control:
@@ -37,7 +37,7 @@ class Games:
             clock = dict(base_minutes=minutes, increment_seconds=increment, white_ms=base_ms,
                          black_ms=base_ms, deadline_ms=None if online and not guest else self.now_ms() + base_ms)
         db.execute(insert(games).values(id=game_id, owner=owner, version=0, online=online, guest=guest,
-                                        engine_level=engine_level, previous_game=previous_game, rated=rated, **clock))
+                                        engine_level=engine_level, chess960=chess960, previous_game=previous_game, rated=rated, **clock))
         if online and guest:
             notify_turn(db, owner, game_id, 0, self.now_ms())
         return game_id
@@ -105,7 +105,8 @@ class Games:
         return self.get(game_id, player)
 
     def _view(self, game, history, player):
-        view = snapshot(game["id"], history)
+        view = snapshot(game["id"], history, game["chess960"])
+        view["chess960"] = game["chess960"]
         view["side"] = ("white" if game["owner"] == player else "black") if game["online"] else "both"
         view["waiting"] = bool(game["online"] and not game["guest"])
         view["engine_name"] = game["guest"].split(":")[1] if game["engine_level"] else None
@@ -116,6 +117,8 @@ class Games:
         for key in ("previous_game", "next_game", "rematch_offer"):
             view[key] = game[key]
         if game["result"]:
+            if game["chess960"] is not None:
+                view["review960"] = review960(game["chess960"], history, game["result"])
             view.update(result=game["result"], reason=game["reason"], legal=[], claims={})
         if game["base_minutes"]:
             view["clock"] = {key: game[key] for key in (
@@ -152,17 +155,21 @@ class Games:
         with self.engine.connect() as db:
             db.exec_driver_sql("BEGIN")
             game = db.execute(select(games.c.id, games.c.version, games.c.result, games.c.reason,
-                                     games.c.online, games.c.guest).where(games.c.watch_key == key)).one_or_none()
+                                     games.c.online, games.c.guest, games.c.chess960).where(games.c.watch_key == key)).one_or_none()
             if not game:
                 raise GameError("game_unavailable", 404)
             if version == game.version:
                 return None
             history = db.scalars(select(moves.c.uci).where(moves.c.game_id == game.id).order_by(moves.c.ply)).all()
-            return {"moves": history, "version": game.version, "result": game.result, "reason": game.reason,
+            extra = {}
+            if game.chess960 is not None:
+                board, notation = replay(history, game.chess960)
+                extra = {"fen": display_fen(board), "notation": notation}
+            return {**extra, "moves": history, "version": game.version, "result": game.result, "reason": game.reason,
                     "waiting": bool(game.online and not game.guest)}
 
     def _flag(self, db, game, history):
-        board, _ = replay(history)
+        board, _ = replay(history, game["chess960"])
         winner = not board.turn
         result = ("1-0" if winner else "0-1") if not board.has_insufficient_material(winner) else "1/2-1/2"
         changes = {"result": result, "reason": "timeout", "finished_ms": self.now_ms(), "deadline_ms": None, "draw_offer": None,
@@ -231,7 +238,7 @@ class Games:
                     raise GameError("rematch_unavailable", 409)
                 if game["rematch_offer"]:
                     control = (game["base_minutes"], game["increment_seconds"]) if game["base_minutes"] else None
-                    changes["next_game"] = self.insert_game(db, game["guest"], True, control, game["owner"], game_id, rated=game["rated"])
+                    changes["next_game"] = self.insert_game(db, game["guest"], True, control, game["owner"], game_id, rated=game["rated"], chess960=game["chess960"])
                     changes["rematch_offer"] = None
                 else:
                     changes["rematch_offer"] = side
@@ -254,7 +261,7 @@ class Games:
                 history.append(command)
                 db.execute(insert(moves).values(game_id=game_id, ply=len(history), uci=command,
                                                 command_id=command_id))
-                outcome = replay(history)[0].outcome()
+                outcome = replay(history, game["chess960"])[0].outcome()
                 if outcome:
                     changes.update(result=outcome.result(), reason=outcome.termination.name.lower())
                 if view["draw_offer"] != side:

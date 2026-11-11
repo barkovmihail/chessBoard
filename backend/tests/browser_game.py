@@ -560,6 +560,17 @@ class BrowserGameTest(TestCase):
                     expect(black.get_by_role("button", name="Включить сообщения")).to_be_visible()
                     black.reload()
                     expect(black.get_by_role("button", name="Включить сообщения")).to_be_visible()
+                    white.goto(base)
+                    white.get_by_text("Chess960", exact=True).click()
+                    white.get_by_label("Номер расстановки").fill("3")
+                    white.get_by_role("button", name="Начать Chess960 на одном устройстве").click()
+                    expect(white.locator('[data-square="f1"] [role=img]')).to_have_attribute("aria-label", "white king f1")
+                    white.locator('[data-square="f1"]').click()
+                    white.locator('[data-square="g1"]').click()
+                    expect(white.get_by_label("Запись ходов")).to_contain_text("O-O")
+                    white.reload()
+                    expect(white.locator('[data-square="g1"] [role=img]')).to_have_attribute("aria-label", "white king g1")
+                    expect(white.locator('[data-square="f1"] [role=img]')).to_have_attribute("aria-label", "white rook f1")
                     browser.close()
             finally:
                 server.should_exit = True

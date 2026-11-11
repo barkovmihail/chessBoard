@@ -16,6 +16,7 @@ export function PlayBoard({ game, enabled, onMove }: Props) {
   function choose(square: Square) {
     setPromotions([]);
     if (selected === square) return select(undefined);
+    if (selected && choices.some(move => move.slice(2, 4) === square)) return drop(selected, square);
     if (game?.legal.some(move => move.startsWith(square))) return select(square);
     if (selected) drop(selected, square);
   }

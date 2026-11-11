@@ -18,7 +18,7 @@ def continuations(engine, player, prefix):
 
     if not player:
         return []
-    archived = select(games.c.id).where(games.c.result.is_not(None),
+    archived = select(games.c.id).where(games.c.result.is_not(None), games.c.chess960.is_(None),
         (games.c.owner == player) | (games.c.guest == player))
     if prefix:
         matched = (select(moves.c.game_id).where(moves.c.game_id.in_(archived),

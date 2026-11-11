@@ -65,12 +65,12 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     }, setDisconnected);
   }, [onlineId]);
 
-  async function create(online: boolean, control?: { minutes: number; increment: number }, engine_level?: Game["engine_level"], engine_name?: Game["engine_name"], visible = false) {
+  async function create(online: boolean, control?: { minutes: number; increment: number }, engine_level?: Game["engine_level"], engine_name?: Game["engine_name"], visible = false, chess960?: number) {
     setBusy(true);
     setError("");
     try {
       const result = invite ? await requestGame("/" + encodeURIComponent(invite) + "/join", {})
-        : await requestGame("", { online, control, engine_level, engine_name, public: visible });
+        : await requestGame("", { online, control, engine_level, engine_name, public: visible, chess960 });
       setInvite(undefined);
       onOpen(result.id);
       receive(result, true);
@@ -125,6 +125,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     <button disabled={busy || !!pending} onClick={setVisibility}>{game.watch_key ? "Закрыть просмотр" : "Открыть просмотр по ссылке"}</button>
     {game.arena_id && <a href={"?section=arenas&arena=" + game.arena_id}>Вернуться на арену</a>}
     {game.watch_key && <a href={"?watch=" + game.watch_key}>Ссылка для зрителей</a>}
+    {game.chess960 != null && <p>Chess960 · Расстановка №{game.chess960}. Для рокировки переместите короля на свою ладью.</p>}
     {game.engine_level && <p>Чёрные · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {game.engine_level === "easy" ? "Начальный" : "Обычный"}</p>}
     {game.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
       onFocus={event => event.target.select()} /></label>}

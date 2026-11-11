@@ -70,6 +70,7 @@ sessions = Table("account_sessions", metadata,
     Column("expires", Integer, nullable=False),
 )
 games = Table("games", metadata,
+    Column("chess960", Integer),
     Column("arena_id", ForeignKey("arenas.id"), index=True),
     Column("watch_key", String, unique=True, index=True),
     Column("engine_level", String),

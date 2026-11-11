@@ -9,12 +9,14 @@ export function GameReview({ game, render }: {
 }) {
   const [ply, setPly] = useState(game.moves.length);
   const { position, lastMove } = useMemo(() => {
+    if (game.review960) return { position: boardPosition(new Chess(game.review960.fens[ply])), lastMove: undefined };
     const board = new Chess();
     let lastMove;
     for (const san of game.moves.slice(0, ply)) lastMove = board.move(san);
     return { position: boardPosition(board), lastMove };
-  }, [game.moves, ply]);
+  }, [game.moves, game.review960, ply]);
   const pgn = useMemo(() => {
+    if (game.review960) return game.review960.pgn;
     const board = new Chess();
     game.moves.forEach(move => board.move(move));
     board.setHeader("Result", game.result ?? "*");
@@ -32,6 +34,6 @@ export function GameReview({ game, render }: {
     <EngineAnalysis id={game.id} ply={ply} initial={game.engine_name ?? "lc0"} />
     <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}
       download={game.id + ".pgn"}>Скачать PGN</a>
-    <a href={"?section=analysis&game=" + game.id + "&ply=" + ply}>Разобрать позицию</a>
+    {game.chess960 == null && <a href={"?section=analysis&game=" + game.id + "&ply=" + ply}>Разобрать позицию</a>}
   </>);
 }

@@ -3,6 +3,8 @@ import type { BoardPiece } from "../../entities/board";
 export interface Game {
   id: string;
   arena_id?: string | null;
+  chess960?: number | null;
+  review960?: { fens: string[]; pgn: string };
   watch_key?: string | null;
   engine_name?: "lc0" | "stockfish" | null;
   engine_level?: "easy" | "normal" | null;
@@ -50,6 +52,10 @@ function parseGame(data: any): Game {
   if (data.claims !== undefined && (!data.claims || typeof data.claims !== "object" || Array.isArray(data.claims) ||
       !Object.entries(data.claims).every(([key, value]) => /^claim(:[a-h][1-8][a-h][1-8][qrbn]?)?$/.test(key) &&
         (value === "threefold_repetition" || value === "fifty_moves")))) throw new Error("invalid_claims");
+  if (data.chess960 != null && (!Number.isInteger(data.chess960) || data.chess960 < 0 || data.chess960 > 959 ||
+      (data.result && (!Array.isArray(data.review960?.fens) || data.review960.fens.length !== data.moves.length + 1 ||
+        !data.review960.fens.every((fen: unknown) => typeof fen === "string") || typeof data.review960.pgn !== "string"))))
+    throw Error("invalid_chess960");
   if (data.clock) {
     const c = data.clock;
     if (![c.base_minutes, c.increment_seconds, c.white_ms, c.black_ms, c.server_ms].every(Number.isSafeInteger)

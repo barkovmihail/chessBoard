@@ -26,7 +26,7 @@ export function AnalysisPage() {
     let active = true;
     requestGame("/" + encodeURIComponent(id)).then(game => {
       if (!active) return;
-      if (!game.result) throw Error();
+      if (!game.result || game.chess960 != null) throw Error();
       setLine({ moves: game.moves, result: game.result });
       setPly(Number.isInteger(requestedPly) ? Math.max(0, Math.min(requestedPly, game.moves.length)) : game.moves.length);
       setSide(game.side);
