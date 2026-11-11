@@ -74,6 +74,11 @@ class Search(QueueVersion):
     control: TimeControl
 
 
+class Visibility(BaseModel):
+    public: bool
+    version: int = Field(ge=0)
+
+
 class CreateGame(BaseModel):
     public: bool = False
     engine_name: Literal["lc0", "stockfish"] = "lc0"
@@ -284,6 +289,12 @@ def create_app(path: Path):
         return app.state.games.create(player_session(request, response), bool(options and options.online),
                                       (control.minutes, control.increment) if control else None, engine_level=level, engine_name=name,
                                       public=bool(options and options.public))
+
+    @app.post("/api/games/{game_id}/visibility")
+    def visibility(game_id: str, change: Visibility, request: Request):
+        game = app.state.games.set_visibility(game_id, current(request)[0], change.version, change.public)
+        from_thread.run_sync(app.state.events.publish, game_id)
+        return game
 
     @app.get("/api/watch/{key}")
     def watch(key: UUID, version: int | None = Query(None, ge=0)):

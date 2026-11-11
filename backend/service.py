@@ -136,6 +136,17 @@ class Games:
             game, rows = self._load(db, game_id, owner)
             return self._view(game, [row["uci"] for row in rows], owner)
 
+    def set_visibility(self, game_id, player, version, public):
+        with self.engine.begin() as db:
+            db.exec_driver_sql("BEGIN IMMEDIATE")
+            game, _ = self._load(db, game_id, player)
+            if bool(game["watch_key"]) != public:
+                if game["version"] != version:
+                    raise GameError("stale_version", 409)
+                db.execute(update(games).where(games.c.id == game_id).values(
+                    watch_key=uuid4().hex if public else None, version=version + 1))
+        return self.get(game_id, player)
+
     def watch(self, key, version):
         with self.engine.connect() as db:
             db.exec_driver_sql("BEGIN")

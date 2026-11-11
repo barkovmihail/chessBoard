@@ -30,6 +30,7 @@ class RematchTest(TestCase):
             old.dispose()
             engine = open_database(path)
             service = Games(engine)
+            self.assertIsNone(service.get("old", "a")["watch_key"])
             entry, = service.archive("solo", 0, 20)["items"]
             self.assertEqual((entry["result"], entry["reason"], entry["finished_ms"]), ("0-1", "checkmate", None))
             def apply(player, action, version, key):

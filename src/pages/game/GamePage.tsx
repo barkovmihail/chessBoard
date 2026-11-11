@@ -80,6 +80,19 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     finally { setBusy(false); }
   }
 
+  async function setVisibility() {
+    if (!game) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await requestGame("/" + game.id + "/visibility", { public: !game.watch_key, version: game.version });
+      receive(result, true);
+    } catch {
+      try { receive(await requestGame("/" + game.id), true); } catch { /* Keep the last confirmed position. */ }
+      setError("Не удалось подтвердить изменение доступа. Проверьте ссылку и повторите попытку.");
+    } finally { setBusy(false); }
+  }
+
   async function submit(command: Command) {
     if (!game) return;
     setBusy(true);
@@ -109,6 +122,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
       onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />;
   const context = game ? <>
     <p>{game.rated ? "Рейтинговая игра" : "Нерейтинговая игра"}</p>
+    <button disabled={busy || !!pending} onClick={setVisibility}>{game.watch_key ? "Закрыть просмотр" : "Открыть просмотр по ссылке"}</button>
     {game.watch_key && <a href={"?watch=" + game.watch_key}>Ссылка для зрителей</a>}
     {game.engine_level && <p>Чёрные · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {game.engine_level === "easy" ? "Начальный" : "Обычный"}</p>}
     {game.waiting && <label>Ссылка для соперника <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
