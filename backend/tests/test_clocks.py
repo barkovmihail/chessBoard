@@ -72,6 +72,10 @@ class ClockTest(TestCase):
                 result = games.apply(game_id, player, move, ply, str(ply))
                 games.apply(game_id, player, move, ply, str(ply))
             self.assertEqual(result["reason"], "checkmate")
+            self.assertEqual(games.move_times(game_id, "black"), durations)
+            with self.assertRaises(GameError) as denied:
+                games.move_times(game_id, "outsider")
+            self.assertEqual(denied.exception.status, 404)
             untimed = games.create("solo")["id"]
             games.apply(untimed, "solo", "e2e4", 0, "first")
             engine.dispose()

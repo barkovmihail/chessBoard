@@ -140,6 +140,14 @@ class Games:
             game, rows = self._load(db, game_id, owner)
             return self._view(game, [row["uci"] for row in rows], owner)
 
+    def move_times(self, game_id, player):
+        with self.engine.connect() as db:
+            db.exec_driver_sql("BEGIN")
+            game, rows = self._load(db, game_id, player)
+            if not game["result"]:
+                raise GameError("unfinished_game", 409)
+            return [row["elapsed_ms"] for row in rows]
+
     def set_visibility(self, game_id, player, version, public):
         with self.engine.begin() as db:
             db.exec_driver_sql("BEGIN IMMEDIATE")

@@ -453,6 +453,10 @@ def create_app(path: Path):
     def get(game_id: str, request: Request):
         return app.state.games.get(game_id, current(request)[0])
 
+    @app.get("/api/games/{game_id}/move-times")
+    def move_times(game_id: str, request: Request):
+        return app.state.games.move_times(game_id, current(request)[0])
+
     @app.get("/api/games/{game_id}/analysis")
     async def analysis(game_id: str, request: Request, engine: Literal["lc0", "stockfish"], ply: int = Query(ge=0)):
         game = await asyncio.to_thread(lambda: app.state.games.get(game_id, current(request)[0]))

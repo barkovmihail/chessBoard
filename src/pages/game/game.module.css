@@ -37,3 +37,14 @@
 .settings select { display: block; width: 100%; margin: 4px 0 8px; }
 .settings .gameActions { display: grid; margin: 0; }
 .settings .gameActions button { width: 100%; }
+
+.timeChart { margin: 8px 0; padding: 12px; background: var(--panel); border: 1px solid var(--edge); border-radius: 6px; font-variant-numeric: tabular-nums; }
+.chartBody { display: flex; gap: 8px; margin-block: 10px; }
+.axis { display: flex; flex-direction: column; justify-content: space-between; height: 96px; font-size: .8rem; }
+.chartScroll { flex: 1; min-width: 0; overflow-x: auto; }
+.columns { display: flex; width: max-content; }
+.columns > div { width: 28px; text-align: center; }
+.timeChart .columns button { width: 100%; height: 96px; display: flex; align-items: flex-end; justify-content: center; border: 0; border-bottom: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 3px; }
+.columns button span { width: 100%; border: 1px solid #56585a; background: #e3dfd6; }
+.columns > div:nth-child(even) button span { background: #53585d; }
+.columns button[aria-pressed=true], .columns button:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; }

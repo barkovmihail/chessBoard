@@ -1,6 +1,7 @@
 import { ReplayButtons } from "../../shared/replay";
 import { useLanguage } from "../../shared/language";
 import React, { useMemo, useState } from "react";
+import { MoveTimes } from "./MoveTimes";
 import { GameReport, type PositionScore } from "./GameReport";
 import { EngineAnalysis } from "./EngineAnalysis";
 import { Chess } from "chess.js";
@@ -8,15 +9,16 @@ import { Board, boardPosition } from "../../entities/board";
 import type { Game } from "../../features/play";
 
 export function GameReview({ game, render }: {
-  game: Game; render: (board: React.ReactElement, controls: React.ReactElement) => React.ReactElement;
+  game: Game; render: (board: React.ReactElement, controls: React.ReactElement, belowBoard: React.ReactElement) => React.ReactElement;
 }) {
   const { language, t } = useLanguage();
   const [ply, setPly] = useState(game.moves.length);
+  const [timeView, setTimeView] = useState(false);
   const [scores, setScores] = useState<PositionScore[]>([]);
   const [showArrows, setShowArrows] = useState(true);
   const before = scores[ply - 1], after = scores[ply];
   const best = before?.bestUci;
-  const comparing = showArrows && !!best && !!after;
+  const comparing = !timeView && showArrows && !!best && !!after;
   const { position, lastMove } = useMemo(() => {
     if (game.review960) return { position: boardPosition(new Chess(game.review960.fens[comparing ? ply - 1 : ply])), lastMove: undefined };
     const board = new Chess();
@@ -49,7 +51,7 @@ export function GameReview({ game, render }: {
         {lastMove.san.startsWith("O-O") && t(" · рокировка", " · castling", " · enroque")}
         {lastMove.san.endsWith("#") ? t(" · мат", " · checkmate", " · jaque mate") : lastMove.san.endsWith("+") && t(" · шах", " · check", " · jaque")}
       </p>}
-      {best && after && <label><input type="checkbox" checked={showArrows} onChange={e => setShowArrows(e.target.checked)} />
+      {!timeView && best && after && <label><input type="checkbox" checked={showArrows} onChange={e => setShowArrows(e.target.checked)} />
         {t("Сравнить стрелками из позиции до хода", "Compare arrows from the position before the move", "Comparar con flechas desde la posición anterior")}</label>}
       {comparing && <p>{t("Сплошная — рекомендация движка", "Solid arrow — engine recommendation", "Flecha continua — recomendación del motor")} · {before.best}
         {mistake && <> · {t("Пунктир — сыгранная ошибка", "Dashed arrow — played mistake", "Flecha discontinua — error jugado")} · {game.moves[ply - 1]}</>}</p>}
@@ -58,10 +60,16 @@ export function GameReview({ game, render }: {
       <li key={i}>{game.moves.slice(i, i + 2).map((move, offset) =>
         <React.Fragment key={offset}>{offset > 0 && " "}<button aria-current={ply === i + offset + 1 ? "step" : undefined}
           onClick={() => setPly(i + offset + 1)}>{move}</button></React.Fragment>)}</li>)}</ol>
-    <GameReport scores={scores} setScores={setScores} game={game} ply={ply} select={setPly} />
-    <EngineAnalysis id={game.id} ply={ply} initial={game.engine_name ?? "lc0"} />
+    <div hidden={timeView}><GameReport scores={scores} setScores={setScores} game={game} ply={ply} select={setPly} />
+    <EngineAnalysis id={game.id} ply={ply} initial={game.engine_name ?? "lc0"} /></div>
     <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}
       download={game.id + ".pgn"}>{t("Скачать PGN", "Download PGN", "Descargar PGN")}</a>
     {game.chess960 == null && <a href={"?section=analysis&game=" + game.id + "&ply=" + (comparing ? ply - 1 : ply)}>{t("Разобрать позицию", "Analyze position", "Analizar la posición")}</a>}
-  </>);
+  </>, <section>
+    <div className="replay-buttons">
+      <button aria-pressed={!timeView} onClick={() => setTimeView(false)}>{t("Разбор", "Review", "Revisión")}</button>
+      <button aria-pressed={timeView} onClick={() => setTimeView(true)}>{t("Время", "Time", "Tiempo")}</button>
+    </div>
+    {timeView && <MoveTimes game={game} ply={ply} select={setPly} />}
+  </section>);
 }

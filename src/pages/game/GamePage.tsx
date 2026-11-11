@@ -175,8 +175,8 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     {error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}
     {pending && !busy && <button onClick={() => submit(pending)}>{t("Повторить отправку", "Retry sending", "Reintentar el envío")}</button>}
   </>;
-  function render(position: React.ReactElement, controls?: React.ReactElement) {
-    return <BoardLayout gameWorkspace={!!game} lang={language} board={game ? <ClockPanel game={game}>{position}</ClockPanel> : position}
+  function render(position: React.ReactElement, controls?: React.ReactElement, belowBoard?: React.ReactElement) {
+    return <BoardLayout gameWorkspace={!!game} lang={language} board={game ? <><ClockPanel game={game}>{position}</ClockPanel>{belowBoard}</> : position}
     context={<>{context}{!game && error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}</>} actions={controls ? <>{controls}{actions}</> : actions} status={status} />;
   }
   if (!game && !invite) return <main>

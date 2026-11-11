@@ -165,6 +165,17 @@ class BrowserGameTest(TestCase):
                         else:
                             self.assertGreaterEqual(nav_box["y"], clocks_box["y"] + clocks_box["height"])
                         self.assertTrue(host.evaluate("document.documentElement.scrollWidth <= innerWidth"))
+                    host.get_by_role("button", name="Tiempo", exact=True).click()
+                    chart = host.locator("figure").filter(has_text="Tiempo por jugada")
+                    bar = chart.get_by_role("button", name=re.compile(r"1\. e4 · Blancas ·"))
+                    expect(bar).to_have_attribute("aria-pressed", "true")
+                    replay_es.get_by_role("button", name="Jugada anterior").click()
+                    bar.focus()
+                    expect(chart.locator("output")).to_contain_text("1. e4 · Blancas")
+                    bar.press("Enter")
+                    expect(host.locator('[data-square="e4"] [role="img"]')).to_be_visible()
+                    host.get_by_role("button", name="Revisión", exact=True).click()
+                    expect(replay_es).to_contain_text("1. e4")
                     replay_es.get_by_role("button", name="Jugada anterior").press("Enter")
                     expect(replay_es.get_by_text("Posición inicial")).to_be_visible()
                     host.get_by_label("Menú de perfil").click()
@@ -511,6 +522,27 @@ class BrowserGameTest(TestCase):
                     history_panel = page.get_by_label("Запись ходов")
                     expect(history_panel.get_by_role("listitem")).to_have_count(40)
                     self.assertTrue(history_panel.evaluate("el => el.scrollHeight > el.clientHeight"))
+                    long_id = page.url.split("game=")[1]
+                    with closing(connect(Path(directory) / "test.sqlite3")) as db:
+                        db.execute("UPDATE games SET result='1/2-1/2', reason='agreement' WHERE id=?", (long_id,))
+                        db.commit()
+                    page.reload()
+                    page.get_by_role("button", name="Время", exact=True).click()
+                    expect(page.get_by_text("Партия без часов", exact=True)).to_be_visible()
+                    with closing(connect(Path(directory) / "test.sqlite3")) as db:
+                        db.execute("UPDATE games SET base_minutes=5, increment_seconds=3, white_ms=120000, black_ms=180000 WHERE id=?", (long_id,))
+                        db.execute("UPDATE moves SET elapsed_ms=CASE WHEN ply=1 THEN NULL WHEN ply=80 THEN 92345 "
+                                   "ELSE 1000 END WHERE game_id=?", (long_id,))
+                        db.commit()
+                    page.reload()
+                    page.get_by_role("button", name="Время", exact=True).click()
+                    times = page.locator("figure").filter(has_text="Время на ход")
+                    expect(times.get_by_role("button")).to_have_count(80)
+                    expect(times.get_by_role("button").first).to_have_accessible_name(re.compile("Нет данных"))
+                    last = times.get_by_role("button").last
+                    last.focus()
+                    expect(times.locator("output")).to_contain_text("92,345 с")
+                    self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
                     page.set_viewport_size({"width": 390, "height": 844})
 
                     prepare("e4 b6 Bc4 e6 Bb3 Ba6 Nf3 h6")
