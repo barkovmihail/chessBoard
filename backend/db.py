@@ -133,6 +133,7 @@ moves = Table("moves", metadata,
     Column("game_id", ForeignKey("games.id"), primary_key=True),
     Column("ply", Integer, primary_key=True),
     Column("uci", String, nullable=False),
+    Column("elapsed_ms", Integer),
     Column("command_id", String, nullable=False),
     UniqueConstraint("game_id", "command_id"),
 )

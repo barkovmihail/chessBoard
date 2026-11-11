@@ -258,9 +258,13 @@ class Games:
                     raise GameError("not_your_turn", 403)
                 if command not in view["legal"]:
                     raise GameError("illegal_move", 422)
+                elapsed_ms = None
+                if deadline is not None:
+                    starting_ms = game[view["turn"] + "_ms"]
+                    elapsed_ms = max(0, starting_ms - (deadline - now))
                 history.append(command)
                 db.execute(insert(moves).values(game_id=game_id, ply=len(history), uci=command,
-                                                command_id=command_id))
+                                                command_id=command_id, elapsed_ms=elapsed_ms))
                 outcome = replay(history, game["chess960"])[0].outcome()
                 if outcome:
                     changes.update(result=outcome.result(), reason=outcome.termination.name.lower())

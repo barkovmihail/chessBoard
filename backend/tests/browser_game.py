@@ -2,6 +2,8 @@
 import os
 import re
 import shutil
+from sqlite3 import connect
+from contextlib import closing
 from pathlib import Path
 from random import Random
 from socket import socket
@@ -142,6 +144,11 @@ class BrowserGameTest(TestCase):
                     host.locator('[data-square="e2"]').click()
                     host.locator('[data-square="e4"]').click()
                     expect(guest.get_by_text("Juegan negras")).to_be_visible()
+                    with closing(connect(Path(directory) / "test.sqlite3")) as db:
+                        elapsed, = db.execute("SELECT elapsed_ms FROM moves WHERE game_id=? AND ply=1",
+                                              (host.url.split("game=")[1],)).fetchone()
+                        self.assertGreaterEqual(elapsed, 0)
+                        self.assertLess(elapsed, 300000)
                     host.get_by_role("button", name="Ofrecer tablas").click()
                     guest.get_by_role("button", name="Rechazar tablas").click()
                     expect(host.get_by_role("button", name="Ofrecer tablas")).to_be_enabled()
