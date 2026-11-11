@@ -41,18 +41,18 @@ export function GameReport({ game, ply, select }: { game: Game; ply: number; sel
     ply: i + 1, loss: (scores[i].value - after.value) * (i % 2 ? -1 : 1),
   })).filter(moment => moment.loss >= 100).sort((a, b) => b.loss - a.loss).slice(0, 3);
   const before = scores[ply - 1], after = scores[ply];
-  return <section aria-label={t("Подробный разбор", "Game review")}><h3>{t("Разбор всей партии", "Full game review")}</h3>
+  return <section aria-label={t("Подробный разбор", "Game review", "Revisión de la partida")}><h3>{t("Разбор всей партии", "Full game review", "Análisis completo de la partida")}</h3>
     {!done && <button onClick={state === "running" ? () => { request.current?.abort(); request.current = undefined; setState("idle"); } : analyse}>
-      {state === "running" ? t("Приостановить", "Pause") : scores.length ? t("Продолжить разбор", "Resume review") : t("Найти ключевые моменты", "Find key moments")}</button>}
-    {(scores.length > 0 || state === "running") && <p>{t("Проверено позиций", "Positions evaluated")}: {scores.length}/{game.moves.length + 1}</p>}
-    {state === "error" && <p role="alert">{t("Расчёт прерван. Можно повторить с этой позиции.", "Analysis interrupted. Retry from this position.")}</p>}
-    {done && !moments.length && <p>{t("Движок не нашёл заметных потерь оценки.", "The engine found no substantial evaluation losses.")}</p>}
-    {moments.length > 0 && <><strong>{t("Ключевые моменты", "Key moments")}</strong><div>{moments.map(moment =>
+      {state === "running" ? t("Приостановить", "Pause", "Pausar") : scores.length ? t("Продолжить разбор", "Resume review", "Continuar el análisis") : t("Найти ключевые моменты", "Find key moments", "Buscar momentos clave")}</button>}
+    {(scores.length > 0 || state === "running") && <p>{t("Проверено позиций", "Positions evaluated", "Posiciones evaluadas")}: {scores.length}/{game.moves.length + 1}</p>}
+    {state === "error" && <p role="alert">{t("Расчёт прерван. Можно повторить с этой позиции.", "Analysis interrupted. Retry from this position.", "Se ha interrumpido el análisis. Puedes continuar desde esta posición.")}</p>}
+    {done && !moments.length && <p>{t("Движок не нашёл заметных потерь оценки.", "The engine found no substantial evaluation losses.", "El motor no ha encontrado jugadas que empeoren significativamente la posición.")}</p>}
+    {moments.length > 0 && <><strong>{t("Ключевые моменты", "Key moments", "Momentos clave")}</strong><div>{moments.map(moment =>
       <button key={moment.ply} aria-pressed={ply === moment.ply} onClick={() => select(moment.ply)}>
         {Math.ceil(moment.ply / 2)}{moment.ply % 2 ? ". " : "… "}{game.moves[moment.ply - 1]}</button>)}</div></>}
-    {before && after && <p>{t("Оценка за белых до и после хода", "White’s evaluation before and after the move")}: {before.label} → {after.label}.
-      {before.best && before.best !== game.moves[ply - 1] && <> {t("Движок предлагал", "Engine preference")}: {before.best}.</>}</p>}
-    {before && after && <p>{t("Плюс — преимущество белых, минус — чёрных. Одна единица примерно равна пешке. Знак # означает форсированный мат.", "Positive values favour White and negative values favour Black. One point is about one pawn. # indicates forced mate.")}</p>}
-    {before && game.chess960 == null && <a href={"?section=analysis&game=" + game.id + "&ply=" + (ply - 1)}>{t("Попробовать другой ход", "Try a different move")}</a>}
+    {before && after && <p>{t("Оценка за белых до и после хода", "White’s evaluation before and after the move", "Evaluación para las blancas antes y después de la jugada")}: {before.label} → {after.label}.
+      {before.best && before.best !== game.moves[ply - 1] && <> {t("Движок предлагал", "Engine preference", "Jugada recomendada por el motor")}: {before.best}.</>}</p>}
+    {before && after && <p>{t("Плюс — преимущество белых, минус — чёрных. Одна единица примерно равна пешке. Знак # означает форсированный мат.", "Positive values favour White and negative values favour Black. One point is about one pawn. # indicates forced mate.", "Los valores positivos favorecen a las blancas y los negativos a las negras. Un punto equivale aproximadamente a un peón. El signo # indica mate forzado.")}</p>}
+    {before && game.chess960 == null && <a href={"?section=analysis&game=" + game.id + "&ply=" + (ply - 1)}>{t("Попробовать другой ход", "Try a different move", "Probar otra jugada")}</a>}
   </section>;
 }

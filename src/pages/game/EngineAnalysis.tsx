@@ -27,23 +27,23 @@ function Evaluation({ id, ply, engine }: { id: string; ply: number; engine: Engi
     }).catch(() => { if (!abort.signal.aborted) setResult("error"); });
     return () => abort.abort();
   }, [id, ply, engine]);
-  if (!result) return <p role="status">{t("Расчёт…", "Calculating…")}</p>;
-  if (result === "error") return <p role="status">{t("Движок недоступен. Попробуйте ещё раз.", "Engine unavailable. Try again.")}</p>;
+  if (!result) return <p role="status">{t("Расчёт…", "Calculating…", "Calculando…")}</p>;
+  if (result === "error") return <p role="status">{t("Движок недоступен. Попробуйте ещё раз.", "Engine unavailable. Try again.", "El motor no está disponible. Inténtalo de nuevo.")}</p>;
   const { score, line } = result;
-  const text = score.kind === "score" ? score.text : t("мат в ", "mate in ") + Math.abs(score.moves) +
-    (score.moves > 0 ? t(" за белых", " for White") : t(" за чёрных", " for Black"));
-  return <p role="status">{t("Оценка за белых", "Evaluation for White")} {text}{line.length > 0 && " · " + line.join(" ")}</p>;
+  const text = score.kind === "score" ? score.text : t("мат в ", "mate in ", "mate en ") + Math.abs(score.moves) +
+    (score.moves > 0 ? t(" за белых", " for White", " para las blancas") : t(" за чёрных", " for Black", " para las negras"));
+  return <p role="status">{t("Оценка за белых", "Evaluation for White", "Evaluación desde el punto de vista de las blancas")} {text}{line.length > 0 && " · " + line.join(" ")}</p>;
 }
 
 export function EngineAnalysis({ id, ply, initial }: { id: string; ply: number; initial: Engine }) {
   const { language, t } = useLanguage();
   const [engine, setEngine] = useState(initial);
   const [active, setActive] = useState(false);
-  return <fieldset lang={language}><legend>{t("Анализ позиции", "Position analysis")}</legend>
-    <label>{t("Движок анализа", "Analysis engine")} <select value={engine} onChange={e => setEngine(e.target.value === "lc0" ? "lc0" : "stockfish")}>
+  return <fieldset lang={language}><legend>{t("Анализ позиции", "Position analysis", "Análisis de la posición")}</legend>
+    <label>{t("Движок анализа", "Analysis engine", "Motor de análisis")} <select value={engine} onChange={e => setEngine(e.target.value === "lc0" ? "lc0" : "stockfish")}>
       <option value="lc0">Leela Chess Zero</option><option value="stockfish">Stockfish</option>
     </select></label>
-    <button onClick={() => setActive(!active)}>{active ? t("Остановить анализ", "Stop analysis") : t("Оценить позицию", "Evaluate position")}</button>
+    <button onClick={() => setActive(!active)}>{active ? t("Остановить анализ", "Stop analysis", "Detener el análisis") : t("Оценить позицию", "Evaluate position", "Evaluar la posición")}</button>
     {active && <Evaluation key={id + ply + engine} id={id} ply={ply} engine={engine} />}
   </fieldset>;
 }

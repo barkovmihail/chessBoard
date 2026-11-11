@@ -28,26 +28,26 @@ export function GameReview({ game, render }: {
     return board.pgn();
   }, [game]);
   return render(<Board position={position} flipped={game.side === "black"} lastMove={lastMove} highlight={game.review960?.uci?.[ply - 1]} />, <>
-    <nav lang={language} aria-label={t("Просмотр партии", "Game replay")}>
-      <p aria-live="polite">{ply ? Math.ceil(ply / 2) + (ply % 2 ? ". " : "… ") + game.moves[ply - 1] : t("Начальная позиция", "Starting position")}</p>
+    <nav lang={language} aria-label={t("Просмотр партии", "Game replay", "Reproducción de la partida")}>
+      <p aria-live="polite">{ply ? Math.ceil(ply / 2) + (ply % 2 ? ". " : "… ") + game.moves[ply - 1] : t("Начальная позиция", "Starting position", "Posición inicial")}</p>
       {lastMove && <p>{{
-        p: t("Пешка", "Pawn"), n: t("Конь", "Knight"), b: t("Слон", "Bishop"),
-        r: t("Ладья", "Rook"), q: t("Ферзь", "Queen"), k: t("Король", "King"),
+        p: t("Пешка", "Pawn", "Peón"), n: t("Конь", "Knight", "Caballo"), b: t("Слон", "Bishop", "Alfil"),
+        r: t("Ладья", "Rook", "Torre"), q: t("Ферзь", "Queen", "Dama"), k: t("Король", "King", "Rey"),
       }[lastMove.piece]} · {lastMove.from} → {lastMove.to}
-        {lastMove.captured && t(" · взятие", " · capture")}
-        {lastMove.san.startsWith("O-O") && t(" · рокировка", " · castling")}
-        {lastMove.san.endsWith("#") ? t(" · мат", " · checkmate") : lastMove.san.endsWith("+") && t(" · шах", " · check")}
+        {lastMove.captured && t(" · взятие", " · capture", " · captura")}
+        {lastMove.san.startsWith("O-O") && t(" · рокировка", " · castling", " · enroque")}
+        {lastMove.san.endsWith("#") ? t(" · мат", " · checkmate", " · jaque mate") : lastMove.san.endsWith("+") && t(" · шах", " · check", " · jaque")}
       </p>}
       <ReplayButtons ply={ply} total={game.moves.length} onSelect={setPly} />
     </nav>
-    <ol className="review-score" aria-label={t("Запись ходов", "Move list")}>{game.moves.map((_, i) => i % 2 === 0 &&
+    <ol className="review-score" aria-label={t("Запись ходов", "Move list", "Lista de jugadas")}>{game.moves.map((_, i) => i % 2 === 0 &&
       <li key={i}>{game.moves.slice(i, i + 2).map((move, offset) =>
         <React.Fragment key={offset}>{offset > 0 && " "}<button aria-current={ply === i + offset + 1 ? "step" : undefined}
           onClick={() => setPly(i + offset + 1)}>{move}</button></React.Fragment>)}</li>)}</ol>
     <GameReport game={game} ply={ply} select={setPly} />
     <EngineAnalysis id={game.id} ply={ply} initial={game.engine_name ?? "lc0"} />
     <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}
-      download={game.id + ".pgn"}>{t("Скачать PGN", "Download PGN")}</a>
-    {game.chess960 == null && <a href={"?section=analysis&game=" + game.id + "&ply=" + ply}>{t("Разобрать позицию", "Analyze position")}</a>}
+      download={game.id + ".pgn"}>{t("Скачать PGN", "Download PGN", "Descargar PGN")}</a>
+    {game.chess960 == null && <a href={"?section=analysis&game=" + game.id + "&ply=" + ply}>{t("Разобрать позицию", "Analyze position", "Analizar la posición")}</a>}
   </>);
 }
