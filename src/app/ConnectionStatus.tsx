@@ -2,10 +2,13 @@ import React, { useEffect, useState } from "react";
 
 type Sample = { ping: number; server: number };
 
-export function ConnectionStatus() {
-  const [sample, setSample] = useState<Sample | "offline" | null>(null);
+type ConnectionSample = Sample | "offline" | null;
+
+export function useConnectionSample(open: boolean) {
+  const [sample, setSample] = useState<ConnectionSample>(null);
 
   useEffect(() => {
+    if (!open) { setSample(null); return; }
     let current: AbortController | undefined;
     function offline() {
       current?.abort();
@@ -17,6 +20,7 @@ export function ConnectionStatus() {
       const request = new AbortController();
       current = request;
       const timeout = window.setTimeout(() => {
+        if (request.signal.aborted) return;
         request.abort();
         setSample("offline");
       }, 4000);
@@ -44,7 +48,11 @@ export function ConnectionStatus() {
       window.removeEventListener("offline", offline);
       window.removeEventListener("online", measure);
     };
-  }, []);
+  }, [open]);
+  return sample;
+}
+
+export function ConnectionStatus({ sample }: { sample: ConnectionSample }) {
 
   return <div role="group" aria-label="Качество связи" className="connection-status">
     {sample === "offline" ? "Нет связи" : sample === null ? "Проверка связи…" : <>

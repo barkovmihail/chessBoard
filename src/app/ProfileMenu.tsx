@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ConnectionStatus } from "./ConnectionStatus";
+import { ConnectionStatus, useConnectionSample } from "./ConnectionStatus";
 import { Appearance } from "./Appearance";
 import { Sound } from "./Sound";
 
@@ -7,6 +7,7 @@ export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current
   const menu = useRef<HTMLDetailsElement>(null);
   const trigger = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(false);
+  const sample = useConnectionSample(open);
   const [name, setName] = useState<string | null>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,6 +50,9 @@ export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current
     <summary ref={trigger} aria-label="Меню профиля">{name ?? "Профиль"}</summary>
     <div className="profile-panel">
       <a href="?section=profile" aria-current={current ? "page" : undefined}>Профиль</a>
+      {name && <span role="status" className="profile-presence" data-online={!!sample && sample !== "offline"}>
+        {sample === null ? "Проверяем связь…" : sample === "offline" ? "Не в сети" : "В сети"}
+      </span>}
       {name === null && <a href="?section=profile#account">Войти</a>}
       {name && <>
         <button onClick={() => { if (menu.current) menu.current.open = false; onInbox(); }}>Входящие</button>
@@ -57,7 +61,7 @@ export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current
       </>}
       {error && <p role="alert">{error}</p>}
       <Sound /><Appearance />
-      {open && <ConnectionStatus />}
+      {open && <ConnectionStatus sample={sample} />}
     </div>
   </details>;
 }

@@ -95,6 +95,7 @@ class BrowserGameTest(TestCase):
                     page.add_init_script(track_audio)
                     page.goto(f"http://127.0.0.1:{port}")
                     page.get_by_label("Меню профиля").click()
+                    expect(page.locator(".profile-presence")).to_have_count(0)
                     status = page.get_by_label("Качество связи")
                     expect(status).to_contain_text(re.compile(r"PING \d+ мс"))
                     expect(status).to_contain_text(re.compile(r"SERVER \d+(?:\.\d+)? мс"))
@@ -600,6 +601,14 @@ class BrowserGameTest(TestCase):
                     white.locator('[data-square="e2"]').click()
                     white.locator('[data-square="e4"]').click()
                     expect(black.get_by_label("Запись ходов")).to_contain_text("e4")
+                    white.goto(base + "/?section=profile")
+                    white.get_by_label("Меню профиля").click()
+                    presence = white.locator(".profile-panel").get_by_role("status")
+                    expect(presence).to_have_text("В сети")
+                    white.context.set_offline(True)
+                    expect(presence).to_have_text("Не в сети")
+                    white.context.set_offline(False)
+                    expect(presence).to_have_text("В сети")
                     browser.close()
             finally:
                 server.should_exit = True

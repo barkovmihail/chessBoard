@@ -52,3 +52,7 @@ body { background: var(--paper); color: var(--ink); }
 .palette.blue { --a: #dee3e6; --b: #8ca2ad; }
 
 .connection-status { display: grid; gap: .15rem; padding: .55rem; border-top: 1px solid currentColor; font-size: .85rem; font-variant-numeric: tabular-nums; }
+
+.profile-presence { display: flex; align-items: center; gap: .4em; padding: 0 8px .4rem; font-size: .85rem; }
+.profile-presence::before { content: ""; width: .65em; height: .65em; border-radius: 50%; background: currentColor; }
+.profile-presence[data-online="true"]::before { background: #649530; }
