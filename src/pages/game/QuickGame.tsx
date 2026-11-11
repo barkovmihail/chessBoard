@@ -1,4 +1,12 @@
+import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
+
+const errors = {
+  check: ["Не удалось проверить поиск.", "Could not check matchmaking."],
+  offline: ["Восстанавливаем связь с очередью…", "Reconnecting to the queue…"],
+  login: ["Для рейтинговой игры войдите в профиль.", "Sign in to play a rated game."],
+  queue: ["Не удалось подтвердить поиск. Проверьте состояние очереди.", "Could not confirm the search. Check the queue status."],
+} as const;
 
 interface Ticket {
   version: number;
@@ -26,16 +34,17 @@ async function queue(action = "", data?: object): Promise<Ticket> {
 export function QuickGame({ control, valid, onSearching }: {
   control: { minutes: number; increment: number }; valid: boolean; onSearching: (value: boolean) => void;
 }) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState("casual");
   const [ticket, setTicket] = useState<Ticket>();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<keyof typeof errors | null>(null);
   const [retry, setRetry] = useState(0);
   useEffect(() => { onSearching(busy || !!ticket?.waiting); }, [busy, ticket?.waiting, onSearching]);
   useEffect(() => {
     let active = true;
     queue().then(value => { if (active) setTicket(value); })
-      .catch(() => { if (active) setError("Не удалось проверить поиск."); });
+      .catch(() => { if (active) setError("check"); });
     return () => { active = false; };
   }, [retry]);
 
@@ -48,10 +57,10 @@ export function QuickGame({ control, valid, onSearching }: {
         const next = await queue("/renew", { version: ticket.version });
         if (!active) return;
         setTicket(next);
-        setError("");
+        setError(null);
         if (next.game_id) location.assign("?game=" + next.game_id);
         if (!next.waiting) return;
-      } catch { if (active) setError("Восстанавливаем связь с очередью…"); }
+      } catch { if (active) setError("offline"); }
       if (active) timer = setTimeout(poll, 2000);
     };
     timer = setTimeout(poll, 1500);
@@ -61,7 +70,7 @@ export function QuickGame({ control, valid, onSearching }: {
   async function change() {
     if (!ticket) return;
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       if (!ticket.waiting) await queue("/session", {});
       const next = await queue(ticket.waiting ? "/cancel" : "/start", { version: ticket.version, control, rated: mode === "rated", chess960: mode === "chess960" });
@@ -69,25 +78,25 @@ export function QuickGame({ control, valid, onSearching }: {
       if (next.game_id) location.assign("?game=" + next.game_id);
     } catch (failure) {
       if (failure instanceof Error && failure.message === "account_required") {
-        setError("Для рейтинговой игры войдите в профиль.");
+        setError("login");
         return;
       }
-      setError("Не удалось подтвердить поиск. Проверьте состояние очереди.");
+      setError("queue");
       setRetry(value => value + 1);
     } finally { setBusy(false); }
   }
 
   return <div>
-    {!ticket?.waiting && <label>Режим быстрого поиска <select disabled={busy} value={mode}
+    {!ticket?.waiting && <label>{t("Режим быстрого поиска", "Quick pairing mode")} <select disabled={busy} value={mode}
       onChange={event => setMode(event.target.value)}>
-      <option value="casual">Нерейтинговая игра</option><option value="rated">Рейтинговая игра</option>
-      <option value="chess960">Chess960 · Нерейтинговая игра</option>
+      <option value="casual">{t("Нерейтинговая игра", "Casual game")}</option><option value="rated">{t("Рейтинговая игра", "Rated game")}</option>
+      <option value="chess960">{t("Chess960 · Нерейтинговая игра", "Chess960 · Casual game")}</option>
     </select></label>}
-    {ticket?.waiting && <p role="status">Ищем соперника · {ticket.minutes}+{ticket.increment}{ticket.chess960 && " · Chess960"}{ticket.rated && " · Рейтинговая игра"}</p>}
+    {ticket?.waiting && <p role="status">{t("Ищем соперника", "Searching for an opponent")} · {ticket.minutes}+{ticket.increment}{ticket.chess960 && " · Chess960"}{ticket.rated && t(" · Рейтинговая игра", " · Rated game")}</p>}
     <button disabled={!ticket || busy || (!ticket.waiting && !valid)} onClick={change}>
-      {ticket?.waiting ? "Отменить поиск" : "Найти соперника"}
+      {ticket?.waiting ? t("Отменить поиск", "Cancel search") : t("Найти соперника", "Find an opponent")}
     </button>
-    {ticket?.game_id && <a href={"?game=" + ticket.game_id}>Открыть последнюю быструю игру</a>}
-    {error && <p role="alert">{error} <button onClick={() => setRetry(value => value + 1)}>Проверить</button></p>}
+    {ticket?.game_id && <a href={"?game=" + ticket.game_id}>{t("Открыть последнюю быструю игру", "Open last quick game")}</a>}
+    {error && <p role="alert">{t(errors[error][0], errors[error][1])} <button onClick={() => setRetry(value => value + 1)}>{t("Проверить", "Check")}</button></p>}
   </div>;
 }

@@ -636,6 +636,15 @@ class BrowserGameTest(TestCase):
                     nav.get_by_label("Challenges and current games").click()
                     nav.get_by_text(re.compile(r"^🔔 Notifications")).click()
                     expect(nav.get_by_role("region", name="Notification feed")).to_contain_text("Open game")
+                    nav.get_by_role("link", name="Play", exact=True).click()
+                    white.get_by_label("Time category").select_option(label="Rapid")
+                    expect(white.get_by_role("button", name=re.compile(r"^\d+\+\d+"))).to_have_count(3)
+                    white.get_by_role("button", name="15+10 Rapid").click()
+                    expect(white.get_by_label("Quick pairing mode")).to_be_visible()
+                    white.get_by_role("button", name="Start game", exact=True).click()
+                    expect(white.get_by_label("Chess clocks")).to_contain_text("15+10")
+                    white.reload()
+                    expect(white.get_by_label("Chess clocks")).to_contain_text("White")
                     browser.close()
             finally:
                 server.should_exit = True
