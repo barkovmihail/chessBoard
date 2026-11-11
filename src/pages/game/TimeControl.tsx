@@ -17,6 +17,7 @@ export function TimeSetup({ create, busy }: {
   const [engine, setEngine] = useState<"lc0" | "stockfish">("lc0");
   const [level, setLevel] = useState<"easy" | "normal">("easy");
   const [searching, setSearching] = useState(false);
+  const [category, setCategory] = useState("");
   const [selected, select] = useState(5);
   const [minutes, setMinutes] = useState("7");
   const [increment, setIncrement] = useState("2");
@@ -26,10 +27,18 @@ export function TimeSetup({ create, busy }: {
   const valid = !custom || (/^\d+$/.test(minutes) && /^\d+$/.test(increment) &&
     control.minutes >= 1 && control.minutes <= 1440 && control.increment <= 3600);
   return <fieldset disabled={busy}><legend>Контроль времени</legend>
-    {!searching && <div className={styles.presets}>{presets.map(([label, min, inc], index) =>
+    {!searching && <label>Категория времени <select value={category} onChange={event => {
+      const value = event.target.value;
+      setCategory(value);
+      if (value && presets[selected]?.[0] !== value) select(presets.findIndex(preset => preset[0] === value));
+    }}>
+      <option value="">Все категории</option>
+      {["Пуля", "Блиц", "Рапид", "Классика"].map(label => <option key={label}>{label}</option>)}
+    </select></label>}
+    {!searching && <div className={styles.presets}>{presets.map(([label, min, inc], index) => (!category || label === category) &&
       <button key={index} aria-pressed={index === selected} onClick={() => select(index)}>
         <strong>{min}+{inc}</strong><small>{label}</small></button>)}
-      <button aria-pressed={custom} onClick={() => select(presets.length)}>Своя игра</button></div>}
+      <button aria-pressed={custom} onClick={() => { setCategory(""); select(presets.length); }}>Своя игра</button></div>}
     {custom && !searching && <div><label>Минут на игрока <input type="number" min="1" max="1440"
       value={minutes} onChange={e => setMinutes(e.target.value)} /></label>
       <label>Добавка за ход, секунд <input type="number" min="0" max="3600"
