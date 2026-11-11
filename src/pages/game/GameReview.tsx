@@ -1,3 +1,4 @@
+import { ReplayButtons } from "../../shared/replay";
 import { useLanguage } from "../../shared/language";
 import React, { useMemo, useState } from "react";
 import { EngineAnalysis } from "./EngineAnalysis";
@@ -28,10 +29,7 @@ export function GameReview({ game, render }: {
   return render(<Board position={position} flipped={game.side === "black"} lastMove={lastMove} highlight={game.review960?.uci?.[ply - 1]} />, <>
     <nav lang={language} aria-label={t("Просмотр партии", "Game replay")}>
       <p aria-live="polite">{ply ? Math.ceil(ply / 2) + (ply % 2 ? ". " : "… ") + game.moves[ply - 1] : t("Начальная позиция", "Starting position")}</p>
-      <button disabled={!ply} onClick={() => setPly(0)}>{t("В начало", "Go to start")}</button>
-      <button disabled={!ply} onClick={() => setPly(ply - 1)}>{t("Назад", "Previous move")}</button>
-      <button disabled={ply === game.moves.length} onClick={() => setPly(ply + 1)}>{t("Вперёд", "Next move")}</button>
-      <button disabled={ply === game.moves.length} onClick={() => setPly(game.moves.length)}>{t("В конец", "Go to end")}</button>
+      <ReplayButtons ply={ply} total={game.moves.length} onSelect={setPly} />
     </nav>
     <EngineAnalysis id={game.id} ply={ply} initial={game.engine_name ?? "lc0"} />
     <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}

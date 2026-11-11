@@ -12,8 +12,8 @@ interface Props {
 export function BoardLayout({ lang, board, context, actions, status }: Props) {
   return <main lang={lang} className={styles.layout}>
     {status && <header className={styles.status}>{status}</header>}
-    {context && <aside className={styles.context}>{context}</aside>}
+    {context && <aside className={styles.context + " game-context"}>{context}</aside>}
     <div className={styles.board}>{board}</div>
-    {actions && <section className={styles.actions}>{actions}</section>}
+    {actions && <section className={styles.actions + " game-actions"}>{actions}</section>}
   </main>;
 }

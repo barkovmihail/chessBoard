@@ -70,3 +70,16 @@ button, input, select, textarea { font-family: inherit; }
 .study-nav .brand { font-size: 22px; letter-spacing: -.06em; gap: 5px; }
 .brand img { width: 29px; height: 29px; }
 :root[data-theme=dark] .brand img { filter: invert(1); }
+
+.replay-buttons { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.replay-buttons button, .analysis-page button:not([data-square]), .game-context button:not([data-square]):not(.rt-Button),
+.game-actions button:not([data-square]) {
+  min-height: 40px; border: 1px solid var(--edge); border-radius: 6px; padding: 6px 10px;
+  background: var(--panel); color: var(--ink); font: inherit; cursor: pointer;
+}
+.replay-buttons button { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; }
+.replay-buttons button:disabled, .analysis-page button:disabled, .game-actions button:disabled { opacity: .45; cursor: default; }
+.game-actions button.resign-action:not([data-square]) { color: var(--link); margin: 6px; }
+.replay-buttons button:enabled:hover, .analysis-page button:not([data-square]):enabled:hover, .resign-action:enabled:hover { background: color-mix(in srgb, var(--panel) 87%, var(--link)); }
+.replay-buttons button:focus-visible, .analysis-page button:focus-visible, .resign-action:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.analysis-page { max-width: 900px; margin: 24px auto; padding: 0 16px; }

@@ -1,3 +1,4 @@
+import { ReplayButtons } from "../../shared/replay";
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useMemo, useState } from "react";
 import { Chess } from "chess.js";
@@ -63,7 +64,7 @@ export function AnalysisPage() {
     setPly(next);
     setVariation([]);
   }
-  return <main lang={language}><h1>{t("Анализ", "Analysis")}</h1>
+  return <main className="analysis-page" lang={language}><h1>{t("Анализ", "Analysis")}</h1>
     {id && <a href={"?game=" + encodeURIComponent(id)}>{t("Вернуться к партии", "Return to game")}</a>}
     {loading ? <p>{t("Загрузка позиции…", "Loading position…")}</p> : <>
       <PlayBoard key={board.fen()} enabled game={{ position: boardPosition(board), side,
@@ -71,10 +72,7 @@ export function AnalysisPage() {
         onMove={uci => { const move = legal.find(choice => choice.lan === uci);
           if (move) setVariation([...variation, move.san]); }} />
       <nav aria-label={t("Ходы записи", "Game moves")}>
-        <button disabled={!ply} onClick={() => navigate(0)}>{t("В начало", "Go to start")}</button>
-        <button disabled={!ply} onClick={() => navigate(ply - 1)}>{t("Назад", "Previous move")}</button>
-        <button disabled={ply === line.moves.length} onClick={() => navigate(ply + 1)}>{t("Вперёд", "Next move")}</button>
-        <button disabled={ply === line.moves.length} onClick={() => navigate(line.moves.length)}>{t("В конец", "Go to end")}</button>
+        <ReplayButtons ply={ply} total={line.moves.length} onSelect={navigate} />
       </nav>
       <p>{t("Запись", "Game score")} · {line.moves.join(" ")} {line.result}</p>
       {variation.length > 0 && <><p aria-live="polite">{t("Вариант", "Variation")} · {variation.join(" ")}</p>

@@ -163,7 +163,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
           : game.draw_offer === game.side ? <span>{t("Ничья предложена", "Draw offered")}</span>
           : <><button onClick={() => act("accept")}>{t("Принять ничью", "Accept draw")}</button>
             <button onClick={() => act("decline")}>{t("Отклонить ничью", "Decline draw")}</button></>)}
-        <button onClick={() => act("resign")}>{t("Сдаться", "Resign")}</button>
+        <button className="resign-action" onClick={() => act("resign")}>{t("Сдаться", "Resign")}</button>
       </fieldset>}
       {game.moves.length > 0 && <ol aria-label={t("Запись ходов", "Move list")} className={styles.history}>
         {game.moves.map((move, index) => index % 2 === 0 && <li key={index}>
