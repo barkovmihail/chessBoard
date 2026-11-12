@@ -1,10 +1,12 @@
+from itertools import batched
 from time import time_ns
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.dialects.sqlite import insert
 
 from .db import puzzle_attempts as attempts
 from .domain import GameError
+from .puzzles import open_catalogue
 
 
 class PuzzleAttempts:
@@ -28,3 +30,28 @@ class PuzzleAttempts:
                 attempts.c.mistakes, attempts.c.solved).where(attempts.c.player == player)
                 .order_by(attempts.c.started.desc(), attempts.c.id.desc()).limit(21).offset(offset)).mappings().all()
         return {"items": [dict(row) for row in rows[:20]], "more": len(rows) > 20}
+
+    def progress(self, player, days, catalogue):
+        a = attempts.c
+        ranked = select(a.puzzle, a.started, a.mistakes, a.solved, func.row_number().over(
+            partition_by=a.puzzle, order_by=(a.started, a.id)).label("number")).where(a.player == player).subquery()
+        r = ranked.c
+        since = time_ns() // 1_000_000 - days * 86_400_000
+        query = select(r.puzzle, func.max(r.solved).label("solved"), func.sum(r.mistakes).label("mistakes"),
+                       func.max(case(((r.number == 1) & r.solved & (r.mistakes == 0), 1), else_=0)).label("first")
+                       ).where(r.started >= since).group_by(r.puzzle)
+        with self.engine.connect() as db:
+            rows = {row.puzzle: row for row in db.execute(query)}
+        result = {"practiced": len(rows), "solved": sum(row.solved for row in rows.values()),
+                  "first": sum(row.first for row in rows.values()), "themes": {}}
+        if rows and catalogue.is_file():
+            with open_catalogue(catalogue) as db:
+                for ids in batched(rows, 500):
+                    marks = ",".join("?" for _ in ids)
+                    for item in db.execute(f"SELECT puzzle_id, themes FROM puzzles WHERE puzzle_id IN ({marks})", ids):
+                        row = rows[item["puzzle_id"]]
+                        for theme in set(item["themes"].split()) & {"fork", "pin", "mateIn1", "mateIn2", "endgame"}:
+                            stats = result["themes"].setdefault(theme, {"solved": 0, "mistakes": 0})
+                            stats["solved"] += int(row.solved)
+                            stats["mistakes"] += row.mistakes
+        return result

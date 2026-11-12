@@ -539,6 +539,11 @@ def create_app(path: Path):
         save_position(app.state.games.engine, player_session(request, response), command.model_dump())
         return {"ok": True}
 
+    @app.get("/api/profile/puzzle-progress")
+    def puzzle_progress(request: Request, response: Response, days: Literal["7", "30", "90"] = "30"):
+        response.headers["Cache-Control"] = "private, no-store"
+        return app.state.attempts.progress(current(request)[0], int(days), catalogue)
+
     @app.get("/api/puzzles/attempts")
     def attempts(request: Request, offset: int = Query(0, ge=0)):
         return app.state.attempts.history(current(request)[0], offset)

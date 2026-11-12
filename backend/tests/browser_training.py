@@ -248,6 +248,20 @@ class TrainingTest(unittest.TestCase):
             expect(page.get_by_text("Этой задачи больше нет в каталоге.")).to_be_visible()
             page.get_by_role("button", name="Следующая задача").click()
             expect(page.get_by_role("heading", name="Ваш ход")).to_be_visible()
+            page.get_by_label("Меню профиля").click()
+            page.get_by_role("link", name="Профиль", exact=True).click()
+            progress = page.get_by_role("region", name="Прогресс в задачах")
+            progress.get_by_label("Последние дни").select_option("7")
+            expect(progress.get_by_text("Решено задач · 1/1")).to_be_visible()
+            expect(progress.get_by_text("С первой попытки без ошибок · 0 %")).to_be_visible()
+            fork = progress.get_by_role("row").filter(has_text="Вилка")
+            expect(fork.get_by_role("cell").last).to_have_text("1")
+            with page.expect_response(lambda res: "/api/puzzles/random?theme=fork" in res.url):
+                fork.get_by_role("link", name="Вилка").click()
+            expect(page.get_by_text("Выбор темы · Вилка")).to_be_visible()
+            fresh = browser.new_page()
+            fresh.goto(page.url.split("?")[0] + "?section=profile")
+            expect(fresh.get_by_text("За этот период попыток нет.")).to_be_visible()
             browser.close()
 
 

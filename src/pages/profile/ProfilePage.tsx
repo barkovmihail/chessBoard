@@ -1,5 +1,6 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
+import { PuzzleProgress } from "./PuzzleProgress";
 import { Account } from "./Account";
 import { resultReason } from "../../features/play";
 
@@ -51,5 +52,6 @@ export function ProfilePage({ onInbox }: { onInbox: () => void }) {
         {offset > 0 && <button onClick={() => setOffset(Math.max(0, offset - 20))}>{t("Предыдущая страница", "Previous page", "Página anterior")}</button>}
         {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Следующая страница", "Next page", "Página siguiente")}</button>}
       </>}
+    <PuzzleProgress />
   </main>;
 }

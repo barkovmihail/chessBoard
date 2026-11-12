@@ -1,5 +1,6 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useRef, useState } from "react";
+import { usePuzzleThemes } from "../../shared/puzzle-themes";
 import { AttemptHistory } from "./AttemptHistory";
 import { commandId } from "../../shared/commandId";
 import { Chess } from "chess.js";
@@ -41,7 +42,11 @@ export function PuzzlesPage() {
     attempt.current = entry;
     void save(entry);
   }
-  const [theme, setTheme] = useState("");
+  const themes = usePuzzleThemes();
+  const [theme, setTheme] = useState(() => {
+    const selected = new URLSearchParams(location.search).get("theme") ?? "";
+    return Object.prototype.hasOwnProperty.call(themes, selected) ? selected : "";
+  });
   const [replayId, setReplayId] = useState<string>();
   const [sequence, next] = useState(0);
   const [puzzle, setPuzzle] = useState<Puzzle>();
@@ -70,11 +75,6 @@ export function PuzzlesPage() {
     });
     return () => abort.abort();
   }, [sequence, theme, replayId]);
-  const themes: Record<string, string> = {
-    "": t("Все темы", "All themes", "Todos los temas"), mateIn1: t("Мат в один ход", "Mate in one", "Mate en una"),
-    mateIn2: t("Мат в два хода", "Mate in two", "Mate en dos"), fork: t("Вилка", "Fork", "Ataque doble"),
-    pin: t("Связка", "Pin", "Clavada"), endgame: t("Эндшпиль", "Endgame", "Final"),
-  };
   const title = <><h1>{t("Шахматные задачи", "Puzzles", "Problemas de ajedrez")}</h1>
     <details><summary>{t("Выбор темы", "Choose theme", "Elegir tema")} · {themes[theme]}</summary>
       <label>{t("Тема задачи", "Puzzle theme", "Tema del problema")} <select value={theme} onChange={e => { setReplayId(undefined); setTheme(e.target.value); }}>
