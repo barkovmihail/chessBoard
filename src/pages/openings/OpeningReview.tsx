@@ -1,12 +1,12 @@
 import { Chess } from "chess.js";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Trainer } from "../../features/training";
 import { useLanguage } from "../../shared/language";
 import { lessonsByLanguage } from "./lessons";
 
 interface Review {
   fen: string; side: "w" | "b"; san: string; chapter: string; chapter_name: string | null;
-  line: number; ply: number; more: boolean;
+  line: number; ply: number; more: boolean; due_at: number; expected: string;
 }
 
 export function OpeningReview() {
@@ -28,7 +28,7 @@ export function OpeningReview() {
       if (position === null) { setReview(null); return; }
       if (typeof position.fen !== "string" || typeof position.expected !== "string" ||
           typeof position.chapter !== "string" || !(position.chapter_name === null || typeof position.chapter_name === "string") ||
-          !Number.isSafeInteger(position.line) || !Number.isSafeInteger(position.ply)) throw Error();
+          !Number.isSafeInteger(position.due_at) || !Number.isSafeInteger(position.line) || !Number.isSafeInteger(position.ply)) throw Error();
       const board = new Chess(position.fen);
       if (board.turn() !== position.side) throw Error();
       const san = board.move(position.expected).san;
@@ -48,7 +48,41 @@ export function OpeningReview() {
   if (!review) return <main lang={language} className="study-page">{context}
     {failed ? <p role="alert">{t("Не удалось загрузить позицию.", "Could not load the position.", "No se pudo cargar la posición.")} <button onClick={() => refresh(n => n + 1)}>{t("Повторить", "Retry", "Reintentar")}</button></p> :
       <p role="status">{review === null ? t("Нет позиций для повторения.", "No positions to review.", "No hay posiciones para repasar.") : t("Загрузка…", "Loading…", "Cargando…")}</p>}
-    {previous}</main>;
-  return <Trainer key={offset} fen={review.fen} side={review.side} steps={[[review.san, ""]]} context={context}
-    next={<>{previous}{review.more && <button onClick={() => setOffset(offset + 1)}>{t("Следующая позиция", "Next position", "Posición siguiente")}</button>}</>} />;
+    {previous}{review === null && <button onClick={() => refresh(n => n + 1)}>{t("Обновить", "Refresh", "Actualizar")}</button>}</main>;
+  return <ReviewBoard key={offset + ":" + revision} review={review} context={context} previous={previous}
+    skip={() => setOffset(offset + 1)} advance={() => { setOffset(0); refresh(n => n + 1); }} />;
+}
+
+interface BoardProps {
+  review: Review; context: React.ReactNode; previous: React.ReactNode; skip: () => void; advance: () => void;
+}
+
+function ReviewBoard({ review, context, previous, skip, advance }: BoardProps) {
+  const { language, t } = useLanguage();
+  const firstAnswer = useRef<boolean>();
+  const [status, setStatus] = useState<"idle" | "saving" | "failed" | "saved">("idle");
+  const [due, setDue] = useState(0);
+  async function save(correct: boolean) {
+    firstAnswer.current = correct;
+    setStatus("saving");
+    try {
+      const { chapter, line, ply, fen, expected, side, due_at } = review;
+      const response = await fetch("/api/openings/review", { method: "POST", keepalive: true,
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chapter, line, ply, fen, expected, side, due_at, correct }) });
+      if (!response.ok) throw Error();
+      const result = await response.json();
+      if (!Number.isSafeInteger(result.due_at) || result.due_at <= due_at) throw Error();
+      setDue(result.due_at);
+      setStatus("saved");
+    } catch { setStatus("failed"); }
+  }
+  return <Trainer fen={review.fen} side={review.side} steps={[[review.san, ""]]} context={context}
+    onAttempt={wrong => { if (firstAnswer.current === undefined) void save(!wrong); }}
+    next={<>
+      {status === "failed" && <p role="alert">{t("Расписание не сохранено.", "Could not save the schedule.", "No se pudo guardar el calendario.")} <button onClick={() => void save(firstAnswer.current!)}>{t("Повторить", "Retry", "Reintentar")}</button></p>}
+      {status === "saving" && <p role="status">{t("Сохраняем результат…", "Saving result…", "Guardando el resultado…")}</p>}
+      {status === "saved" && <><p role="status">{t("Следующее повторение", "Next review", "Próximo repaso")} · {new Date(due * 1000).toLocaleString(language)}</p>
+        <button onClick={advance}>{t("Продолжить повторение", "Continue review", "Continuar el repaso")}</button></>}
+      {status === "idle" && <>{previous}{review.more && <button onClick={skip}>{t("Следующая позиция", "Next position", "Posición siguiente")}</button>}</>}
+    </>} />;
 }

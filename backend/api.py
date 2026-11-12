@@ -28,7 +28,7 @@ from .db import open_database
 from .domain import GameError
 from .matchmaking import Matchmaking
 from .puzzle_attempts import PuzzleAttempts
-from .opening_positions import review_position, save_position
+from .opening_positions import review_position, save_position, schedule_review
 from .opening_frequency import continuations
 from .puzzles import puzzle_by_id, random_puzzle
 from .service import Games
@@ -54,6 +54,11 @@ class OpeningPosition(BaseModel):
     fen: str = Field(min_length=1, max_length=128)
     side: Literal["w", "b"]
     expected: str = Field(pattern=r"^[a-h][1-8][a-h][1-8][qrbn]?$")
+
+
+class OpeningAnswer(OpeningPosition):
+    due_at: int = Field(ge=0, le=2**53 - 1)
+    correct: bool
 
 
 class PuzzleProgress(BaseModel):
@@ -524,6 +529,10 @@ def create_app(path: Path):
     def get_opening_review(request: Request, response: Response, offset: int = Query(0, ge=0, le=2147483647)):
         response.headers["Cache-Control"] = "private, no-store"
         return review_position(app.state.games.engine, current(request)[0], offset)
+
+    @app.post("/api/openings/review")
+    def finish_opening_review(command: OpeningAnswer, request: Request):
+        return schedule_review(app.state.games.engine, current(request)[0], command.model_dump())
 
     @app.post("/api/openings/positions")
     def record_opening_position(command: OpeningPosition, request: Request, response: Response):
