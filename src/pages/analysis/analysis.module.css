@@ -1,0 +1,19 @@
+.session, .importFields { display: grid; gap: 16px; min-width: 0; }
+.session h2, .session p { margin: 0; }
+.session h2:not(:first-child) { border-top: 1px solid var(--line); padding-top: 18px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.buttons button { flex: 1 1 auto; }
+.buttons button[aria-pressed="true"] { background: var(--soft); border-color: var(--brand); color: var(--ink); }
+.notation { line-height: 1.75; overflow: auto; overflow-wrap: anywhere; max-height: 15rem; padding-block: 10px; }
+.moveTable { max-height: 18rem; overflow: auto; }
+.moveTable table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.moveTable th, .moveTable td { padding: 5px 6px; text-align: left; border-bottom: 1px solid var(--line); }
+.moveTable th { font-size: .9rem; color: var(--muted); }
+.moveTable thead th { position: sticky; top: 0; background: var(--paper); }
+.moveTable td button { min-width: 3.5rem; background: transparent; border-color: transparent; text-align: left; }
+.moveTable td button[aria-current], .moveTable td button:hover { background: var(--soft); }
+.quickImport { max-width: 52rem; }
+.importFields { border: 0; margin: 0; padding: 0; }
+.importFields label { display: grid; gap: 6px; min-width: 0; }
+.importFields textarea, .importFields input { min-width: 0; width: 100%; }
+.importFields label:last-child { border-top: 1px solid var(--line); padding-top: 14px; }

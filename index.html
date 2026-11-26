@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f1ea" />
+    <script>
+      try {
+        if (JSON.parse(localStorage.getItem("chessboard.appearance"))?.theme === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch { /* Use the light palette when storage is unavailable. */ }
+    </script>
+    <meta
+      name="description"
+      content="Chess board"
+    />
+    <link rel="icon" href="/staunton.svg" type="image/svg+xml" />
+    <title>ChessBoard</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

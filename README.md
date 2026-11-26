@@ -1,10 +1,23 @@
-# Chess board
-A simple checkerboard implementation using React and TypeScript. The application template can be used for quick development start.
+# chessBoard
 
-## App Interface
-The classic version of the chessboard was chosen. If desired, you can add styles with other variants of chess pieces.
+Веб-приложение для шахматных партий, тренировки дебютов и решения задач. На главном экране «Игровой зал» выберите контроль времени и соперника. Для оформления используется Nunito с локальными файлами кириллицы и латиницы. [Лицензия шрифта](public/fonts/nunito/nunito-LICENSE.txt) · [Лицензия приложения](LICENSE)
 
-![alt text](https://github.com/barkovmihail/chessBoard/blob/main/public/template.png)
+[Исходный вид шахматной доски](public/template.png)
 
-### License
-[MIT licensed](./LICENSE).
+## Разработка
+
+Требуется Node.js 22.12 или новее. Установите зависимости командой `npm ci` и запустите доску через `npm start`. Команда `npm test` проверяет расстановку и архитектурные границы, `npm run build` проверяет типы и создаёт сборку в `build/`.
+
+[Архитектура приложения](ARCHITECTURE.md) · [План развития и приоритеты](ROADMAP.md)
+
+## Игра с сохранением
+
+Из корня проекта выполните `python3 -m venv .venv`, затем `.venv/bin/python -m pip install -r backend/requirements.txt`. Соберите клиент через `npm run build` и запустите `npm run backend`. Откройте http://127.0.0.1:8011. Для разработки интерфейса можно одновременно запустить `npm start`: Vite передаёт запросы API тому же серверу.
+
+Нажмите «Начать партию», затем e2 и e4. Эта партия предназначена для двух сторон за одним устройством. Адрес страницы и cookie этого браузера позволяют вернуться к позиции. По умолчанию база хранится в `chessboard.sqlite3`; переменная `CHESSBOARD_DB` задаёт другой путь.
+
+Для серверных проверок установите `backend/requirements-test.txt` в то же окружение и выполните `.venv/bin/python -m unittest discover -s backend/tests`. Для браузерной проверки после сборки установите Chromium командой `.venv/bin/playwright install chromium` и выполните `.venv/bin/python -m backend.tests.browser_game`. Для установленного Chrome задайте `BROWSER_CHANNEL=chrome`.
+
+Для игры вдвоём выберите «Пригласить друга» и передайте ссылку второму игроку. Он открывает её в своём браузере и нажимает «Играть за чёрных». Обоим игрокам нужен доступ к адресу сервера. После входа сервер передаёт позицию по WebSocket при изменениях и сразу после переподключения.
+
+В веб-приложении доступны «Тренажёр дебютов» и «Шахматные задачи». Для задач нужен локальный каталог. [Загрузка данных](docs/features/puzzles.md) · [Описание функций](docs/features/README.md)
