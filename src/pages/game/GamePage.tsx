@@ -3,9 +3,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { Game, gameCue, levelLabels, PlayBoard, resultReason, RequestError, requestGame, subscribeGame } from "../../features/play";
 import { commandId } from "../../shared/commandId";
 import { playSound } from "../../shared/sound";
-import { ClockPanel, TimeSetup } from "./TimeControl";
+import { ClockPanel, PositionPreview, TimeSetup } from "./TimeControl";
+import { MoveRecord } from "./MoveRecord";
 import { GameReview } from "./GameReview";
 import { BoardLayout } from "../../shared/board-layout";
+import { ConfirmAction } from "../../shared/confirm-action";
 import styles from "./game.module.css";
 
 const errors = {
@@ -43,6 +45,8 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
   const [inviteFailed, setInviteFailed] = useState(false);
   const [invite, setInvite] = useState<string>();
   const [pending, setPending] = useState<Command>();
+  const [copyMessage, setCopyMessage] = useState<"copied" | "manual">();
+  const invitationField = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const query = new URLSearchParams(location.search);
@@ -131,7 +135,7 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     if (game) submit({ action, version: game.version, command_id: commandId() });
   }
 
-  const board = <PlayBoard key={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending}
+  const board = <PlayBoard positionKey={game?.version} game={game} enabled={!!game && !game.waiting && (game.side === "both" || game.side === game.turn) && !busy && !pending}
       onMove={uci => game && submit({ uci, version: game.version, command_id: commandId() })} />;
   const context = game ? <>
     <p>{game.rated ? t("Рейтинговая игра", "Rated game", "Partida puntuada") : t("Нерейтинговая игра", "Casual game", "Partida amistosa")}</p>
@@ -140,15 +144,12 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
     {game.watch_key && <a href={"?watch=" + game.watch_key}>{t("Ссылка для зрителей", "Spectator link", "Enlace para espectadores")}</a>}
     {game.chess960 != null && <p>Chess960 · {t("Расстановка №", "Position #", "Posición n.º ")}{game.chess960}. {t("Для рокировки переместите короля на свою ладью.", "To castle, move your king onto your rook.", "Para enrocar, mueve el rey a la casilla de tu torre.")}</p>}
     {game.engine_level && <p>{t("Чёрные", "Black", "Negras")} · {game.engine_name === "stockfish" ? "Stockfish" : "Leela Chess Zero"} · {t(levelLabels[game.engine_level][0], levelLabels[game.engine_level][1], levelLabels[game.engine_level][2])}</p>}
-    {game.waiting && <label>{t("Ссылка для соперника", "Opponent link", "Enlace para el rival")} <input readOnly value={location.origin + location.pathname + "?invite=" + game.id}
-      onFocus={event => event.target.select()} /></label>}
-  </> : invite ? <><p>{inviteFailed ? t("Не удалось загрузить контроль времени", "Could not load the time control", "No se pudo cargar el ritmo de juego") : inviteControl === "unlimited" ? t("Без часов", "Unlimited", "Sin reloj") : inviteControl}</p><button disabled={busy || (!inviteControl && !inviteFailed)} onClick={() => create(true)}>{t("Играть за чёрных", "Play as Black", "Jugar con negras")}</button></>
-    : null;
-  const status = game && <><span aria-live="polite">{game.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") :
+  </> : null;
+  const status = game && <div className={styles.gameStatus}><span aria-live="polite">{game.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") :
     game.result ?? (game.turn === "white" ? t("Ход белых", "White to move", "Juegan blancas") : t("Ход чёрных", "Black to move", "Juegan negras"))}</span>
       {game.reason && <p>{resultReason(game.reason, language)}</p>}
     {disconnected && onlineId && <p role="status">{t("Восстанавливаем связь с партией…", "Reconnecting to the game…", "Reconectando con la partida…")}</p>}
-  </>;
+  </div>;
   const actions = game && <>
       {game.previous_game && <a href={"?game=" + game.previous_game}>{t("Предыдущая партия", "Previous game", "Partida anterior")}</a>}
       {game.next_game ? <a href={"?game=" + game.next_game}>{t("Открыть реванш", "Open rematch", "Abrir la revancha")}</a> :
@@ -165,23 +166,63 @@ export function GamePage({ onOpen }: { onOpen: (id: string) => void }) {
           : game.draw_offer === game.side ? <span>{t("Ничья предложена", "Draw offered", "Tablas ofrecidas")}</span>
           : <><button onClick={() => act("accept")}>{t("Принять ничью", "Accept draw", "Aceptar tablas")}</button>
             <button onClick={() => act("decline")}>{t("Отклонить ничью", "Decline draw", "Rechazar tablas")}</button></>)}
-        <button className="resign-action" onClick={() => act("resign")}>{t("Сдаться", "Resign", "Abandonar")}</button>
+        <ConfirmAction label={t("Сдаться", "Resign", "Abandonar")}
+          question={t("Сдаться в этой партии?", "Resign this game?", "¿Abandonar esta partida?")}
+          description={t("Сопернику будет засчитана победа.", "Your opponent will win the game.", "Tu rival ganará la partida.")}
+          onConfirm={() => act("resign")} />
       </fieldset>}
-      {!game.result && game.moves.length > 0 && <ol aria-label={t("Запись ходов", "Move list", "Lista de jugadas")} className={styles.history}>
-        {game.moves.map((move, index) => index % 2 === 0 && <li key={index}>
-          <span>{move}</span>{" "}<span>{game.moves[index + 1]}</span>{" "}
-        </li>)}
-      </ol>}
     {error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}
     {pending && !busy && <button onClick={() => submit(pending)}>{t("Повторить отправку", "Retry sending", "Reintentar el envío")}</button>}
   </>;
-  function render(position: React.ReactElement, controls?: React.ReactElement, belowBoard?: React.ReactElement) {
-    return <BoardLayout gameWorkspace={!!game} lang={language} board={game ? <><ClockPanel game={game}>{position}</ClockPanel>{belowBoard}</> : position}
-    context={<>{context}{!game && error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}</>} actions={controls ? <>{controls}{actions}</> : actions} status={status} />;
+  if (game?.waiting || (!game && invite)) {
+    const control = game?.clock ? game.clock.base_minutes + "+" + game.clock.increment_seconds : inviteControl;
+    const link = game && location.origin + location.pathname + "?invite=" + game.id;
+    const inviteTitle = t("Приглашение друга", "Friend invitation", "Invitación a un amigo");
+    return <main lang={language}><h1 className={styles.pageTitle}>{inviteTitle}</h1><div className={styles.lobby}>
+      <PositionPreview invitation board={board} chess960={game?.chess960} />
+      <section className={styles.invitation}>
+        <h2>{game ? t("Приглашение готово", "Invitation ready", "Invitación lista") : t("Приглашение в партию", "Game invitation", "Invitación a una partida")}</h2>
+        <svg aria-hidden="true" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="m9 8 3-3a5 5 0 0 1 7 7l-3 3m-1 1-3 3a5 5 0 0 1-7-7l3-3m0 7 8-8"/></svg>
+        <strong className={styles.inviteTime}>{control && control !== "unlimited" ? control : game || control === "unlimited" ? t("Без часов", "Unlimited", "Sin reloj") : ""}</strong>
+        <p>{game ? t("Друг присоединится по приглашению. Партия начнётся после подключения.", "Share the invitation with your friend. The game starts when they join.", "Comparte la invitación con tu amigo. La partida empieza cuando se una.") : t("Примите приглашение, чтобы занять место за доской.", "Accept the invitation to take your seat at the board.", "Acepta la invitación para ocupar tu lugar en el tablero.")}</p>
+        {link ? <>
+          <label>{t("Ссылка для соперника", "Opponent link", "Enlace para el rival")}<input ref={invitationField} readOnly value={link} onFocus={e => e.target.select()} /></label>
+          <button className={styles.primary} onClick={async () => {
+            try { await navigator.clipboard.writeText(link); setCopyMessage("copied"); }
+            catch { invitationField.current?.focus(); invitationField.current?.select(); setCopyMessage("manual"); }
+          }}>{t("Скопировать ссылку", "Copy link", "Copiar enlace")}</button>
+          {copyMessage && <p role="status">{copyMessage === "copied" ? t("Ссылка скопирована", "Link copied", "Enlace copiado") : t("Скопируйте выделенную ссылку.", "Copy the selected link.", "Copia el enlace seleccionado.")}</p>}
+          {status}<a href="?section=inbox">{t("Текущие партии", "Current games", "Partidas en curso")} →</a>
+          {context}
+        </> : <>
+          {inviteFailed && <p role="alert">{t("Не удалось загрузить контроль времени", "Could not load the time control", "No se pudo cargar el ritmo de juego")}</p>}
+          <button className={styles.primary} disabled={busy || (!inviteControl && !inviteFailed)} onClick={() => create(true)}>{t("Играть за чёрных", "Play as Black", "Jugar con negras")}</button>
+        </>}
+        {error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}
+      </section>
+    </div></main>;
   }
-  if (!game && !invite) return <main>
+  if (!game) return <main>
     <TimeSetup busy={busy} create={create} board={board} />
     {error && <p role="alert">{t(errors[error][0], errors[error][1], errors[error][2])}</p>}
   </main>;
-  return game?.result ? <GameReview key={game.id} game={game} render={render} /> : render(board);
+  const activeGame = game;
+  const title = game.result ? t("Разбор партии", "Game review", "Revisión de la partida") :
+    game.engine_level ? t("Партия с компьютером", "Computer game", "Partida contra el ordenador") :
+    game.side === "both" ? t("Партия на одном устройстве", "Local game", "Partida en un dispositivo") : t("Партия с другом", "Game with a friend", "Partida con un amigo");
+  function render(position: React.ReactElement, controls?: React.ReactElement, belowBoard?: React.ReactElement) {
+    return <BoardLayout title={title} gameWorkspace lang={language}
+      board={<><ClockPanel game={activeGame}>{position}</ClockPanel>{belowBoard}</>}
+      actions={<>
+        {controls ? <><h2>{t("Итоги партии", "Game summary", "Resumen de la partida")}</h2>{controls}</> :
+          <><MoveRecord moves={activeGame.moves} pieceCount={activeGame.position.length} />{status}
+            <div className={styles.moveInfo}>
+              {activeGame.moves.length > 0 && <p>{t("Последний ход", "Last move", "Última jugada")} · {Math.ceil(activeGame.moves.length / 2)}{activeGame.moves.length % 2 ? ". " : "… "}{activeGame.moves[activeGame.moves.length - 1]}</p>}
+              {activeGame.clock && <p>{activeGame.clock.base_minutes} {t("мин", "min", "min")} + {activeGame.clock.increment_seconds} {t("с за ход", "s per move", "s por jugada")}</p>}
+            </div>
+          </>}
+        {actions}
+      </>} context={context} />;
+  }
+  return game.result ? <GameReview key={game.id} game={game} summary={status} render={render} /> : render(board);
 }

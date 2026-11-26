@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLanguage } from "../../shared/language";
 import { usePuzzleThemes } from "../../shared/puzzle-themes";
+import { panelStyles as styles } from "../../shared/page-panels";
 
 interface ThemeStats { solved: number; mistakes: number }
 interface Progress { practiced: number; solved: number; first: number; themes: Record<string, ThemeStats> }
@@ -28,18 +29,19 @@ export function PuzzleProgress() {
     return () => abort.abort();
   }, [days, revision]);
   const title = t("Прогресс в задачах", "Puzzle progress", "Progreso en problemas");
-  return <section aria-label={title}><h2>{title}</h2>
+  return <section className="atlas-card" aria-label={title}><h2>{title}</h2>
     <label>{t("Последние дни", "Days to include", "Últimos días")} <select value={days} onChange={e => setDays(e.target.value)}>
       {[7, 30, 90].map(n => <option key={n}>{n}</option>)}</select></label>
     {failed ? <p role="alert">{t("Не удалось загрузить статистику.", "Could not load statistics.", "No se pudieron cargar las estadísticas.")} <button onClick={() => refresh(n => n + 1)}>{t("Повторить", "Retry", "Reintentar")}</button></p>
       : !data ? <p role="status">{t("Загрузка…", "Loading…", "Cargando…")}</p>
       : !data.practiced ? <p>{t("За этот период попыток нет.", "No attempts in this period.", "No hay intentos en este periodo.")} <a href="?section=puzzles">{t("Решать задачи", "Solve puzzles", "Resolver problemas")}</a></p>
-      : <><p>{t("Решено задач", "Puzzles solved", "Problemas resueltos")} · {data.solved}/{data.practiced}</p>
-        <p>{t("С первой попытки без ошибок", "Solved on the first try without mistakes", "Resueltos al primer intento sin errores")} · {new Intl.NumberFormat(language, { style: "percent", maximumFractionDigits: 1 }).format(data.first / data.practiced)}</p>
-        {Object.keys(data.themes).length > 0 && <table><thead><tr>
+      : <><div className={styles.metrics}><div><span>{t("Решено задач", "Puzzles solved", "Problemas resueltos")} · </span><strong>{data.solved}/{data.practiced}</strong></div>
+        <div><span>{t("С первой попытки без ошибок", "Solved on the first try without mistakes", "Resueltos al primer intento sin errores")} · </span><strong>{new Intl.NumberFormat(language, { style: "percent", maximumFractionDigits: 1 }).format(data.first / data.practiced)}</strong></div></div>
+        {Object.keys(data.themes).length > 0 && <div className={styles.scrollTable}><table><thead><tr>
           <th>{t("Тема", "Theme", "Tema")}</th><th>{t("Решено", "Solved", "Resueltos")}</th><th>{t("Ошибки", "Mistakes", "Errores")}</th>
         </tr></thead><tbody>{Object.entries(data.themes).sort(([a, x], [b, y]) => y.mistakes - x.mistakes || a.localeCompare(b)).map(([key, row]) =>
-          <tr key={key}><th scope="row"><a href={"?section=puzzles&theme=" + encodeURIComponent(key)}>{themes[key]}</a></th><td>{row.solved}</td><td>{row.mistakes}</td></tr>)}</tbody></table>}
+          <tr key={key}><th scope="row"><a href={"?section=puzzles&theme=" + encodeURIComponent(key)}>{themes[key]}</a></th><td>{row.solved}</td><td>{row.mistakes}</td></tr>)}</tbody></table></div>}
       </>}
+    <a className={styles.rowLink} href="?section=puzzles&view=history">{t("История попыток", "Attempt history", "Historial de intentos")}</a>
   </section>;
 }

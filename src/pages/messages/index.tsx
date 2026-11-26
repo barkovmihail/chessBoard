@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { commandId } from "../../shared/commandId";
 import { useLanguage } from "../../shared/language";
 
-import styles from "./messages.module.css";
+import { PlayerAvatar, panelStyles as styles } from "../../shared/page-panels";
 
 interface Message {
   seq: number; sender: string; recipient: string; body: string; outgoing: boolean; created: number;
@@ -65,32 +65,39 @@ export function MessagesPage() {
     } catch { setSendError("send"); }
     finally { setBusy(false); }
   }
-  return <main className={"study-page " + styles.messages}><h1>{t("Личные сообщения", "Private messages", "Mensajes privados")}</h1>
-    {guest ? <a href="?section=profile#account">{t("Войти", "Sign in", "Iniciar sesión")}</a> : <>
-      {page && <form onSubmit={send}><fieldset disabled={busy}>
-        <label>{t("Кому", "Recipient", "Destinatario")} <input required maxLength={32} value={recipient}
-          onChange={e => { setRecipient(e.target.value); token.current = ""; }} /></label>
-        <label>{t("Текст сообщения", "Message text", "Texto del mensaje")} <textarea ref={editor} required maxLength={500} value={body}
-          onChange={e => { setBody(e.target.value); token.current = ""; }} /></label>
-        <button disabled={!body.trim() || !recipient.trim()}>{t("Отправить", "Send", "Enviar")}</button>
-      </fieldset></form>}
-      {sendError && <p role="alert">{sendError === "recipient" ? t("Укажите имя другого игрока с аккаунтом.", "Enter another registered player’s name.", "Introduce el nombre de otro jugador registrado.") :
-        t("Отправка не подтверждена. Повторите попытку.", "Delivery was not confirmed. Try again.", "No se ha confirmado la entrega. Vuelve a intentarlo.")}</p>}
-      {loadFailed ? <p role="alert">{t("Не удалось загрузить сообщения.", "Could not load messages.", "No se pudieron cargar los mensajes.")}</p> : !page && <p>{t("Загрузка…", "Loading…", "Cargando…")}</p>}
-      {page && <>
-        {!page.items.length && <p>{t("Сообщений пока нет.", "No messages yet.", "Todavía no hay mensajes.")}</p>}
-        <ol>{page.items.map(m => <li key={m.seq}>
-          <strong>{m.outgoing ? t("Кому", "To", "Para") + " " + m.recipient : t("От", "From", "De") + " " + m.sender}</strong>
-          {" · "}<time dateTime={new Date(m.created).toISOString()}>{new Date(m.created).toLocaleString(language)}</time>
-          <p>{m.body}</p>
-          {!m.outgoing && <button disabled={busy} onClick={() => {
-            if (recipient !== m.sender) token.current = "";
-            setRecipient(m.sender); editor.current?.focus();
-          }}>{t("Ответить", "Reply", "Responder")}</button>}
-        </li>)}</ol>
-        {before && <button onClick={() => setBefore(undefined)}>{t("К новым", "Newest", "Más recientes")}</button>}
-        {page.before && <button onClick={() => setBefore(page.before!)}>{t("Более ранние", "Older", "Anteriores")}</button>}
-      </>}
-    </>}
+  return <main lang={language} className="atlas-page"><h1>{t("Личные сообщения", "Private messages", "Mensajes privados")}</h1>
+    <div className="atlas-columns">
+      <section className="atlas-card"><h2>{t("Переписка", "Correspondence", "Conversaciones")}</h2>
+        {guest && <p>{t("Переписка доступна после входа.", "Sign in to see your messages.", "Inicia sesión para ver tus mensajes.")}</p>}
+        {loadFailed ? <p role="alert">{t("Не удалось загрузить сообщения.", "Could not load messages.", "No se pudieron cargar los mensajes.")}</p> : !guest && !page && <p role="status">{t("Загрузка…", "Loading…", "Cargando…")}</p>}
+        {page && <>
+          {!page.items.length && <p className="atlas-muted">{t("Сообщений пока нет.", "No messages yet.", "Todavía no hay mensajes.")}</p>}
+          <ol className={styles.feed}>{page.items.map(m => <li key={m.seq}>
+            <PlayerAvatar name={m.sender} own={m.outgoing} />
+            <div><div className={styles.byline}><strong>{m.outgoing ? t("Кому", "To", "Para") + " " + m.recipient : t("От", "From", "De") + " " + m.sender}</strong>
+              <time dateTime={new Date(m.created).toISOString()}>{new Date(m.created).toLocaleString(language)}</time></div>
+              <p className={styles.body}>{m.body}</p>
+              {!m.outgoing && <button disabled={busy} onClick={() => {
+                if (recipient !== m.sender) token.current = "";
+                setRecipient(m.sender); editor.current?.focus();
+              }}>{t("Ответить", "Reply", "Responder")}</button>}
+            </div></li>)}</ol>
+          <div className={styles.actions}>{before && <button onClick={() => setBefore(undefined)}>{t("К новым", "Newest", "Más recientes")}</button>}
+          {page.before && <button onClick={() => setBefore(page.before!)}>{t("Более ранние", "Older", "Anteriores")}</button>}</div>
+        </>}
+      </section>
+      <section className="atlas-card"><h2>{t("Новое сообщение", "New message", "Nuevo mensaje")}</h2>
+        {guest ? <a className="atlas-primary" href="?section=profile&view=account#account">{t("Войти", "Sign in", "Iniciar sesión")}</a> :
+          <form className={styles.form} onSubmit={send}><fieldset disabled={busy || !page}>
+            <label>{t("Кому", "Recipient", "Destinatario")} <input required maxLength={32} value={recipient}
+              onChange={e => { setRecipient(e.target.value); token.current = ""; }} /></label>
+            <label>{t("Текст сообщения", "Message text", "Texto del mensaje")} <textarea ref={editor} required maxLength={500} value={body}
+              onChange={e => { setBody(e.target.value); token.current = ""; }} /></label>
+            <button className="atlas-primary" disabled={!body.trim() || !recipient.trim()}>{t("Отправить", "Send", "Enviar")}</button>
+          </fieldset></form>}
+        {sendError && <p role="alert">{sendError === "recipient" ? t("Укажите имя другого игрока с аккаунтом.", "Enter another registered player’s name.", "Introduce el nombre de otro jugador registrado.") :
+          t("Отправка не подтверждена. Повторите попытку.", "Delivery was not confirmed. Try again.", "No se ha confirmado la entrega. Vuelve a intentarlo.")}</p>}
+      </section>
+    </div>
   </main>;
 }

@@ -1,9 +1,0 @@
-.messages { max-width: 46rem; overflow-wrap: anywhere; }
-.messages fieldset { display: grid; gap: .75rem; min-width: 0; }
-.messages label { display: grid; gap: .25rem; }
-.messages input, .messages textarea { width: 100%; padding: .45rem; font: inherit; }
-.messages textarea { min-height: 5rem; resize: vertical; }
-.messages button { justify-self: start; }
-.messages ol { padding: 0; list-style: none; }
-.messages li { padding: .8rem 0; border-top: 1px solid var(--edge); }
-.messages li p { margin: .45rem 0; white-space: pre-wrap; }

@@ -1,6 +1,7 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useRef, useState } from "react";
 import { commandId } from "../../shared/commandId";
+import { panelStyles as styles } from "../../shared/page-panels";
 
 interface Member { name: string; joined: boolean }
 interface Team { id: string; name: string; owner: boolean; sender: string; joined: boolean; members: Member[] }
@@ -58,33 +59,48 @@ export function TeamsPage() {
     finally { setBusy(false); }
   }
 
-  return <main lang={language} className="study-page"><h1>{t("Команды", "Teams", "Equipos")}</h1>
-    {guest ? <a href="?section=profile">{t("Войти для участия", "Sign in to participate", "Inicia sesión para participar")}</a> : teams && <>
-      <form onSubmit={async e => {
-        e.preventDefault();
-        const form = e.currentTarget;
-        if (!nextId.current) nextId.current = commandId();
-        if (await send("", { id: nextId.current, name: new FormData(form).get("name") })) { nextId.current = ""; form.reset(); }
-      }}><label>{t("Название команды", "Team name", "Nombre del equipo")} <input name="name" required maxLength={80} /></label><button disabled={busy}>{t("Создать команду", "Create team", "Crear equipo")}</button></form>
-      {!teams.length && <p>{t("У вас пока нет команд и приглашений.", "You have no teams or invitations yet.", "Todavía no tienes equipos ni invitaciones.")}</p>}
-      {teams.map(team => <section key={team.id}><h2>{team.name}</h2>
-        {team.joined ? <><ul>{team.members.map(m => <li key={m.name}>{m.name}{!m.joined && t(" · Приглашение отправлено", " · Invited", " · Invitación enviada")}</li>)}</ul>
-          {team.owner && <form onSubmit={async e => {
-            e.preventDefault(); const form = e.currentTarget;
-            if (await send("/" + team.id + "/invite", { name: new FormData(form).get("player") })) form.reset();
-          }}><label>{t("Имя игрока", "Player name", "Nombre del jugador")} <input required name="player" maxLength={32} /></label><button disabled={busy}>{t("Пригласить в команду", "Invite to team", "Invitar al equipo")}</button></form>}
-        </> : <><p>{t("Приглашает", "Invited by", "Invitación de")} {team.sender}.</p><button disabled={busy} onClick={() => send("/" + team.id + "/accept")}>{t("Принять приглашение", "Accept invitation", "Aceptar invitación")}</button>
-          <button disabled={busy} onClick={() => send("/" + team.id + "/decline")}>{t("Отклонить приглашение", "Decline invitation", "Rechazar invitación")}</button>
-          <button disabled={busy} onClick={() => send("/blocks/block", { name: team.sender })}>{t("Отключить приглашения от", "Block invitations from", "Bloquear invitaciones de")} {team.sender}</button></>}
-      </section>)}
-      {blocked.length > 0 && <section><h2>{t("Приглашения отключены", "Blocked invitations", "Invitaciones bloqueadas")}</h2><ul>{blocked.map(name =>
-        <li key={name}>{name} <button disabled={busy} onClick={() => send("/blocks/unblock", { name })}>{t("Разрешить приглашения от", "Allow invitations from", "Permitir invitaciones de")} {name}</button></li>
-      )}</ul></section>}
-    </>}
+  const memberships = teams?.filter(team => team.joined);
+  const invitations = teams?.filter(team => !team.joined);
+  return <main lang={language} className="atlas-page"><h1>{t("Команды", "Teams", "Equipos")}</h1>
     {loadError && <p role="alert">{t("Не удалось загрузить команды.", "Could not load teams.", "No se pudieron cargar los equipos.")} <button onClick={() => refresh(n => n + 1)}>{t("Повторить", "Retry", "Reintentar")}</button></p>}
     {error && <p role="alert">{error === "invite" ? t("Приглашение этому игроку недоступно.", "This player cannot be invited.", "No se puede invitar a este jugador.") :
       error === "player" ? t("Игрок с таким именем не найден.", "Player not found.", "No se encontró al jugador.") :
       error === "save" ? t("Изменение не сохранено. Проверьте данные и повторите попытку.", "Could not save changes. Check the details and try again.", "No se pudieron guardar los cambios. Revisa los datos y vuelve a intentarlo.") :
       t("Ошибка соединения.", "Connection error.", "Error de conexión.")}</p>}
+    <div className="atlas-columns">
+      <div className={styles.stack}>
+        {!memberships?.length && <section className="atlas-card"><h2>{t("Мои команды", "My teams", "Mis equipos")}</h2>
+          {guest ? <a className="atlas-primary" href="?section=profile&view=account#account">{t("Войти для участия", "Sign in to participate", "Inicia sesión para participar")}</a> :
+            teams ? <p className="atlas-muted">{teams.length ? t("Вы пока не состоите в командах.", "You haven't joined a team yet.", "Todavía no perteneces a ningún equipo.") : t("У вас пока нет команд и приглашений.", "You have no teams or invitations yet.", "Todavía no tienes equipos ni invitaciones.")}</p> :
+            !loadError && <p role="status">{t("Загрузка…", "Loading…", "Cargando…")}</p>}
+        </section>}
+        {memberships?.map(team => <section key={team.id} className="atlas-card"><h2>{team.name}</h2>
+          <h3>{t("Участники команды", "Team members", "Miembros del equipo")}</h3>
+          <ul className={styles.list}>{team.members.map(m => <li key={m.name}><strong>{m.name}</strong>{!m.joined && t(" · Приглашение отправлено", " · Invited", " · Invitación enviada")}</li>)}</ul>
+          {team.owner && <form className={styles.form} onSubmit={async e => {
+            e.preventDefault(); const form = e.currentTarget;
+            if (await send("/" + team.id + "/invite", { name: new FormData(form).get("player") })) form.reset();
+          }}><label>{t("Имя игрока", "Player name", "Nombre del jugador")} <input required name="player" maxLength={32} /></label><button className="atlas-primary" disabled={busy}>{t("Пригласить в команду", "Invite to team", "Invitar al equipo")}</button></form>}
+        </section>)}
+      </div>
+      <aside className={styles.stack}><section className="atlas-card"><h2>{t("Управление командой", "Team management", "Gestión del equipo")}</h2>
+        <form className={styles.form} onSubmit={async e => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          if (!nextId.current) nextId.current = commandId();
+          if (await send("", { id: nextId.current, name: new FormData(form).get("name") })) { nextId.current = ""; form.reset(); }
+        }}><fieldset disabled={busy || !teams}><label>{t("Название команды", "Team name", "Nombre del equipo")} <input name="name" required maxLength={80} /></label>
+          <button className="atlas-primary">{t("Создать команду", "Create team", "Crear equipo")}</button></fieldset></form>
+      </section>
+      {!!invitations?.length && <section className="atlas-card"><h2>{t("Приглашения", "Invitations", "Invitaciones")}</h2>
+        {invitations.map(team => <section key={team.id}><h3>{team.name}</h3><p>{t("Приглашает", "Invited by", "Invitación de")} {team.sender}.</p>
+          <div className={styles.stack}><button className="atlas-primary" disabled={busy} onClick={() => send("/" + team.id + "/accept")}>{t("Принять приглашение", "Accept invitation", "Aceptar invitación")}</button>
+            <button disabled={busy} onClick={() => send("/" + team.id + "/decline")}>{t("Отклонить приглашение", "Decline invitation", "Rechazar invitación")}</button>
+            <button disabled={busy} onClick={() => send("/blocks/block", { name: team.sender })}>{t("Отключить приглашения от", "Block invitations from", "Bloquear invitaciones de")} {team.sender}</button>
+          </div></section>)}</section>}
+      {blocked.length > 0 && <section className="atlas-card"><h2>{t("Приглашения отключены", "Blocked invitations", "Invitaciones bloqueadas")}</h2><ul className={styles.list}>{blocked.map(name =>
+        <li key={name}>{name} <button disabled={busy} onClick={() => send("/blocks/unblock", { name })}>{t("Разрешить приглашения от", "Allow invitations from", "Permitir invitaciones de")} {name}</button></li>)}</ul></section>}
+      </aside>
+    </div>
   </main>;
 }

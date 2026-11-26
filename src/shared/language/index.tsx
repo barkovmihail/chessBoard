@@ -7,17 +7,26 @@ const LanguageContext = createContext<{ language: Language; select: (value: Lang
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, select] = useState<Language>(() => {
+  const [language, setLanguage] = useState<Language>(() => {
     try {
       const saved = localStorage.getItem(key);
-      return saved === "en" || saved === "es" ? saved : "ru";
+      if (saved === "ru" || saved === "en" || saved === "es") return saved;
+    } catch { /* Browser preferences still apply when storage is unavailable. */ }
+    if (typeof navigator !== "undefined") {
+      for (const tag of navigator.languages?.length ? navigator.languages : [navigator.language]) {
+        const code = tag?.split("-")[0].toLowerCase();
+        if (code === "ru" || code === "en" || code === "es") return code;
+      }
     }
-    catch { return "ru"; }
+    return "ru";
   });
   useEffect(() => {
     document.documentElement.lang = language;
-    try { localStorage.setItem(key, language); } catch { /* Keep the selection for this session. */ }
   }, [language]);
+  function select(value: Language) {
+    setLanguage(value);
+    try { localStorage.setItem(key, value); } catch { /* Keep the selection for this session. */ }
+  }
   return <LanguageContext.Provider value={{ language, select }}>{children}</LanguageContext.Provider>;
 }
 

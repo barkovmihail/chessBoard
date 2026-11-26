@@ -10,9 +10,9 @@ class TrainingTest(unittest.TestCase):
     def test_openings_and_puzzle(self):
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(channel=os.getenv("BROWSER_CHANNEL") or None)
-            page = browser.new_page(viewport={"width": 390, "height": 844}, has_touch=True)
+            page = browser.new_page(locale="ru-RU", viewport={"width": 390, "height": 844}, has_touch=True)
             page.goto(os.getenv("CHESSBOARD_TEST_URL", "http://127.0.0.1:8011"))
-            page.get_by_role("link", name="Тренажёр дебютов").click()
+            page.get_by_role("link", name="Дебюты").click()
 
             def check_layout():
                 for width in (360, 768, 1440):
@@ -88,7 +88,7 @@ class TrainingTest(unittest.TestCase):
 
             link = page.get_by_role("link", name="Ссылка на главу")
             self.assertEqual(link.get_attribute("href"), "?section=openings&chapter=french-defense")
-            reader = browser.new_page()
+            reader = browser.new_page(locale="ru-RU")
             reader.goto(page.url.split("?")[0] + link.get_attribute("href"))
             expect(reader.get_by_label("Дебют", exact=True)).to_have_value("french-defense")
             reader.get_by_label("Дебют", exact=True).select_option("queens-gambit")
@@ -139,7 +139,7 @@ class TrainingTest(unittest.TestCase):
             reader.get_by_label("Variante 2", exact=True).fill("d4 | Контролируем e5")
             reader.get_by_role("button", name="Guardar capítulo").click()
             expect(reader.get_by_role("heading", name="Центральные пешки")).to_be_visible()
-            student = browser.new_page(viewport={"width": 390, "height": 844})
+            student = browser.new_page(locale="ru-RU", viewport={"width": 390, "height": 844})
             student.goto(reader.url)
             expect(student.get_by_label("Учебный вариант")).to_be_hidden()
             student.get_by_text("Выбрать вариант", exact=True).click()
@@ -165,7 +165,7 @@ class TrainingTest(unittest.TestCase):
             student.close()
             reader.close()
             with page.expect_response(lambda res: "/api/puzzles/random" in res.url) as fetched:
-                page.get_by_role("link", name="Шахматные задачи").click()
+                page.get_by_role("link", name="Задачи").click()
             check_layout()
             self.assertEqual(fetched.value.status, 200)
             page.get_by_text("История попыток", exact=True).click()
@@ -249,7 +249,7 @@ class TrainingTest(unittest.TestCase):
             page.get_by_role("button", name="Следующая задача").click()
             expect(page.get_by_role("heading", name="Ваш ход")).to_be_visible()
             page.get_by_label("Меню профиля").click()
-            page.get_by_role("link", name="Профиль", exact=True).click()
+            page.locator(".profile-panel").get_by_role("link", name="Профиль", exact=True).click()
             progress = page.get_by_role("region", name="Прогресс в задачах")
             progress.get_by_label("Последние дни").select_option("7")
             expect(progress.get_by_text("Решено задач · 1/1")).to_be_visible()
@@ -259,7 +259,7 @@ class TrainingTest(unittest.TestCase):
             with page.expect_response(lambda res: "/api/puzzles/random?theme=fork" in res.url):
                 fork.get_by_role("link", name="Вилка").click()
             expect(page.get_by_text("Выбор темы · Вилка")).to_be_visible()
-            fresh = browser.new_page()
+            fresh = browser.new_page(locale="ru-RU")
             fresh.goto(page.url.split("?")[0] + "?section=profile")
             expect(fresh.get_by_text("За этот период попыток нет.")).to_be_visible()
             browser.close()

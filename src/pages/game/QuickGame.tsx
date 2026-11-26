@@ -1,3 +1,4 @@
+import styles from "./game.module.css";
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
 
@@ -86,8 +87,8 @@ export function QuickGame({ control, valid, onSearching }: {
     } finally { setBusy(false); }
   }
 
-  return <div>
-    {!ticket?.waiting && <label>{t("Режим быстрого поиска", "Quick pairing mode", "Modo de emparejamiento rápido")} <select disabled={busy} value={mode}
+  return <div className={styles.quickGame}>
+    {!ticket?.waiting && <label className={styles.pairMode}>{t("Режим быстрого поиска", "Quick pairing mode", "Modo de emparejamiento rápido")} <select disabled={busy} value={mode}
       onChange={event => setMode(event.target.value)}>
       <option value="casual">{t("Нерейтинговая игра", "Casual game", "Partida amistosa")}</option><option value="rated">{t("Рейтинговая игра", "Rated game", "Partida puntuada")}</option>
       <option value="chess960">{t("Chess960 · Нерейтинговая игра", "Chess960 · Casual game", "Chess960 · Partida amistosa")}</option>

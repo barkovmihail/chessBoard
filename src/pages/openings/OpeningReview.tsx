@@ -39,16 +39,17 @@ export function OpeningReview() {
   }, [offset, revision]);
   const back = new URLSearchParams(location.search);
   back.delete("review");
-  const context = <><h1>{t("Повторить сегодня", "Review today", "Repasar hoy")}</h1>
+  const title = t("Повторить сегодня", "Review today", "Repasar hoy");
+  const context = <>
     <a href={"?" + back}>{t("К тренажёру дебютов", "Back to opening trainer", "Volver al entrenador de aperturas")}</a>
     {review && <p>{review.chapter_name ?? lessonsByLanguage[language].find(item => item.id === review.chapter)?.name ??
       t("Дебют", "Opening", "Apertura")} · {t("Вариант", "Line", "Variante")} {review.line + 1} · {t("Полуход", "Half-move", "Media jugada")} {review.ply + 1}</p>}
   </>;
   const previous = offset > 0 && <button onClick={() => setOffset(offset - 1)}>{t("Предыдущая позиция", "Previous position", "Posición anterior")}</button>;
-  if (!review) return <main lang={language} className="study-page">{context}
+  if (!review) return <main lang={language} className="atlas-page"><h1>{title}</h1><section className="atlas-card">{context}
     {failed ? <p role="alert">{t("Не удалось загрузить позицию.", "Could not load the position.", "No se pudo cargar la posición.")} <button onClick={() => refresh(n => n + 1)}>{t("Повторить", "Retry", "Reintentar")}</button></p> :
       <p role="status">{review === null ? t("Нет позиций для повторения.", "No positions to review.", "No hay posiciones para repasar.") : t("Загрузка…", "Loading…", "Cargando…")}</p>}
-    {previous}{review === null && <button onClick={() => refresh(n => n + 1)}>{t("Обновить", "Refresh", "Actualizar")}</button>}</main>;
+    {previous}{review === null && <button onClick={() => refresh(n => n + 1)}>{t("Обновить", "Refresh", "Actualizar")}</button>}</section></main>;
   return <ReviewBoard key={offset + ":" + revision} review={review} context={context} previous={previous}
     skip={() => setOffset(offset + 1)} advance={() => { setOffset(0); refresh(n => n + 1); }} />;
 }
@@ -76,7 +77,7 @@ function ReviewBoard({ review, context, previous, skip, advance }: BoardProps) {
       setStatus("saved");
     } catch { setStatus("failed"); }
   }
-  return <Trainer fen={review.fen} side={review.side} steps={[[review.san, ""]]} context={context}
+  return <Trainer title={t("Повторить сегодня", "Review today", "Repasar hoy")} fen={review.fen} side={review.side} steps={[[review.san, ""]]} context={context}
     onAttempt={wrong => { if (firstAnswer.current === undefined) void save(!wrong); }}
     next={<>
       {status === "failed" && <p role="alert">{t("Расписание не сохранено.", "Could not save the schedule.", "No se pudo guardar el calendario.")} <button onClick={() => void save(firstAnswer.current!)}>{t("Повторить", "Retry", "Reintentar")}</button></p>}

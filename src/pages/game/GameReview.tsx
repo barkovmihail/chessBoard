@@ -1,3 +1,4 @@
+import styles from "./game.module.css";
 import { readReviewPly, readScores, reportKey, saveReviewPly, saveScores } from "./savedReport";
 import { classifyMove, qualityLabels } from "./moveQuality";
 import { ReplayButtons } from "../../shared/replay";
@@ -12,11 +13,12 @@ import { Chess } from "chess.js";
 import { Board, boardPosition } from "../../entities/board";
 import type { Game } from "../../features/play";
 
-export function GameReview({ game, render }: {
-  game: Game; render: (board: React.ReactElement, controls: React.ReactElement, belowBoard: React.ReactElement) => React.ReactElement;
+export function GameReview({ game, summary, render }: {
+  game: Game; summary: React.ReactNode; render: (board: React.ReactElement, controls: React.ReactElement, belowBoard: React.ReactElement) => React.ReactElement;
 }) {
   const { language, t } = useLanguage();
   const key = reportKey(game);
+  const [movesOnly, setMovesOnly] = useState(false);
   const [practice, setPractice] = useState(false);
   const [timeView, setTimeView] = useState(false);
   const [scores, setScores] = useState<PositionScore[]>(() => readScores(key, game.moves.length));
@@ -51,7 +53,22 @@ export function GameReview({ game, render }: {
   const mistake = !!played && classifyMove(before, after, ply, game.moves[ply - 1]) === "mistake";
   const arrows = comparing ? [...(mistake ? [{ uci: played!, mistake: true }] : []), { uci: best, mistake: false }] : [];
   if (practice && best) return <ReviewPractice id={game.id} ply={ply} best={best} exit={() => setPractice(false)} />;
-  return render(<Board arrows={arrows} position={position} flipped={game.side === "black"} lastMove={comparing ? undefined : lastMove} highlight={comparing ? undefined : game.review960?.uci?.[ply - 1]} />, <>
+  return render(<Board inspectable arrows={arrows} position={position} flipped={game.side === "black"} lastMove={comparing ? undefined : lastMove} highlight={comparing ? undefined : game.review960?.uci?.[ply - 1]} />, <>
+    <div className={styles.switches}>
+      <button aria-pressed={!movesOnly} onClick={() => setMovesOnly(false)}>{t("Обзор", "Overview", "Resumen")}</button>
+      <button aria-pressed={movesOnly} onClick={() => setMovesOnly(true)}>{t("Ходы", "Moves", "Jugadas")}</button>
+    </div>
+    <div><div className={styles.historyHead} aria-hidden="true"><span>{t("Ход", "Move", "Jugada")}</span><span>{t("Белые", "White", "Blancas")}</span><span>{t("Чёрные", "Black", "Negras")}</span></div>
+    <ol className={styles.reviewScore + " review-score"} aria-label={t("Запись ходов", "Move list", "Lista de jugadas")}>{game.moves.map((_, i) => i % 2 === 0 &&
+      <li key={i}><small>{i / 2 + 1}.</small>{" "}{game.moves.slice(i, i + 2).map((move, offset) => {
+        const index = i + offset;
+        const quality = classifyMove(scores[index], scores[index + 1], index + 1, move);
+        const label = quality && qualityLabels[quality];
+        return <React.Fragment key={offset}>{offset > 0 && " "}<button aria-current={ply === i + offset + 1 ? "step" : undefined}
+          onClick={() => setPly(i + offset + 1)}>{move}{label && <small className="move-quality" data-quality={quality}>{t(label[0], label[1], label[2])}</small>}</button></React.Fragment>;
+      })}</li>)}</ol>
+    </div>
+    {!movesOnly && <div className={styles.reviewResult}>{summary}</div>}
     <nav lang={language} aria-label={t("Просмотр партии", "Game replay", "Reproducción de la partida")}>
       <ReplayButtons ply={ply} total={game.moves.length} onSelect={setPly} />
       <p aria-live="polite">{ply ? Math.ceil(ply / 2) + (ply % 2 ? ". " : "… ") + game.moves[ply - 1] : t("Начальная позиция", "Starting position", "Posición inicial")}</p>
@@ -69,15 +86,7 @@ export function GameReview({ game, render }: {
       {comparing && <p>{t("Сплошная — рекомендация движка", "Solid arrow — engine recommendation", "Flecha continua — recomendación del motor")} · {before.best}
         {mistake && <> · {t("Пунктир — сыгранная ошибка", "Dashed arrow — played mistake", "Flecha discontinua — error jugado")} · {game.moves[ply - 1]}</>}</p>}
     </nav>
-    <ol className="review-score" aria-label={t("Запись ходов", "Move list", "Lista de jugadas")}>{game.moves.map((_, i) => i % 2 === 0 &&
-      <li key={i}>{game.moves.slice(i, i + 2).map((move, offset) => {
-        const index = i + offset;
-        const quality = classifyMove(scores[index], scores[index + 1], index + 1, move);
-        const label = quality && qualityLabels[quality];
-        return <React.Fragment key={offset}>{offset > 0 && " "}<button aria-current={ply === i + offset + 1 ? "step" : undefined}
-          onClick={() => setPly(i + offset + 1)}>{move}{label && <small className="move-quality" data-quality={quality}>{t(label[0], label[1], label[2])}</small>}</button></React.Fragment>;
-      })}</li>)}</ol>
-    <div hidden={timeView}><GameReport scores={scores} setScores={setScores} game={game} ply={ply} select={setPly} practise={i => { setPly(i); setPractice(true); }} />
+    <div className={styles.reviewTools} hidden={timeView || movesOnly}><GameReport scores={scores} setScores={setScores} game={game} ply={ply} select={setPly} practise={i => { setPly(i); setPractice(true); }} />
     <EngineAnalysis id={game.id} ply={ply} initial={game.engine_name ?? "lc0"} /></div>
     <a href={"data:application/x-chess-pgn;charset=utf-8," + encodeURIComponent(pgn)}
       download={game.id + ".pgn"}>{t("Скачать PGN", "Download PGN", "Descargar PGN")}</a>

@@ -1,46 +1,36 @@
 .layout {
-  max-width: 1320px;
-  margin: 20px auto;
-  padding: 0 16px;
   display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(180px, 1fr) minmax(0, 620px) minmax(210px, 1fr);
-  grid-template-areas: "context status actions" "context board actions";
+  grid-template-columns: minmax(0, 600fr) minmax(0, 494fr);
+  gap: clamp(16px, 2vw, 28px);
   align-items: start;
+  min-width: 0;
 }
-.board { grid-area: board; min-width: 0; --board-width: calc(100% - 32px); --board-margin: 8px 24px 24px 8px; }
-.status { grid-area: status; font-weight: 600; }
-.context { grid-area: context; }
-.actions { grid-area: actions; }
-.context, .actions { min-width: 0; padding: 14px; border: 1px solid var(--edge); background: var(--panel); border-radius: 6px; }
-.layout fieldset { min-width: 0; margin: 0; }
-.context h1 { font-size: clamp(1.4rem, 2vw, 2rem); margin: 0 0 12px; }
-.status h2, .status p { margin: 4px 0; }
+.layout > h1 { grid-column: 1 / -1; margin: 0; font: 400 clamp(32px, 4vw, 49px)/1.12 var(--display); }
+.board, .panel { min-width: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
+.footer { min-width: 0; grid-column: 1 / -1; }
+.board { padding: clamp(14px, 1.5vw, 20px) clamp(12px, 2.2vw, 32px); --board-width: 100%; --board-margin: 0; }
+.panel { padding: clamp(16px, 2vw, 26px); display: grid; gap: 18px; align-content: start; align-self: stretch; overflow-wrap: anywhere; }
+.actions, .context { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.panel h2 { margin: 0; font: 400 clamp(23px, 2.3vw, 29px)/1.15 var(--display); }
+.panel p { margin: 0; }
+.context:not(:first-child) { border-top: 1px solid var(--line); padding-top: 16px; }
+.status { color: var(--ink); font-weight: 600; }
+.layout fieldset { display: grid; gap: 8px; margin: 0; padding: 0; min-width: 0; border: 0; }
 .layout select, .layout input { max-width: 100%; }
-.layout button:not([data-square]) { padding: 6px 9px; }
-.layout a { color: var(--link); }
-@media (min-width: 1001px) {
-  .layout:not(:has(.actions)) { max-width: 1000px; grid-template-columns: minmax(225px, 1fr) minmax(0, 620px); grid-template-areas: "context board"; }
-}
-@media (max-width: 1000px) {
-  .layout { grid-template-columns: minmax(0, 1fr) minmax(205px, 32%); grid-template-areas: "status actions" "board actions" "context context"; }
-  .layout:not(:has(.actions)) { grid-template-areas: "board context"; }
-}
-@media (max-width: 680px) {
-  .layout { margin: 12px auto; padding: 0 8px; gap: 8px; grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "status" "board" "actions" "context"; }
-  .layout:not(:has(.actions)) { grid-template-areas: "context" "board"; }
-}
-
-.layout[data-game-workspace] .actions { overflow-wrap: anywhere; }
-.layout[data-game-workspace] .actions > fieldset { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.layout[data-game-workspace] .actions button { min-height: 44px; }
-.layout[data-game-workspace] .actions button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
-@media (min-width: 681px) {
-  .layout[data-game-workspace] {
-    max-width: 1080px;
-    grid-template-columns: minmax(0, 1.8fr) minmax(225px, 1fr);
-    grid-template-areas: "status actions" "board actions" "context actions";
-    grid-template-rows: max-content max-content 1fr;
-  }
+.layout button:not([data-square]) { min-height: 38px; }
+.seat { display: flex; align-items: center; gap: 12px; min-height: 50px; }
+.board .seat:first-child { margin-bottom: 13px; }
+.board :not(.seat) + .seat { margin-top: 15px; }
+.avatar { width: 39px; height: 39px; flex: none; display: grid; place-items: center; border: 1px solid #8d8686; border-radius: 8px; background: #352f39; color: #eeeae0; }
+.avatar[data-side=white] { background: #eeeae0; color: #352f39; }
+.identity { display: grid; gap: 2px; min-width: 0; }
+.identity strong { font-size: clamp(16px, 1.4vw, 19px); overflow-wrap: anywhere; }
+.identity small { color: var(--muted); font-size: 14px; }
+.clock { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-left: auto; padding: 5px 12px; border: 1px solid var(--line); border-radius: 7px; white-space: nowrap; font-size: clamp(18px,2vw,25px); font-variant-numeric: tabular-nums; }
+.clock[data-active] { color: var(--on-spot); background: var(--spot); border-color: var(--spot); }
+@media (max-width:680px) {
+  .layout { grid-template-columns: minmax(0,1fr); gap: 14px; }
+  .board { padding: 12px; }
+  .board .seat:first-child { margin-bottom: 8px; }
+  .board :not(.seat) + .seat { margin-top: 8px; }
 }

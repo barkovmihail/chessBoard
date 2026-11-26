@@ -4,9 +4,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { ConnectionStatus, useConnectionSample } from "./ConnectionStatus";
 import { Appearance } from "./Appearance";
 import { Sound } from "./Sound";
+import { LanguageOptions } from "./SettingsPage";
 
-export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current: boolean }) {
-  const { language, select, t } = useLanguage();
+export function ProfileMenu({ onInbox, current, settingsPage }: { onInbox: () => void; current: boolean; settingsPage: boolean }) {
+  const { language, t } = useLanguage();
   const menu = useRef<HTMLDetailsElement>(null);
   const trigger = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(false);
@@ -50,7 +51,10 @@ export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current
       trigger.current?.focus();
     }
   }}>
-    <summary className="nav-trigger" title={name ?? t("Профиль", "Profile", "Perfil")} ref={trigger} aria-label={t("Меню профиля", "Profile menu", "Menú de perfil")}><NavIcon name="account" /></summary>
+    <summary className="profile-trigger" title={name ?? t("Профиль", "Profile", "Perfil")} ref={trigger} aria-label={t("Меню профиля", "Profile menu", "Menú de perfil")}>
+      <span className="user-avatar">{name ? name.slice(0, 1).toUpperCase() : <NavIcon name="account" />}</span>
+      <span className="user-caption"><strong>{name ?? t("Гость", "Guest", "Invitado")}</strong><small>{t("Меню профиля", "Profile menu", "Menú de perfil")}</small></span>
+    </summary>
     <div className="profile-panel">{name && <strong>{name}</strong>}
       <a href="?section=profile" aria-current={current ? "page" : undefined}>{t("Профиль", "Profile", "Perfil")}</a>
       {name && <span role="status" className="profile-presence" data-online={!!sample && sample !== "offline"}>
@@ -63,15 +67,8 @@ export function ProfileMenu({ onInbox, current }: { onInbox: () => void; current
         <button disabled={busy} onClick={logout}>{t("Выйти", "Sign out", "Cerrar sesión")}</button>
       </>}
       {error && <p role="alert">{error === "account" ? t("Не удалось загрузить аккаунт.", "Could not load your account.", "No se pudo cargar tu cuenta.") : t("Не удалось выйти. Повторите попытку.", "Could not sign out. Try again.", "No se pudo cerrar la sesión. Inténtalo de nuevo.")}</p>}
-      <details className="appearance"><summary>{t("Язык (Language)", "Language", "Idioma")}</summary>
-        <fieldset><legend>{t("Язык интерфейса", "Interface language", "Idioma de la interfaz")}</legend>
-          {(["ru", "en", "es"] as const).map(code => <label key={code} lang={code}>
-            <input type="radio" name="language" checked={language === code} onChange={() => select(code)} />
-            {{ ru: "Русский", en: "English", es: "Español" }[code]}
-          </label>)}
-        </fieldset>
-      </details>
-      <Sound /><Appearance />
+      <LanguageOptions />
+      {!settingsPage && <Sound />}<Appearance />
       {open && <ConnectionStatus sample={sample} />}
     </div>
   </details>;

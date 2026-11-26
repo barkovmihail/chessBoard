@@ -3,7 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#f4f1ea" />
+    <script>
+      try {
+        if (JSON.parse(localStorage.getItem("chessboard.appearance"))?.theme === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch { /* Use the light palette when storage is unavailable. */ }
+    </script>
     <meta
       name="description"
       content="Chess board"

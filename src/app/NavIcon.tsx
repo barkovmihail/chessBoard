@@ -1,6 +1,11 @@
 import React from "react";
 
 const paths = {
+  mail: "M3 5h18v14H3z M3 6l9 7 9-7",
+  team: "M12 20H2v-3q1-5 5-5t5 5z M15 13q6-2 7 4v3h-7 M10 7a3 3 0 1 1-6 0 3 3 0 1 1 6 0 M19 7a3 3 0 1 1-6 0 3 3 0 1 1 6 0",
+  settings: "M3 7h8m5 0h5 M3 17h3m5 0h10 M15 7a2 2 0 1 1-4 0 2 2 0 1 1 4 0 M10 17a2 2 0 1 1-4 0 2 2 0 1 1 4 0",
+  sun: "M16 12a4 4 0 1 1-8 0 4 4 0 1 1 8 0 M12 1v3m11 8h-3M12 23v-3M1 12h3m2-6 2 2m10-2-2 2m2 10-2-2M6 18l2-2",
+  moon: "M19 16A9 9 0 0 1 8 4a9 9 0 1 0 11 12z",
   board: "M3 3h18v18H3z M3 12h18 M12 3v18 M4 4h7v7H4z M13 13h7v7h-7z",
   book: "M12 6Q7 3 2 5v14q5-2 10 1 5-3 10-1V5q-5-2-10 1v14",
   puzzle: "M4 6h5a3 3 0 1 1 6 0h4v5a3 3 0 1 0 0 6v3H4v-5a3 3 0 1 0 0-6z",

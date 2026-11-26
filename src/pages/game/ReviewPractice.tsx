@@ -33,8 +33,8 @@ export function ReviewPractice({ id, ply, best, exit }: {
       .finally(() => { if (!abort.signal.aborted) setBusy(false); });
     return () => abort.abort();
   }, [id, ply, moves, retry]);
-  return <BoardLayout gameWorkspace lang={language} status={<h2>{t("Найдите улучшение", "Find an improvement", "Encuentra una mejora")}</h2>}
-    board={view && <PlayBoard key={view.board.fen()} enabled={!busy && !failed && moves.length < 256}
+  return <BoardLayout gameWorkspace lang={language} title={t("Найдите улучшение", "Find an improvement", "Encuentra una mejora")}
+    board={view && <PlayBoard positionKey={view.board.fen()} enabled={!busy && !failed && moves.length < 256}
       game={{ position: boardPosition(view.board), turn: view.board.turn() === "w" ? "white" : "black",
         side: ply % 2 ? "white" : "black", legal: view.legal }}
       onMove={uci => { setBusy(true); setMoves([...moves, uci]); }} />}

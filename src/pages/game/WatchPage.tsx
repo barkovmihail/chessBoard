@@ -3,7 +3,9 @@ import React, { useEffect, useState } from "react";
 import { Chess } from "chess.js";
 import { Board, boardPosition } from "../../entities/board";
 import { resultReason } from "../../features/play";
-import { BoardLayout } from "../../shared/board-layout";
+import { MoveRecord } from "./MoveRecord";
+import styles from "./game.module.css";
+import { BoardLayout, BoardSeat } from "../../shared/board-layout";
 
 interface View {
   board: Chess; lastUci?: string; notation: string[]; result: string | null; reason: string | null; waiting: boolean;
@@ -53,8 +55,15 @@ export function WatchPage({ token }: { token: string }) {
     error === "offline" ? t("Восстанавливаем связь…", "Reconnecting…", "Reconectando…") : "";
   if (!view) return <main><h1>{t("Просмотр партии", "Watch game", "Ver partida")}</h1><p role="status">{message || t("Загружаем позицию…", "Loading position…", "Cargando la posición…")}</p></main>;
   const history = view.board.history({ verbose: true });
-  return <BoardLayout context={<h1>{t("Просмотр партии", "Watch game", "Ver partida")}</h1>} board={<Board position={boardPosition(view.board)} lastMove={history[history.length - 1]} highlight={view.lastUci} />}
-    status={<p role="status">{message || (view.result ? view.result + " · " + resultReason(view.reason ?? "", language) :
-      view.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") : view.board.turn() === "w" ? t("Ход белых", "White to move", "Juegan blancas") : t("Ход чёрных", "Black to move", "Juegan negras"))}</p>}
-    actions={<p aria-label={t("Запись ходов", "Move list", "Lista de jugadas")}>{view.notation.map((m, i) => (i % 2 === 0 ? (i / 2 + 1) + ". " : "") + m).join(" ")}</p>} />;
+  return <BoardLayout lang={language} title={t("Просмотр партии", "Watch game", "Ver partida")} board={<>
+    <BoardSeat side="black" name={t("Чёрные", "Black", "Negras")} detail={t("Сторона доски", "Board side", "Lado del tablero")} />
+    <Board inspectable position={boardPosition(view.board)} lastMove={history[history.length - 1]} highlight={view.lastUci} />
+    <BoardSeat side="white" name={t("Белые", "White", "Blancas")} detail={t("Сторона доски", "Board side", "Lado del tablero")} />
+  </>} actions={<>
+    <MoveRecord moves={view.notation} pieceCount={boardPosition(view.board).length} />
+    <p className={styles.gameStatus} role="status">{message || (view.result ? view.result + " · " + resultReason(view.reason ?? "", language) :
+      view.waiting ? t("Ожидание соперника", "Waiting for opponent", "Esperando al rival") : view.board.turn() === "w" ? t("Ход белых", "White to move", "Juegan blancas") : t("Ход чёрных", "Black to move", "Juegan negras"))}</p>
+    <p>{t("Вы наблюдаете за партией.", "You are watching this game.", "Estás viendo esta partida.")}</p>
+    <a href="?section=game">{t("К игровому залу", "Back to the playing hall", "Volver a la sala de juego")} →</a>
+  </>} />;
 }

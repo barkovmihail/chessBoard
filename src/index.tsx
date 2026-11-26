@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { LanguageProvider } from "./shared/language";
 import App from "./app/App";
+import { AppearanceProvider } from "./app/Appearance";
 
 import "./index.css";
 
@@ -9,4 +10,4 @@ const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
 
-root.render(<LanguageProvider><App /></LanguageProvider>);
+root.render(<LanguageProvider><AppearanceProvider><App /></AppearanceProvider></LanguageProvider>);

@@ -1,5 +1,6 @@
 import { useLanguage } from "../../shared/language";
 import React, { useEffect, useState } from "react";
+import { panelStyles as styles } from "../../shared/page-panels";
 
 const spanish = { notify_sound: "Sonido de las notificaciones", notify_turn: "Mi turno", notify_finish: "Fin de la partida", notify_challenge: "Nuevo desafío", notify_response: "Desafío respondido o cancelado" };
 const english = { notify_sound: "Notification sound", notify_turn: "My turn", notify_finish: "Game ended", notify_challenge: "New challenge", notify_response: "Challenge answered or cancelled" };
@@ -14,7 +15,7 @@ async function preferences(body?: { setting: Setting; enabled: boolean }) {
   return data as Record<Setting, boolean>;
 }
 
-export function NotificationSettings() {
+export function NotificationSettings({ standalone = false }: { standalone?: boolean }) {
   const { t } = useLanguage();
   const [values, setValues] = useState<Record<Setting, boolean>>();
   const [busy, setBusy] = useState(false);
@@ -33,9 +34,13 @@ export function NotificationSettings() {
     catch { setValues(previous); setError(true); }
     finally { setBusy(false); }
   }
-  return <details id="notification-settings" open={new URLSearchParams(location.search).get("settings") === "1" || undefined}><summary>{t("Настройки уведомлений", "Notification settings", "Ajustes de notificaciones")}</summary>
-    {values && <fieldset disabled={busy}><legend>{t("События", "Events", "Eventos")}</legend>{(Object.keys(labels) as Setting[]).map(k =>
-      <label key={k}><input type="checkbox" checked={values[k]} onChange={e => change(k, e.target.checked)} />{t(labels[k], english[k], spanish[k])}</label>)}</fieldset>}
+  const title = t("Настройки уведомлений", "Notification settings", "Ajustes de notificaciones");
+  const content = <>
+    {!values && !error && <p role="status">{t("Загрузка…", "Loading…", "Cargando…")}</p>}
+    {values && <fieldset className={styles.switchRows} disabled={busy} aria-label={title}>{(Object.keys(labels) as Setting[]).map(k =>
+      <label key={k}>{t(labels[k], english[k], spanish[k])}<input type="checkbox" checked={values[k]} onChange={e => change(k, e.target.checked)} /></label>)}</fieldset>}
     {error && <p role="alert">{t("Не удалось загрузить настройки. Обновите страницу.", "Could not load settings. Reload the page.", "No se pudieron cargar los ajustes. Recarga la página.")}</p>}
-  </details>;
+  </>;
+  return standalone ? <section className="atlas-card" id="notification-settings"><h2>{t("События", "Events", "Eventos")}</h2>{content}</section>
+    : <details id="notification-settings"><summary>{title}</summary>{content}</details>;
 }

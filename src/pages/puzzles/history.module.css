@@ -1,0 +1,11 @@
+.ledger { list-style: none; display: grid; margin: 0; padding: 0; }
+.ledger li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-block: 14px; border-bottom: 1px solid var(--line); }
+.ledger small { display: block; margin-top: 4px; color: var(--muted); }
+.totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.totals > div { display: grid; align-content: space-between; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+.totals dt { font-size: .85rem; color: var(--muted); }
+.totals dd { font: 400 clamp(22px, 3vw, 36px)/1 var(--display); margin: 0; }
+@media (max-width: 420px) {
+  .totals { gap: 4px; }
+  .totals > div { padding: 8px; overflow-wrap: anywhere; }
+}

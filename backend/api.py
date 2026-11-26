@@ -426,13 +426,14 @@ def create_app(path: Path):
         return app.state.queue.change(player, command.version, action)
 
     @app.get("/api/profile/games")
-    def archive(request: Request, offset: int = Query(0, ge=0), active: bool = False):
+    def archive(request: Request, offset: int = Query(0, ge=0), active: bool = False,
+                side: Literal["all", "white", "black"] = "all"):
         player = current(request)[0]
         if not player:
             return {"items": [], "next_offset": None}
         if active:
             return app.state.games.active_games(player, offset, 20)
-        return app.state.games.archive(player, offset, 20)
+        return app.state.games.archive(player, offset, 20, side)
 
     @app.post("/api/games", status_code=201)
     def create(request: Request, response: Response, options: CreateGame | None = None):

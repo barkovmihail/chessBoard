@@ -1,4 +1,4 @@
-import { NavIcon } from "./NavIcon";
+import { ToolbarPanel, type PanelView } from "./ToolbarPanel";
 import { useLanguage } from "../shared/language";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -12,14 +12,15 @@ interface Notice {
 }
 interface Feed { items: Notice[]; unread: number; before: number | null }
 
-export function Notifications({ onInbox }: { onInbox: () => void }) {
+export function Notifications(view: PanelView & { onInbox: () => void }) {
+  const { open, onInbox } = view;
   const { language, t } = useLanguage();
   const latest = useRef<number>();
-  const [open, setOpen] = useState(false);
   const [before, setBefore] = useState<number>();
   const [feed, setFeed] = useState<Feed>();
   const [refresh, setRefresh] = useState(0);
   const [error, setError] = useState<"load" | "read" | null>(null);
+  useEffect(() => { if (!open) setBefore(undefined); }, [open]);
   useEffect(() => {
     const abort = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
@@ -61,23 +62,31 @@ export function Notifications({ onInbox }: { onInbox: () => void }) {
       setRefresh(n => n + 1);
     } catch { setError("read"); }
   }
-  return <details open={open} className="current-games" onToggle={e => {
-    setOpen(e.currentTarget.open);
-    if (!e.currentTarget.open) setBefore(undefined);
-  }}>
-    <summary className="nav-trigger" title={t("Уведомления", "Notifications", "Notificaciones")} aria-label={[t("Уведомления", "Notifications", "Notificaciones"), feed?.unread || ""].join(" ").trim()}><NavIcon name="bell" />{!!feed?.unread && <small>{feed.unread}</small>}</summary>
-    <section aria-label={t("Лента уведомлений", "Notification feed", "Lista de notificaciones")}>
+  const title = t("Уведомления", "Notifications", "Notificaciones");
+  const feedTitle = t("Лента уведомлений", "Notification feed", "Lista de notificaciones");
+  const content = <>
+      {!feed && !error && <p role="status">{t("Загрузка…", "Loading…", "Cargando…")}</p>}
       {error && <p role="alert">{error === "load" ? t("Не удалось загрузить уведомления.", "Could not load notifications.", "No se pudieron cargar las notificaciones.") : t("Не удалось отметить прочитанным.", "Could not mark as read.", "No se pudo marcar como leído.")}</p>}
       {feed?.unread ? <button onClick={() => read()}>{t("Прочитать все", "Mark all as read", "Marcar todas como leídas")}</button> : null}
       {feed && !feed.items.length && <p>{t("Уведомлений пока нет", "No notifications yet", "Todavía no hay notificaciones")}</p>}
       <ul>{feed?.items.map(n => <li key={n.id}>
         <p>{t(labels[n.kind], english[n.kind], spanish[n.kind])}{n.result && " · " + n.result} · {n.opponent === "Гость" ? t("Гость", "Guest", "Invitado") : n.opponent === "На одном устройстве" ? t("На одном устройстве", "On one device", "En un solo dispositivo") : n.opponent} · {new Date(n.created).toLocaleString(language)}</p>
         {n.game_id ? <a href={"?game=" + encodeURIComponent(n.game_id)}>{t("Открыть партию", "Open game", "Abrir partida")}</a> :
-          <button onClick={() => { setOpen(false); onInbox(); }}>{t("К вызовам", "View challenges", "Ver desafíos")}</button>}
+          <button onClick={onInbox}>{t("К вызовам", "View challenges", "Ver desafíos")}</button>}
         {!n.seen && <button onClick={() => read(n.id)}>{t("Отметить прочитанным", "Mark as read", "Marcar como leída")}</button>}
       </li>)}</ul>
       {before && <button onClick={() => setBefore(undefined)}>{t("К новым", "Newest", "Más recientes")}</button>}
       {feed?.before && <button onClick={() => { latest.current = undefined; setBefore(feed.before!); }}>{t("Более ранние", "Older", "Anteriores")}</button>}
-    </section>
-  </details>;
+    </>;
+  if (view.fullPage) return <main className="atlas-page"><h1 className="atlas-heading">{title}</h1><div className="atlas-columns">
+    <section className="atlas-card notification-feed"><h2>{feedTitle}</h2>{content}</section>
+    <aside className="atlas-card"><h2>{t("Настройки событий", "Event settings", "Ajustes de eventos")}</h2>
+      <p className="atlas-muted">{t("Выберите события, о которых хотите получать уведомления.", "Choose which events you want to hear about.", "Elige los eventos sobre los que quieres recibir notificaciones.")}</p>
+      <a href="?section=profile&settings=1#notification-settings">{t("Настроить уведомления", "Manage notifications", "Configurar notificaciones")} →</a>
+    </aside>
+  </div></main>;
+  return <ToolbarPanel open={open} onToggle={view.onToggle} onClose={view.onClose} title={title}
+    regionLabel={feedTitle} icon="bell" count={feed?.unread}>
+    {content}<a className="panel-link" href="?section=feed">{t("Все уведомления", "All notifications", "Todas las notificaciones")} →</a>
+  </ToolbarPanel>;
 }

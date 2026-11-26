@@ -1,4 +1,4 @@
-import { NavIcon } from "./NavIcon";
+import { ToolbarPanel, type PanelView } from "./ToolbarPanel";
 import { useLanguage } from "../shared/language";
 import React, { useEffect, useState } from "react";
 
@@ -29,14 +29,15 @@ function describe(row: Entry, t: (ru: string, en: string, es: string) => string)
   return [title, clock, status].join(" · ");
 }
 
-export function CurrentGames({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
+export function CurrentGames(view: PanelView) {
+  const { open } = view;
   const { t } = useLanguage();
   const [count, setCount] = useState(0);
   const [offset, setOffset] = useState(0);
   const [page, setPage] = useState<{items: Entry[]; next_offset: number | null}>();
   const [error, setError] = useState(false);
   useEffect(() => {
-    if (!open) return;
+    if (!open) { setOffset(0); return; }
     const abort = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     setPage(undefined);
@@ -57,13 +58,8 @@ export function CurrentGames({ open, setOpen }: { open: boolean; setOpen: (open:
     void load();
     return () => { abort.abort(); clearTimeout(timer); };
   }, [open, offset]);
-  return <details open={open} className="current-games" onToggle={event => {
-    setOpen(event.currentTarget.open);
-    if (!event.currentTarget.open) setOffset(0);
-  }}>
-    <summary className="nav-trigger" title={t("Вызовы и текущие игры", "Challenges and current games", "Desafíos y partidas en curso")} aria-label={t("Вызовы и текущие игры", "Challenges and current games", "Desafíos y partidas en curso") + (count ? " · " + count : "")}><NavIcon name="swords" />{count > 0 && <small>{count}</small>}</summary>
-    <section><Challenges open={open} count={setCount} />
-    <div role="region" aria-label={t("Текущие партии", "Active games", "Partidas en curso")}><h3>{t("Текущие игры", "Current games", "Partidas en curso")}</h3>
+  const challenges = <Challenges open={open} count={setCount} />;
+  const games = <div role="region" aria-label={t("Текущие партии", "Active games", "Partidas en curso")}><h3>{t("Текущие игры", "Current games", "Partidas en curso")}</h3>
       {error ? <p role="alert">{t("Не удалось обновить список. Повторяем запрос…", "Could not update the list. Retrying…", "No se pudo actualizar la lista. Reintentando…")}</p> : !page && <p>{t("Загрузка…", "Loading…", "Cargando…")}</p>}
       {page && <>
         {!page.items.length && <p>{t("Текущих игр нет", "No current games", "No hay partidas en curso")}</p>}
@@ -71,6 +67,12 @@ export function CurrentGames({ open, setOpen }: { open: boolean; setOpen: (open:
         {offset > 0 && <button onClick={() => setOffset(offset - 20)}>{t("Назад", "Previous", "Anterior")}</button>}
         {page.next_offset !== null && <button onClick={() => setOffset(page.next_offset!)}>{t("Далее", "Next", "Siguiente")}</button>}
       </>}
-    </div></section>
-  </details>;
+    </div>;
+  const title = t("Вызовы и текущие игры", "Challenges and current games", "Desafíos y partidas en curso");
+  if (view.fullPage) return <main className="atlas-page"><h1 className="atlas-heading">{title}</h1><div className="atlas-columns">
+    <section className="atlas-card inbox-games">{games}</section><aside className="atlas-card inbox-challenges">{challenges}</aside>
+  </div></main>;
+  return <ToolbarPanel open={open} onToggle={view.onToggle} onClose={view.onClose} title={title} icon="swords" count={count}>
+    {challenges}{games}<a className="panel-link" href="?section=inbox">{t("Все вызовы и игры", "All challenges and games", "Todos los desafíos y partidas")} →</a>
+  </ToolbarPanel>;
 }

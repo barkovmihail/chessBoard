@@ -39,7 +39,7 @@ export function usePieceDrag(onDrop?: (from: Square, to: Square) => void) {
     setDrag(undefined);
     if (drop && moved.current) {
       const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLButtonElement>("button[data-square]");
-      if (cell && cell.parentElement === event.currentTarget.parentElement && !cell.disabled) {
+      if (cell && cell.closest('[role="grid"]') === event.currentTarget.closest('[role="grid"]') && cell.getAttribute("aria-disabled") !== "true") {
         const to = cell.dataset.square as Square;
         if (to !== start.square) onDrop?.(start.square, to);
       }

@@ -46,20 +46,18 @@ class Games:
         with self.engine.connect() as db:
             return {pool: rating(db, player, pool) for pool in POOLS}
 
-    def archive(self, player, offset, limit):
-        with self.engine.connect() as db:
-            rows = db.execute(select(games.c.id, games.c.owner, games.c.online, games.c.finished_ms,
+    def archive(self, player, offset, limit, side="all"):
+        player_side = case((games.c.online.is_(False), "both"), (games.c.owner == player, "white"), else_="black")
+        query = (select(games.c.id, player_side.label("side"), games.c.finished_ms,
                 games.c.base_minutes, games.c.increment_seconds, games.c.result, games.c.reason, opponent_name())
                 .outerjoin(accounts, accounts.c.player == case((games.c.owner == player, games.c.guest), else_=games.c.owner))
-                .where(games.c.result.is_not(None), (games.c.owner == player) | (games.c.guest == player))
-                .order_by(games.c.finished_ms.desc(), games.c.id.desc()).offset(offset).limit(limit + 1)).mappings().all()
-            items = []
-            for row in rows[:limit]:
-                item = dict(row)
-                owner, online = item.pop("owner"), item.pop("online")
-                item["side"] = ("white" if owner == player else "black") if online else "both"
-                items.append(item)
-            return {"items": items, "next_offset": offset + limit if len(rows) > limit else None}
+                .where(games.c.result.is_not(None), (games.c.owner == player) | (games.c.guest == player)))
+        if side != "all":
+            query = query.where(player_side == side)
+        with self.engine.connect() as db:
+            rows = db.execute(query.order_by(games.c.finished_ms.desc(), games.c.id.desc())
+                              .offset(offset).limit(limit + 1)).mappings().all()
+        return {"items": [dict(row) for row in rows[:limit]], "next_offset": offset + limit if len(rows) > limit else None}
 
     def active_games(self, player, offset, limit):
         ply = select(func.max(moves.c.ply)).where(moves.c.game_id == games.c.id).scalar_subquery()

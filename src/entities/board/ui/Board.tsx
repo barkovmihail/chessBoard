@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId, useRef, useState } from "react";
 import { useLanguage } from "../../../shared/language";
 import { files, ranks } from "../model/position";
 import type { BoardPiece, Square } from "../model/position";
@@ -34,21 +34,44 @@ interface BoardProps {
   highlight?: string;
   targets?: readonly string[];
   onMove?: (from: Square, to: Square) => void;
+  inspectable?: boolean;
   movableColor?: BoardPiece["color"] | "white" | "black";
   onSquare?: (square: Square) => void;
 }
 
-export function Board({ position, arrows, selected, targets, onSquare, flipped, lastMove, highlight, onMove, movableColor }: BoardProps) {
+export function Board({ position, arrows, selected, targets, onSquare, flipped, lastMove, highlight, onMove, movableColor, inspectable }: BoardProps) {
   const { t } = useLanguage();
   const pointer = usePieceDrag(onMove);
+  const grid = useRef<HTMLDivElement>(null);
+  const helpId = useId();
+  const [cursor, setCursor] = useState<Square>();
   const squares = highlight ?? (lastMove && lastMove.from + lastMove.to);
   const occupied = new Map(position.map(piece => [piece.square, piece]));
   const visibleFiles = flipped ? [...files].reverse() : files;
   const visibleRanks = flipped ? [...ranks].reverse() : ranks;
+  const entrySquare = cursor ?? `${visibleFiles[0]}${visibleRanks[0]}`;
+  const canNavigate = !!(onSquare || movableColor || inspectable);
+  function navigate(event: React.KeyboardEvent, row: number, column: number) {
+    switch (event.key) {
+      case "ArrowUp": row--; break;
+      case "ArrowDown": row++; break;
+      case "ArrowLeft": column--; break;
+      case "ArrowRight": column++; break;
+      case "Home": column = 0; if (event.ctrlKey) row = 0; break;
+      case "End": column = 7; if (event.ctrlKey) row = 7; break;
+      default: return;
+    }
+    event.preventDefault();
+    const file = visibleFiles[column], rank = visibleRanks[row];
+    if (file && rank) grid.current?.querySelector<HTMLButtonElement>(`[data-square="${file}${rank}"]`)?.focus();
+  }
   return (
     <div className={styles.board}>
-      <div className={styles.cells}>
-        {visibleRanks.map((rank, row) => visibleFiles.map((file, column) => {
+      {canNavigate && <span id={helpId} className={styles.keyboardHelp}>{onSquare
+        ? t("Стрелки перемещают фокус. Нажмите Enter или пробел на фигуре, затем на поле назначения.", "Use the arrow keys to move focus. Press Enter or Space on a piece and then on its destination.", "Usa las flechas para moverte. Pulsa Intro o espacio en una pieza y después en la casilla de destino.")
+        : t("Используйте стрелки для просмотра позиции.", "Use the arrow keys to inspect the position.", "Usa las flechas para explorar la posición.")}</span>}
+      <div ref={grid} className={styles.cells} role="grid" aria-label={t("Шахматная доска", "Chessboard", "Tablero de ajedrez")} aria-describedby={canNavigate ? helpId : undefined} aria-readonly={!onSquare}>
+        {visibleRanks.map((rank, row) => <div key={rank} role="row" className={styles.row}>{visibleFiles.map((file, column) => {
           const square: Square = `${file}${rank}`;
           const piece = occupied.get(square);
           const contents = piece ? t(...pieceNames[piece.color][piece.type]) : t("пусто", "empty", "vacía");
@@ -60,8 +83,9 @@ export function Board({ position, arrows, selected, targets, onSquare, flipped, 
             "--from-y": (visibleRanks.indexOf(Number(lastMove.from[1]) as typeof ranks[number]) - row) * 100 + "%",
           } as React.CSSProperties : undefined;
           return (
-            <button type="button" key={square} data-square={square} aria-label={square + ", " + contents}
-              disabled={!onSquare} aria-pressed={selected === square} data-target={targets?.includes(square)}
+            <div key={square} role="gridcell"><button type="button" data-square={square} aria-label={square + ", " + contents}
+              disabled={!canNavigate} tabIndex={canNavigate && square === entrySquare ? 0 : -1} onFocus={() => setCursor(square)} onKeyDown={event => navigate(event, row, column)}
+              aria-disabled={!onSquare || undefined} aria-pressed={onSquare ? selected === square : undefined} data-target={targets?.includes(square)}
               data-last-move={squares && (square === squares.slice(0, 2) || square === squares.slice(2, 4)) || undefined}
               data-movable={movable}
               onPointerDown={event => pointer.start(event, square, movable)}
@@ -73,9 +97,9 @@ export function Board({ position, arrows, selected, targets, onSquare, flipped, 
                 data-sprite={piece.color[0] + (piece.type === "knight" ? "N" : piece.type[0].toUpperCase())}
                 style={dragging ? { transform: `translate(${dragging.x}px, ${dragging.y}px)` } : offset}
                 className={[dragging ? styles.dragging : animate ? styles.arriving : "", pieces.piece, pieces[piece.color], pieces[piece.type]].join(" ")} />}
-            </button>
+            </button></div>
           );
-        }))}
+        })}</div>)}
       </div>
       {arrows?.length ? <svg className={styles.arrows} viewBox="0 0 8 8" aria-hidden="true">
         {arrows.map(({ uci, mistake }) => {
