@@ -24,6 +24,8 @@
 
 ## Сборка на Vercel
 
-В настройках проекта выберите корень репозитория (`.`) в **Root Directory** и `FastAPI` в **Framework Preset**. Оставьте **Build Command** без переопределения. Корневой `pyproject.toml` указывает на `backend.api:app` и запускает сборку клиента в `build/`. Python-зависимости берутся из `backend/requirements.txt` через корневой `requirements.txt`.
+Для отдельного проекта API выберите `backend` в **Root Directory** и `FastAPI` в **Framework Preset**. Vercel прочитает `backend/pyproject.toml`, загрузит приложение через `asgi:app` и установит зависимости из соседнего `requirements.txt`. Проверка после деплоя — `GET /api/connection` должен вернуть HTTP 204.
+
+Для совместной сборки клиента и API выберите корень репозитория (`.`), пресет `FastAPI` и оставьте **Build Command** без переопределения. Корневой `pyproject.toml` указывает на `backend.api:app` и запускает сборку клиента в `build/`.
 
 Для пробного запуска задайте `CHESSBOARD_DB=/tmp/chessboard.sqlite3` в переменных окружения Vercel. База в `/tmp` временная и доступна одному экземпляру функции. Для сохранения партий между перезапусками текущему серверу нужен постоянный диск.
