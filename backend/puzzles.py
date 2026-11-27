@@ -1,10 +1,13 @@
 """Read-only Lichess catalogue, shared independently of private game databases."""
 import secrets
 import sqlite3
+from itertools import batched
 from contextlib import closing
 from pathlib import Path
 
 from fastapi import HTTPException
+
+from . import packed_puzzles
 
 
 def open_catalogue(path: Path):
@@ -21,6 +24,8 @@ def puzzle_data(row):
 
 def puzzle_by_id(path: Path, puzzle_id: str):
     with open_catalogue(path) as db:
+        if path.suffix == ".pack":
+            return packed_puzzles.by_id(db, puzzle_id)
         row = db.execute("SELECT puzzle_id, fen, moves, rating, themes FROM puzzles WHERE puzzle_id = ?",
                          (puzzle_id,)).fetchone()
         if row is None:
@@ -30,6 +35,8 @@ def puzzle_by_id(path: Path, puzzle_id: str):
 
 def random_puzzle(path: Path, theme: str | None = None):
     with open_catalogue(path) as db:
+        if path.suffix == ".pack":
+            return packed_puzzles.random_from(db, theme)
         count = db.execute("SELECT max(rowid) FROM puzzles").fetchone()[0]
         if not count:
             raise HTTPException(404, "no_matching_puzzles")
@@ -46,3 +53,13 @@ def random_puzzle(path: Path, theme: str | None = None):
         if row is None:
             raise HTTPException(404, "no_matching_puzzles")
         return puzzle_data(row)
+
+
+def themes_for_ids(path: Path, ids):
+    with open_catalogue(path) as db:
+        if path.suffix == ".pack":
+            yield from packed_puzzles.themes_for_ids(db, ids)
+        else:
+            for batch in batched(ids, 500):
+                marks = ",".join("?" for _ in batch)
+                yield from db.execute(f"SELECT puzzle_id, themes FROM puzzles WHERE puzzle_id IN ({marks})", batch)

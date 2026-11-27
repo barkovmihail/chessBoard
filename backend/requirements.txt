@@ -4,3 +4,4 @@ chess==1.11.2
 sqlalchemy>=2,<3
 alembic>=1.13,<2
 wsproto>=1.2,<2
+-r requirements-import.txt

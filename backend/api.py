@@ -517,7 +517,9 @@ def create_app(path: Path):
             return
         await app.state.events.stream(socket, game_id, lambda: app.state.games.get(game_id, current(socket)[0]))
 
-    catalogue = Path(os.environ.get("CHESSBOARD_PUZZLES_DB", path.with_name("puzzles.sqlite3")))
+    default_catalogue = (Path(__file__).with_name("puzzles.pack") if os.environ.get("VERCEL") == "1"
+                         else path.with_name("puzzles.sqlite3"))
+    catalogue = Path(os.environ.get("CHESSBOARD_PUZZLES_DB", default_catalogue))
 
     @app.get("/api/openings/frequencies")
     def frequencies(request: Request, response: Response, line: str = Query("", max_length=599)):

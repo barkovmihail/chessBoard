@@ -28,3 +28,4 @@ __pycache__/
 *.pyc
 /chessboard.sqlite3*
 /puzzles.sqlite3
+/backend/puzzles.pack

@@ -1,4 +1,3 @@
-from itertools import batched
 from time import time_ns
 
 from sqlalchemy import case, func, select
@@ -6,7 +5,8 @@ from sqlalchemy.dialects.sqlite import insert
 
 from .db import puzzle_attempts as attempts
 from .domain import GameError
-from .puzzles import open_catalogue
+from .puzzles import themes_for_ids
+from .packed_puzzles import THEMES
 
 
 class PuzzleAttempts:
@@ -45,13 +45,10 @@ class PuzzleAttempts:
         result = {"practiced": len(rows), "solved": sum(row.solved for row in rows.values()),
                   "first": sum(row.first for row in rows.values()), "themes": {}}
         if rows and catalogue.is_file():
-            with open_catalogue(catalogue) as db:
-                for ids in batched(rows, 500):
-                    marks = ",".join("?" for _ in ids)
-                    for item in db.execute(f"SELECT puzzle_id, themes FROM puzzles WHERE puzzle_id IN ({marks})", ids):
-                        row = rows[item["puzzle_id"]]
-                        for theme in set(item["themes"].split()) & {"fork", "pin", "mateIn1", "mateIn2", "endgame"}:
-                            stats = result["themes"].setdefault(theme, {"solved": 0, "mistakes": 0})
-                            stats["solved"] += int(row.solved)
-                            stats["mistakes"] += row.mistakes
+            for puzzle_id, labels in themes_for_ids(catalogue, rows):
+                row = rows[puzzle_id]
+                for theme in THEMES.intersection(labels.split()):
+                    stats = result["themes"].setdefault(theme, {"solved": 0, "mistakes": 0})
+                    stats["solved"] += int(row.solved)
+                    stats["mistakes"] += row.mistakes
         return result

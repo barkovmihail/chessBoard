@@ -2,5 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "fastapi",
   "installCommand": "uv pip install -r backend/requirements.txt && npm ci --include=dev",
-  "buildCommand": "bash scripts/build-engines.sh && python -c \"from backend.api import app\" && npm run build"
+  "buildCommand": "bash scripts/build-engines.sh && bash scripts/build-puzzles.sh && python -c \"from backend.api import app\" && npm run build"
 }
