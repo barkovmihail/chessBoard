@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+from pathlib import Path
 from threading import Event
 from uuid import uuid4
 
@@ -16,17 +17,24 @@ SEATS = {"lc0": "computer:lc0", "stockfish": "computer:stockfish"}
 NAMES = {"lc0": "Leela Chess Zero", "stockfish": "Stockfish"}
 LC0_NODES = {"easy": 4, "casual": 12, "normal": 32, "strong": 96, "expert": 256}
 STOCKFISH_SKILL = {"easy": 0, "casual": 4, "normal": 8, "strong": 14, "expert": 20}
+BUNDLED_ENGINES = Path(__file__).resolve().parent / "bin"
 
 
 def executable(name):
-    return shutil.which(os.getenv("CHESS_" + name.upper(), name))
+    if override := os.getenv("CHESS_" + name.upper()):
+        return shutil.which(override)
+    return shutil.which(str(BUNDLED_ENGINES / name)) or shutil.which(name)
 
 
 def engine_command(name):
-    args = [executable(name) or name]
+    binary = executable(name)
+    args = [binary or name]
     if name == "lc0":
         args.append("--backend=eigen")
-        if weights := os.getenv("CHESS_LC0_WEIGHTS"):
+        weights = os.getenv("CHESS_LC0_WEIGHTS")
+        if not weights and binary == str(BUNDLED_ENGINES / "lc0"):
+            weights = str(BUNDLED_ENGINES / "lc0.pb.gz")
+        if weights:
             args.append("--weights=" + weights)
     return args
 
