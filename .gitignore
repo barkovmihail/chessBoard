@@ -29,3 +29,4 @@ __pycache__/
 /chessboard.sqlite3*
 /puzzles.sqlite3
 /backend/puzzles.pack
+/public/puzzle-data/

@@ -35,6 +35,16 @@ class PuzzleFilterTest(TestCase):
             with self.assertRaises(HTTPException) as empty:
                 random_puzzle(target, "endgame")
             self.assertEqual(empty.exception.status_code, 404)
+            assets = Path(directory) / "assets"
+            pack(archive, target, assets)
+            self.assertEqual(len(list(assets.glob("*.zst"))), 2)
+            def open_asset(url, timeout):
+                return (assets / url.rsplit("/", 1)[1]).open("rb")
+            with patch.dict("os.environ", VERCEL_ENV="production", VERCEL_PROJECT_PRODUCTION_URL="example.test"), \
+                    patch("backend.packed_puzzles.urlopen", side_effect=open_asset) as fetched:
+                self.assertEqual(puzzle_by_id(target, "AAz")["themes"], ["fork"])
+                self.assertEqual(dict(themes_for_ids(target, ["AAa"])), {"AAa": "pin"})
+                self.assertEqual(fetched.call_count, 1)
 
     def test_wrap_and_exact_theme(self):
         with TemporaryDirectory() as directory:

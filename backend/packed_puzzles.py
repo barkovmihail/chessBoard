@@ -1,21 +1,43 @@
 """Random access to a full Lichess CSV stored as independently compressed ID prefixes."""
 import csv
+import hashlib
 import io
+import os
 import secrets
 from collections import defaultdict
+from functools import lru_cache
+from urllib.error import URLError
+from urllib.request import urlopen
 
 from fastapi import HTTPException
 
 THEMES = {"fork", "pin", "endgame", "mateIn1", "mateIn2"}
 
 
+@lru_cache(maxsize=32)
+def load_asset(digest):
+    domain = (os.getenv("VERCEL_PROJECT_PRODUCTION_URL") if os.getenv("VERCEL_ENV") == "production"
+              else os.getenv("VERCEL_URL"))
+    if not domain:
+        raise HTTPException(503, "puzzles_unavailable")
+    try:
+        with urlopen(f"https://{domain}/puzzle-data/{digest}.zst", timeout=10) as response:
+            data = response.read()
+    except (OSError, URLError) as error:
+        raise HTTPException(503, "puzzles_unavailable") from error
+    if hashlib.sha256(data).hexdigest() != digest:
+        raise HTTPException(503, "puzzles_unavailable")
+    return data
+
+
 def block_rows(db, prefix):
     import zstandard
 
-    block = db.execute("SELECT data FROM blocks WHERE prefix = ?", (prefix,)).fetchone()
+    block = db.execute("SELECT data, asset FROM blocks WHERE prefix = ?", (prefix,)).fetchone()
     if block is None:
         return
-    data = zstandard.ZstdDecompressor().decompress(block[0])
+    compressed = block[0] if block[0] is not None else load_asset(block[1])
+    data = zstandard.ZstdDecompressor().decompress(compressed)
     for row in csv.reader(io.StringIO(data.decode("utf-8"))):
         yield row
 
