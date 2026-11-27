@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "fastapi",
-  "buildCommand": "npm ci --include=dev && npm run build"
+  "installCommand": "uv pip install -r backend/requirements.txt && npm ci --include=dev",
+  "buildCommand": "python -c \"from backend.api import app\" && npm run build"
 }
