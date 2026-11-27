@@ -20,7 +20,7 @@ from .chat import Chat
 from .teams import Teams
 from .arenas import Arenas
 from .analysis import analyse, practice_position
-from .computer import executable, play_pending
+from .computer import executable, play_pending, play_turn
 from .accounts import Accounts, SESSION_SECONDS, digest
 from .notifications import Notifications
 from .challenges import Challenges
@@ -163,6 +163,8 @@ class Credentials(BaseModel):
 
 
 def create_app(path: Path):
+    inline_engine_replies = os.environ.get("VERCEL") == "1"
+
     @asynccontextmanager
     async def lifespan(app):
         engine = open_database(path)
@@ -191,6 +193,8 @@ def create_app(path: Path):
             while not stopped.is_set():
                 for game_id in await asyncio.to_thread(lambda: list(play_pending(app.state.games, stopped))):
                     app.state.events.publish(game_id)
+                if inline_engine_replies:
+                    return  # Recover pending games once. New moves run within the function invocation.
                 await asyncio.sleep(0.5)
 
         computer = asyncio.create_task(computer_turns())
@@ -490,9 +494,11 @@ def create_app(path: Path):
 
     @app.post("/api/games/{game_id}/moves")
     def move(game_id: str, command: Move, request: Request):
-        result = app.state.games.apply(game_id, current(request)[0],
-                                    command.uci, command.version, str(command.command_id))
-
+        player = current(request)[0]
+        result = app.state.games.apply(game_id, player, command.uci, command.version, str(command.command_id))
+        if inline_engine_replies and result.get("engine_level") and result["turn"] == "black" and not result["result"]:
+            play_turn(app.state.games, game_id, result["version"], result["engine_name"], result["engine_level"])
+            result = app.state.games.get(game_id, player)
         from_thread.run_sync(app.state.events.publish, game_id)
         return result
 

@@ -39,6 +39,36 @@ def engine_command(name):
     return args
 
 
+def play_turn(service, game_id, version, name, level):
+    with service.engine.connect() as db:
+        history = db.scalars(select(moves.c.uci).join(games)
+                             .where(games.c.id == game_id, games.c.version == version, games.c.result.is_(None))
+                             .order_by(moves.c.ply)).all()
+    if len(history) % 2 == 0:
+        return False
+    board = chess.Board()
+    for move in history:
+        board.push_uci(move)
+    try:
+        with chess.engine.SimpleEngine.popen_uci(engine_command(name), timeout=5) as engine:
+            if name == "stockfish":
+                engine.configure({"Skill Level": STOCKFISH_SKILL[level]})
+            limit = chess.engine.Limit(time=0.8, nodes=LC0_NODES[level] if name == "lc0" else None)
+            answer = engine.play(board, limit)
+        if answer.move is None:
+            raise chess.engine.EngineError("No move returned")
+    except (OSError, TimeoutError, chess.engine.EngineError) as exc:
+        logging.getLogger(__name__).exception("Engine failed for game %s", game_id)
+        raise GameError("engine_unavailable", 503) from exc
+    try:
+        service.apply(game_id, SEATS[name], answer.move.uci(), version, uuid4().hex)
+    except GameError as exc:
+        if exc.code not in ("stale_version", "game_finished"):
+            raise
+        return False
+    return True
+
+
 def play_pending(service, stopped: Event):
     ply = select(func.max(moves.c.ply)).where(moves.c.game_id == games.c.id).scalar_subquery()
     with service.engine.connect() as db:
@@ -48,24 +78,8 @@ def play_pending(service, stopped: Event):
     for game_id, version, level, seat in pending:
         if stopped.is_set():
             break
-        with service.engine.connect() as db:
-            history = db.scalars(select(moves.c.uci).where(moves.c.game_id == game_id)
-                                 .order_by(moves.c.ply)).all()
-        board = chess.Board()
-        for move in history:
-            board.push_uci(move)
-        if board.turn != chess.BLACK:
-            continue
         try:
-            name = seat.split(":")[1]
-            with chess.engine.SimpleEngine.popen_uci(engine_command(name), timeout=5) as engine:
-                if name == "stockfish":
-                    engine.configure({"Skill Level": STOCKFISH_SKILL[level]})
-                limit = chess.engine.Limit(time=0.8, nodes=LC0_NODES[level] if name == "lc0" else None)
-                answer = engine.play(board, limit)
-            service.apply(game_id, seat, answer.move.uci(), version, uuid4().hex)
-            yield game_id
+            if play_turn(service, game_id, version, seat.split(":")[1], level):
+                yield game_id
         except GameError:
-            continue  # The clock or another command changed this position.
-        except (OSError, TimeoutError, chess.engine.EngineError, AttributeError):
-            logging.getLogger(__name__).exception("Engine failed for game %s", game_id)
+            continue
