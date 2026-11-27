@@ -40,8 +40,7 @@ class PuzzleFilterTest(TestCase):
             self.assertEqual(len(list(assets.glob("*.zst"))), 2)
             def open_asset(url, timeout):
                 return (assets / url.rsplit("/", 1)[1]).open("rb")
-            with patch.dict("os.environ", VERCEL_ENV="production", VERCEL_PROJECT_PRODUCTION_URL="example.test"), \
-                    patch("backend.packed_puzzles.urlopen", side_effect=open_asset) as fetched:
+            with patch("backend.packed_puzzles.urlopen", side_effect=open_asset) as fetched:
                 self.assertEqual(puzzle_by_id(target, "AAz")["themes"], ["fork"])
                 self.assertEqual(dict(themes_for_ids(target, ["AAa"])), {"AAa": "pin"})
                 self.assertEqual(fetched.call_count, 1)

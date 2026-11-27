@@ -575,11 +575,7 @@ def create_app(path: Path):
         response.headers["Cache-Control"] = "no-store"
         return puzzle_by_id(catalogue, puzzle_id)
 
-    root = Path(__file__).resolve().parents[1]
-    puzzle_assets = root / "public" / "puzzle-data"
-    if puzzle_assets.is_dir():
-        app.mount("/puzzle-data", StaticFiles(directory=puzzle_assets), name="puzzle-data")
-    build = root / "build"
+    build = Path(__file__).resolve().parents[1] / "build"
     if build.is_dir():
         app.mount("/", StaticFiles(directory=build, html=True), name="client")
     return app

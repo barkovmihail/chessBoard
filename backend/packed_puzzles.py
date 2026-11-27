@@ -2,28 +2,23 @@
 import csv
 import hashlib
 import io
-import os
 import secrets
 from collections import defaultdict
 from functools import lru_cache
-from urllib.error import URLError
 from urllib.request import urlopen
 
 from fastapi import HTTPException
 
 THEMES = {"fork", "pin", "endgame", "mateIn1", "mateIn2"}
+SNAPSHOT_URL = "https://raw.githubusercontent.com/barkovmihail/chessBoard/4d851ae051f64381a27ec012d5c02f5e3e084741"
 
 
 @lru_cache(maxsize=32)
 def load_asset(digest):
-    domain = (os.getenv("VERCEL_PROJECT_PRODUCTION_URL") if os.getenv("VERCEL_ENV") == "production"
-              else os.getenv("VERCEL_URL"))
-    if not domain:
-        raise HTTPException(503, "puzzles_unavailable")
     try:
-        with urlopen(f"https://{domain}/puzzle-data/{digest}.zst", timeout=10) as response:
+        with urlopen(f"{SNAPSHOT_URL}/puzzle-data/{digest}.zst", timeout=10) as response:
             data = response.read()
-    except (OSError, URLError) as error:
+    except OSError as error:
         raise HTTPException(503, "puzzles_unavailable") from error
     if hashlib.sha256(data).hexdigest() != digest:
         raise HTTPException(503, "puzzles_unavailable")

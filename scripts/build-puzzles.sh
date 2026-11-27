@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-archive=$(mktemp)
-trap 'rm -f "$archive"' EXIT
+snapshot=$(python -c 'from backend.packed_puzzles import SNAPSHOT_URL; print(SNAPSHOT_URL)')
 curl --fail --location --silent --show-error --retry 3 \
-    https://database.lichess.org/lichess_db_puzzle.csv.zst --output "$archive"
-python -m backend.pack_puzzles "$archive" backend/puzzles.pack --assets public/puzzle-data
+    "$snapshot/index.pack" --output backend/puzzles.pack
+python - <<'PY'
+from pathlib import Path
+from backend.puzzles import puzzle_by_id
+
+if puzzle_by_id(Path("backend/puzzles.pack"), "00008")["puzzle_id"] != "00008":
+    raise RuntimeError("Puzzle snapshot failed its lookup check")
+PY
