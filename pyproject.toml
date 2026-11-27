@@ -1,5 +1,2 @@
 [tool.vercel]
 entrypoint = "backend.api:app"
-
-[tool.vercel.scripts]
-build = "npm ci --include=dev && npm run build"

@@ -573,4 +573,5 @@ def create_app(path: Path):
     return app
 
 
-app = create_app(Path(os.environ.get("CHESSBOARD_DB", "chessboard.sqlite3")))
+default_db = "/tmp/chessboard.sqlite3" if os.environ.get("VERCEL") == "1" else "chessboard.sqlite3"
+app = create_app(Path(os.environ.get("CHESSBOARD_DB", default_db)))
